@@ -1,0 +1,60 @@
+services:
+  # 1. Orquestador de Agentes y Flujo Human-in-the-Loop
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: trading_n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT}:5678"
+    environment:
+      - GENERIC_TIMEZONE=${TIMEZONE}
+      - TZ=${TIMEZONE}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      # URL pública necesaria para que Telegram devuelva la respuesta de los botones
+      - WEBHOOK_URL=https://giving-fog-subjects-vocal.trycloudflare.com
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    networks:
+      - trading_net
+    depends_on:
+      - quant-engine
+
+  # 2. Motor Cuantitativo Determinista (Estocástico 14/4 + Riesgo 1% + Bróker)
+  quant-engine:
+    build:
+      context: ./python_engine
+      dockerfile: Dockerfile
+    container_name: trading_quant_engine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      # Hot-reload: cualquier cambio que hagas en python_engine/app o .env se aplica al instante
+      - ./python_engine/app:/app
+      - ./.env:/app/.env
+    networks:
+      - trading_net
+
+  # 3. Túnel seguro para Webhooks de Telegram en Local (Coste 0€)
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: trading_ngrok
+    restart: on-failure:3
+    command:
+      - "http"
+      - "n8n:5678"
+      - "--domain=${NGROK_STATIC_DOMAIN}"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    networks:
+      - trading_net
+    depends_on:
+      - n8n
+
+networks:
+  trading_net:
+    driver: bridge

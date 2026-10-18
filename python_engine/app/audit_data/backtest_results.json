@@ -1,0 +1,1902 @@
+{
+  "summary": {
+    "initial_capital_usd": 5000.0,
+    "final_equity_usd": 6151.81,
+    "net_profit_usd": 1151.81,
+    "total_return_pct": 23.04,
+    "total_closed_trades": 48,
+    "winning_trades": 36,
+    "losing_trades": 12,
+    "win_rate_pct": 75.0,
+    "profit_factor": 4.56,
+    "max_drawdown_usd": 174.99,
+    "max_drawdown_pct": 3.1,
+    "circuit_breaker_triggered": false,
+    "avg_trade_pnl_usd": 24.0,
+    "avg_r_multiple": 0.61,
+    "macro_gatekeeper_enabled": true,
+    "macro_vetoed_days": 107,
+    "macro_vetoed_signals": 4
+  },
+  "exit_reasons": {
+    "TAKE_PROFIT_HIT": 17,
+    "TIME_EXPIRY_15D": 3,
+    "TRAILING_PROFIT_HIT": 7,
+    "STOP_LOSS_HIT": 12,
+    "BREAKEVEN_STOP_HIT": 9
+  },
+  "cluster_breakdown": {
+    "FINANCE_CONSUMER": {
+      "trades": 6,
+      "wins": 3,
+      "pnl": 31.43,
+      "win_rate_pct": 50.0
+    },
+    "TECH_GROWTH": {
+      "trades": 14,
+      "wins": 12,
+      "pnl": 363.45,
+      "win_rate_pct": 85.7
+    },
+    "HIGH_BETA_EXPANSION": {
+      "trades": 12,
+      "wins": 9,
+      "pnl": 402.4,
+      "win_rate_pct": 75.0
+    },
+    "HEALTH_INDUSTRIAL": {
+      "trades": 16,
+      "wins": 12,
+      "pnl": 354.53,
+      "win_rate_pct": 75.0
+    }
+  },
+  "sample_trades": [
+    {
+      "ticker": "PYPL",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2024-09-11",
+      "exit_date": "2024-09-19",
+      "bars_held": 5,
+      "entry_price": 68.59,
+      "exit_price": 75.72,
+      "shares": 13,
+      "stop_loss": 68.87,
+      "take_profit": 75.72,
+      "net_pnl_usd": 92.05,
+      "net_pnl_pct": 10.32,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "NFLX",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2024-09-10",
+      "exit_date": "2024-10-02",
+      "bars_held": 15,
+      "entry_price": 67.36,
+      "exit_price": 71.11,
+      "shares": 17,
+      "stop_loss": 68.9,
+      "take_profit": 72.95,
+      "net_pnl_usd": 63.0,
+      "net_pnl_pct": 5.5,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 1.33
+    },
+    {
+      "ticker": "AFRM",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-10-04",
+      "exit_date": "2024-10-14",
+      "bars_held": 5,
+      "entry_price": 39.36,
+      "exit_price": 48.7,
+      "shares": 10,
+      "stop_loss": 41.93,
+      "take_profit": 48.7,
+      "net_pnl_usd": 92.7,
+      "net_pnl_pct": 23.53,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "META",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2024-10-25",
+      "exit_date": "2024-10-31",
+      "bars_held": 3,
+      "entry_price": 569.52,
+      "exit_price": 579.66,
+      "shares": 1,
+      "stop_loss": 579.66,
+      "take_profit": 606.38,
+      "net_pnl_usd": 9.44,
+      "net_pnl_pct": 1.66,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.51
+    },
+    {
+      "ticker": "SHOP",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-10-29",
+      "exit_date": "2024-10-31",
+      "bars_held": 1,
+      "entry_price": 80.39,
+      "exit_price": 77.15,
+      "shares": 9,
+      "stop_loss": 77.15,
+      "take_profit": 86.87,
+      "net_pnl_usd": -29.86,
+      "net_pnl_pct": -4.13,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.02
+    },
+    {
+      "ticker": "AFRM",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-10-29",
+      "exit_date": "2024-11-08",
+      "bars_held": 7,
+      "entry_price": 42.87,
+      "exit_price": 45.59,
+      "shares": 10,
+      "stop_loss": 45.59,
+      "take_profit": 52.75,
+      "net_pnl_usd": 26.5,
+      "net_pnl_pct": 6.18,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.54
+    },
+    {
+      "ticker": "PANW",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-11-01",
+      "exit_date": "2024-11-08",
+      "bars_held": 4,
+      "entry_price": 181.32,
+      "exit_price": 196.22,
+      "shares": 4,
+      "stop_loss": 185.42,
+      "take_profit": 196.22,
+      "net_pnl_usd": 58.9,
+      "net_pnl_pct": 8.12,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "MCD",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2024-11-08",
+      "exit_date": "2024-11-15",
+      "bars_held": 4,
+      "entry_price": 284.83,
+      "exit_price": 277.12,
+      "shares": 2,
+      "stop_loss": 277.12,
+      "take_profit": 300.24,
+      "net_pnl_usd": -16.11,
+      "net_pnl_pct": -2.83,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.05
+    },
+    {
+      "ticker": "GOOGL",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2024-11-26",
+      "exit_date": "2024-12-10",
+      "bars_held": 8,
+      "entry_price": 167.94,
+      "exit_price": 181.32,
+      "shares": 4,
+      "stop_loss": 168.48,
+      "take_profit": 181.32,
+      "net_pnl_usd": 52.82,
+      "net_pnl_pct": 7.86,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "DE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2024-12-17",
+      "exit_date": "2024-12-18",
+      "bars_held": 0,
+      "entry_price": 432.51,
+      "exit_price": 419.28,
+      "shares": 1,
+      "stop_loss": 419.28,
+      "take_profit": 458.96,
+      "net_pnl_usd": -13.93,
+      "net_pnl_pct": -3.22,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.05
+    },
+    {
+      "ticker": "DE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2024-12-20",
+      "exit_date": "2025-01-07",
+      "bars_held": 9,
+      "entry_price": 421.68,
+      "exit_price": 406.86,
+      "shares": 1,
+      "stop_loss": 406.86,
+      "take_profit": 451.33,
+      "net_pnl_usd": -15.52,
+      "net_pnl_pct": -3.68,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.05
+    },
+    {
+      "ticker": "DIS",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-02-19",
+      "exit_date": "2025-03-04",
+      "bars_held": 8,
+      "entry_price": 109.29,
+      "exit_price": 109.57,
+      "shares": 7,
+      "stop_loss": 109.57,
+      "take_profit": 116.08,
+      "net_pnl_usd": 1.23,
+      "net_pnl_pct": 0.16,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.05
+    },
+    {
+      "ticker": "UBER",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-06-05",
+      "exit_date": "2025-06-26",
+      "bars_held": 13,
+      "entry_price": 84.67,
+      "exit_price": 94.07,
+      "shares": 9,
+      "stop_loss": 87.25,
+      "take_profit": 94.07,
+      "net_pnl_usd": 83.9,
+      "net_pnl_pct": 11.01,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "GE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-06-20",
+      "exit_date": "2025-06-27",
+      "bars_held": 4,
+      "entry_price": 237.45,
+      "exit_price": 255.1,
+      "shares": 3,
+      "stop_loss": 242.3,
+      "take_profit": 255.1,
+      "net_pnl_usd": 52.24,
+      "net_pnl_pct": 7.33,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "BA",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-06-23",
+      "exit_date": "2025-07-08",
+      "bars_held": 9,
+      "entry_price": 201.31,
+      "exit_price": 218.85,
+      "shares": 3,
+      "stop_loss": 206.13,
+      "take_profit": 218.85,
+      "net_pnl_usd": 51.92,
+      "net_pnl_pct": 8.59,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    }
+  ],
+  "all_trades": [
+    {
+      "ticker": "PYPL",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2024-09-11",
+      "exit_date": "2024-09-19",
+      "bars_held": 5,
+      "entry_price": 68.59,
+      "exit_price": 75.72,
+      "shares": 13,
+      "stop_loss": 68.87,
+      "take_profit": 75.72,
+      "net_pnl_usd": 92.05,
+      "net_pnl_pct": 10.32,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "NFLX",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2024-09-10",
+      "exit_date": "2024-10-02",
+      "bars_held": 15,
+      "entry_price": 67.36,
+      "exit_price": 71.11,
+      "shares": 17,
+      "stop_loss": 68.9,
+      "take_profit": 72.95,
+      "net_pnl_usd": 63.0,
+      "net_pnl_pct": 5.5,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 1.33
+    },
+    {
+      "ticker": "AFRM",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-10-04",
+      "exit_date": "2024-10-14",
+      "bars_held": 5,
+      "entry_price": 39.36,
+      "exit_price": 48.7,
+      "shares": 10,
+      "stop_loss": 41.93,
+      "take_profit": 48.7,
+      "net_pnl_usd": 92.7,
+      "net_pnl_pct": 23.53,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "META",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2024-10-25",
+      "exit_date": "2024-10-31",
+      "bars_held": 3,
+      "entry_price": 569.52,
+      "exit_price": 579.66,
+      "shares": 1,
+      "stop_loss": 579.66,
+      "take_profit": 606.38,
+      "net_pnl_usd": 9.44,
+      "net_pnl_pct": 1.66,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.51
+    },
+    {
+      "ticker": "SHOP",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-10-29",
+      "exit_date": "2024-10-31",
+      "bars_held": 1,
+      "entry_price": 80.39,
+      "exit_price": 77.15,
+      "shares": 9,
+      "stop_loss": 77.15,
+      "take_profit": 86.87,
+      "net_pnl_usd": -29.86,
+      "net_pnl_pct": -4.13,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.02
+    },
+    {
+      "ticker": "AFRM",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-10-29",
+      "exit_date": "2024-11-08",
+      "bars_held": 7,
+      "entry_price": 42.87,
+      "exit_price": 45.59,
+      "shares": 10,
+      "stop_loss": 45.59,
+      "take_profit": 52.75,
+      "net_pnl_usd": 26.5,
+      "net_pnl_pct": 6.18,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.54
+    },
+    {
+      "ticker": "PANW",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2024-11-01",
+      "exit_date": "2024-11-08",
+      "bars_held": 4,
+      "entry_price": 181.32,
+      "exit_price": 196.22,
+      "shares": 4,
+      "stop_loss": 185.42,
+      "take_profit": 196.22,
+      "net_pnl_usd": 58.9,
+      "net_pnl_pct": 8.12,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "MCD",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2024-11-08",
+      "exit_date": "2024-11-15",
+      "bars_held": 4,
+      "entry_price": 284.83,
+      "exit_price": 277.12,
+      "shares": 2,
+      "stop_loss": 277.12,
+      "take_profit": 300.24,
+      "net_pnl_usd": -16.11,
+      "net_pnl_pct": -2.83,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.05
+    },
+    {
+      "ticker": "GOOGL",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2024-11-26",
+      "exit_date": "2024-12-10",
+      "bars_held": 8,
+      "entry_price": 167.94,
+      "exit_price": 181.32,
+      "shares": 4,
+      "stop_loss": 168.48,
+      "take_profit": 181.32,
+      "net_pnl_usd": 52.82,
+      "net_pnl_pct": 7.86,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "DE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2024-12-17",
+      "exit_date": "2024-12-18",
+      "bars_held": 0,
+      "entry_price": 432.51,
+      "exit_price": 419.28,
+      "shares": 1,
+      "stop_loss": 419.28,
+      "take_profit": 458.96,
+      "net_pnl_usd": -13.93,
+      "net_pnl_pct": -3.22,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.05
+    },
+    {
+      "ticker": "DE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2024-12-20",
+      "exit_date": "2025-01-07",
+      "bars_held": 9,
+      "entry_price": 421.68,
+      "exit_price": 406.86,
+      "shares": 1,
+      "stop_loss": 406.86,
+      "take_profit": 451.33,
+      "net_pnl_usd": -15.52,
+      "net_pnl_pct": -3.68,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.05
+    },
+    {
+      "ticker": "DIS",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-02-19",
+      "exit_date": "2025-03-04",
+      "bars_held": 8,
+      "entry_price": 109.29,
+      "exit_price": 109.57,
+      "shares": 7,
+      "stop_loss": 109.57,
+      "take_profit": 116.08,
+      "net_pnl_usd": 1.23,
+      "net_pnl_pct": 0.16,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.05
+    },
+    {
+      "ticker": "UBER",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-06-05",
+      "exit_date": "2025-06-26",
+      "bars_held": 13,
+      "entry_price": 84.67,
+      "exit_price": 94.07,
+      "shares": 9,
+      "stop_loss": 87.25,
+      "take_profit": 94.07,
+      "net_pnl_usd": 83.9,
+      "net_pnl_pct": 11.01,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "GE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-06-20",
+      "exit_date": "2025-06-27",
+      "bars_held": 4,
+      "entry_price": 237.45,
+      "exit_price": 255.1,
+      "shares": 3,
+      "stop_loss": 242.3,
+      "take_profit": 255.1,
+      "net_pnl_usd": 52.24,
+      "net_pnl_pct": 7.33,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "BA",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-06-23",
+      "exit_date": "2025-07-08",
+      "bars_held": 9,
+      "entry_price": 201.31,
+      "exit_price": 218.85,
+      "shares": 3,
+      "stop_loss": 206.13,
+      "take_profit": 218.85,
+      "net_pnl_usd": 51.92,
+      "net_pnl_pct": 8.59,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "ARM",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2025-07-15",
+      "exit_date": "2025-07-31",
+      "bars_held": 11,
+      "entry_price": 147.11,
+      "exit_price": 152.57,
+      "shares": 5,
+      "stop_loss": 152.57,
+      "take_profit": 166.97,
+      "net_pnl_usd": 26.6,
+      "net_pnl_pct": 3.61,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.54
+    },
+    {
+      "ticker": "XOM",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-07-24",
+      "exit_date": "2025-08-04",
+      "bars_held": 6,
+      "entry_price": 106.68,
+      "exit_price": 103.68,
+      "shares": 7,
+      "stop_loss": 103.68,
+      "take_profit": 112.67,
+      "net_pnl_usd": -21.68,
+      "net_pnl_pct": -2.9,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "BA",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-08-07",
+      "exit_date": "2025-08-19",
+      "bars_held": 7,
+      "entry_price": 227.33,
+      "exit_price": 228.06,
+      "shares": 3,
+      "stop_loss": 228.06,
+      "take_profit": 245.59,
+      "net_pnl_usd": 1.49,
+      "net_pnl_pct": 0.22,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.05
+    },
+    {
+      "ticker": "DKNG",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2025-08-13",
+      "exit_date": "2025-08-27",
+      "bars_held": 9,
+      "entry_price": 43.16,
+      "exit_price": 48.26,
+      "shares": 19,
+      "stop_loss": 44.56,
+      "take_profit": 48.26,
+      "net_pnl_usd": 96.2,
+      "net_pnl_pct": 11.73,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "AVGO",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-08-22",
+      "exit_date": "2025-08-29",
+      "bars_held": 4,
+      "entry_price": 291.33,
+      "exit_price": 292.58,
+      "shares": 2,
+      "stop_loss": 292.58,
+      "take_profit": 322.53,
+      "net_pnl_usd": 1.8,
+      "net_pnl_pct": 0.31,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.06
+    },
+    {
+      "ticker": "CSCO",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-08-26",
+      "exit_date": "2025-09-08",
+      "bars_held": 7,
+      "entry_price": 66.74,
+      "exit_price": 64.8,
+      "shares": 12,
+      "stop_loss": 64.8,
+      "take_profit": 70.63,
+      "net_pnl_usd": -24.03,
+      "net_pnl_pct": -3.0,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "SQ",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2025-09-08",
+      "exit_date": "2025-09-26",
+      "bars_held": 13,
+      "entry_price": 75.82,
+      "exit_price": 71.59,
+      "shares": 11,
+      "stop_loss": 71.59,
+      "take_profit": 84.28,
+      "net_pnl_usd": -47.23,
+      "net_pnl_pct": -5.66,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.02
+    },
+    {
+      "ticker": "MS",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-10-03",
+      "exit_date": "2025-10-10",
+      "bars_held": 4,
+      "entry_price": 154.1,
+      "exit_price": 149.63,
+      "shares": 5,
+      "stop_loss": 149.63,
+      "take_profit": 163.03,
+      "net_pnl_usd": -23.03,
+      "net_pnl_pct": -2.99,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "GS",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-10-03",
+      "exit_date": "2025-10-10",
+      "bars_held": 4,
+      "entry_price": 774.74,
+      "exit_price": 751.19,
+      "shares": 1,
+      "stop_loss": 751.19,
+      "take_profit": 821.85,
+      "net_pnl_usd": -24.25,
+      "net_pnl_pct": -3.13,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "AVGO",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-10-01",
+      "exit_date": "2025-10-17",
+      "bars_held": 11,
+      "entry_price": 330.93,
+      "exit_price": 341.69,
+      "shares": 2,
+      "stop_loss": 341.69,
+      "take_profit": 370.05,
+      "net_pnl_usd": 20.82,
+      "net_pnl_pct": 3.14,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.53
+    },
+    {
+      "ticker": "AAPL",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-10-15",
+      "exit_date": "2025-10-20",
+      "bars_held": 2,
+      "entry_price": 248.42,
+      "exit_price": 262.91,
+      "shares": 3,
+      "stop_loss": 241.18,
+      "take_profit": 262.91,
+      "net_pnl_usd": 42.76,
+      "net_pnl_pct": 5.74,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "TSLA",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-10-15",
+      "exit_date": "2025-11-06",
+      "bars_held": 15,
+      "entry_price": 435.15,
+      "exit_price": 437.91,
+      "shares": 1,
+      "stop_loss": 437.91,
+      "take_profit": 504.13,
+      "net_pnl_usd": 2.06,
+      "net_pnl_pct": 0.47,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.06
+    },
+    {
+      "ticker": "CAT",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-11-19",
+      "exit_date": "2025-12-10",
+      "bars_held": 13,
+      "entry_price": 549.75,
+      "exit_price": 605.33,
+      "shares": 1,
+      "stop_loss": 565.04,
+      "take_profit": 605.33,
+      "net_pnl_usd": 54.88,
+      "net_pnl_pct": 9.98,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "CAT",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-12-19",
+      "exit_date": "2026-01-13",
+      "bars_held": 14,
+      "entry_price": 572.72,
+      "exit_price": 630.96,
+      "shares": 1,
+      "stop_loss": 588.74,
+      "take_profit": 630.96,
+      "net_pnl_usd": 57.54,
+      "net_pnl_pct": 10.04,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "GOOGL",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-12-19",
+      "exit_date": "2026-01-13",
+      "bars_held": 14,
+      "entry_price": 306.56,
+      "exit_price": 335.39,
+      "shares": 2,
+      "stop_loss": 314.49,
+      "take_profit": 335.39,
+      "net_pnl_usd": 56.95,
+      "net_pnl_pct": 9.28,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "MRK",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-01-29",
+      "exit_date": "2026-02-03",
+      "bars_held": 2,
+      "entry_price": 106.15,
+      "exit_price": 113.55,
+      "shares": 8,
+      "stop_loss": 108.18,
+      "take_profit": 113.55,
+      "net_pnl_usd": 58.51,
+      "net_pnl_pct": 6.89,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "AMZN",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2026-05-20",
+      "exit_date": "2026-06-01",
+      "bars_held": 6,
+      "entry_price": 265.01,
+      "exit_price": 265.88,
+      "shares": 3,
+      "stop_loss": 265.88,
+      "take_profit": 286.69,
+      "net_pnl_usd": 1.91,
+      "net_pnl_pct": 0.24,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.06
+    },
+    {
+      "ticker": "AAPL",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2026-06-18",
+      "exit_date": "2026-06-25",
+      "bars_held": 3,
+      "entry_price": 297.75,
+      "exit_price": 286.64,
+      "shares": 2,
+      "stop_loss": 286.64,
+      "take_profit": 319.98,
+      "net_pnl_usd": -22.93,
+      "net_pnl_pct": -3.85,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "CRWD",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2026-06-23",
+      "exit_date": "2026-07-06",
+      "bars_held": 7,
+      "entry_price": 170.23,
+      "exit_price": 202.33,
+      "shares": 3,
+      "stop_loss": 179.06,
+      "take_profit": 202.33,
+      "net_pnl_usd": 95.6,
+      "net_pnl_pct": 18.71,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "GE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-07-15",
+      "exit_date": "2026-07-16",
+      "bars_held": 0,
+      "entry_price": 359.8,
+      "exit_price": 345.29,
+      "shares": 2,
+      "stop_loss": 345.29,
+      "take_profit": 388.83,
+      "net_pnl_usd": -29.73,
+      "net_pnl_pct": -4.13,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.02
+    },
+    {
+      "ticker": "DE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-07-15",
+      "exit_date": "2026-07-20",
+      "bars_held": 2,
+      "entry_price": 588.08,
+      "exit_price": 590.41,
+      "shares": 1,
+      "stop_loss": 590.41,
+      "take_profit": 646.53,
+      "net_pnl_usd": 1.63,
+      "net_pnl_pct": 0.28,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.06
+    },
+    {
+      "ticker": "JNJ",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-07-17",
+      "exit_date": "2026-07-28",
+      "bars_held": 6,
+      "entry_price": 251.8,
+      "exit_price": 271.27,
+      "shares": 3,
+      "stop_loss": 257.15,
+      "take_profit": 271.27,
+      "net_pnl_usd": 57.72,
+      "net_pnl_pct": 7.64,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "HOOD",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2026-07-21",
+      "exit_date": "2026-07-28",
+      "bars_held": 4,
+      "entry_price": 106.36,
+      "exit_price": 92.66,
+      "shares": 4,
+      "stop_loss": 92.66,
+      "take_profit": 133.76,
+      "net_pnl_usd": -55.5,
+      "net_pnl_pct": -13.03,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.01
+    },
+    {
+      "ticker": "CRWD",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2026-07-31",
+      "exit_date": "2026-08-10",
+      "bars_held": 5,
+      "entry_price": 190.86,
+      "exit_price": 226.2,
+      "shares": 3,
+      "stop_loss": 200.58,
+      "take_profit": 226.2,
+      "net_pnl_usd": 105.32,
+      "net_pnl_pct": 18.38,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "SQ",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2026-08-11",
+      "exit_date": "2026-08-18",
+      "bars_held": 4,
+      "entry_price": 79.07,
+      "exit_price": 79.44,
+      "shares": 11,
+      "stop_loss": 79.44,
+      "take_profit": 88.29,
+      "net_pnl_usd": 3.37,
+      "net_pnl_pct": 0.39,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.07
+    },
+    {
+      "ticker": "ABBV",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-08-11",
+      "exit_date": "2026-08-28",
+      "bars_held": 12,
+      "entry_price": 248.56,
+      "exit_price": 254.05,
+      "shares": 3,
+      "stop_loss": 254.05,
+      "take_profit": 268.51,
+      "net_pnl_usd": 15.76,
+      "net_pnl_pct": 2.11,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.53
+    },
+    {
+      "ticker": "DIS",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2026-09-10",
+      "exit_date": "2026-09-15",
+      "bars_held": 2,
+      "entry_price": 105.82,
+      "exit_price": 106.1,
+      "shares": 8,
+      "stop_loss": 106.1,
+      "take_profit": 112.7,
+      "net_pnl_usd": 1.54,
+      "net_pnl_pct": 0.18,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.06
+    },
+    {
+      "ticker": "MSFT",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2026-09-11",
+      "exit_date": "2026-09-15",
+      "bars_held": 1,
+      "entry_price": 495.63,
+      "exit_price": 496.94,
+      "shares": 1,
+      "stop_loss": 496.94,
+      "take_profit": 528.47,
+      "net_pnl_usd": 0.61,
+      "net_pnl_pct": 0.12,
+      "exit_reason": "BREAKEVEN_STOP_HIT",
+      "r_multiple": 0.04
+    },
+    {
+      "ticker": "MRK",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-09-14",
+      "exit_date": "2026-09-23",
+      "bars_held": 6,
+      "entry_price": 144.0,
+      "exit_price": 147.22,
+      "shares": 6,
+      "stop_loss": 147.22,
+      "take_profit": 155.7,
+      "net_pnl_usd": 18.62,
+      "net_pnl_pct": 2.15,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.53
+    },
+    {
+      "ticker": "PFE",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-09-18",
+      "exit_date": "2026-10-01",
+      "bars_held": 8,
+      "entry_price": 27.66,
+      "exit_price": 28.08,
+      "shares": 32,
+      "stop_loss": 28.08,
+      "take_profit": 29.18,
+      "net_pnl_usd": 12.74,
+      "net_pnl_pct": 1.44,
+      "exit_reason": "TRAILING_PROFIT_HIT",
+      "r_multiple": 0.52
+    },
+    {
+      "ticker": "PLTR",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2026-09-14",
+      "exit_date": "2026-10-06",
+      "bars_held": 15,
+      "entry_price": 173.31,
+      "exit_price": 192.07,
+      "shares": 4,
+      "stop_loss": 180.71,
+      "take_profit": 200.21,
+      "net_pnl_usd": 74.34,
+      "net_pnl_pct": 10.72,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 1.38
+    },
+    {
+      "ticker": "SNOW",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2026-09-17",
+      "exit_date": "2026-10-09",
+      "bars_held": 15,
+      "entry_price": 338.39,
+      "exit_price": 368.89,
+      "shares": 1,
+      "stop_loss": 307.72,
+      "take_profit": 399.73,
+      "net_pnl_usd": 29.8,
+      "net_pnl_pct": 8.8,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 0.97
+    },
+    {
+      "ticker": "CVX",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2026-09-28",
+      "exit_date": "2026-10-14",
+      "bars_held": 11,
+      "entry_price": 206.37,
+      "exit_price": 219.63,
+      "shares": 4,
+      "stop_loss": 210.02,
+      "take_profit": 219.63,
+      "net_pnl_usd": 52.34,
+      "net_pnl_pct": 6.34,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    }
+  ],
+  "equity_curve": [
+    {
+      "date": "2024-01-12",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-01-22",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-01-29",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-02-05",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-02-12",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-02-20",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-02-27",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-03-05",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-03-12",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-03-19",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-03-26",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-04-03",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-04-10",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-04-17",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-04-24",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-05-01",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-05-08",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-05-15",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-05-22",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-05-30",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-06-06",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-06-13",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-06-21",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-06-28",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-07-08",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-07-15",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-07-22",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-07-29",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-08-05",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-08-12",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-08-19",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-08-26",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-09-03",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-09-10",
+      "equity": 4999.65,
+      "cash": 3854.5,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-09-17",
+      "equity": 5087.01,
+      "cash": 2962.54,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2024-09-24",
+      "equity": 5174.39,
+      "cash": 3946.55,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-10-01",
+      "equity": 5146.97,
+      "cash": 3946.55,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-10-08",
+      "equity": 5172.6,
+      "cash": 4761.1,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-10-15",
+      "equity": 5247.75,
+      "cash": 5247.75,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-10-22",
+      "equity": 5247.75,
+      "cash": 5247.75,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-10-29",
+      "equity": 5266.6,
+      "cash": 3524.97,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2024-11-05",
+      "equity": 5261.23,
+      "cash": 4072.65,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2024-11-12",
+      "equity": 5311.77,
+      "cash": 4742.73,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-11-19",
+      "equity": 5296.62,
+      "cash": 5296.62,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-11-26",
+      "equity": 5296.27,
+      "cash": 4624.51,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-12-04",
+      "equity": 5317.12,
+      "cash": 4624.51,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2024-12-11",
+      "equity": 5349.44,
+      "cash": 5349.44,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-12-18",
+      "equity": 5335.51,
+      "cash": 5335.51,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2024-12-26",
+      "equity": 5336.48,
+      "cash": 4913.48,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-01-03",
+      "equity": 5326.72,
+      "cash": 4913.48,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-01-13",
+      "equity": 5319.99,
+      "cash": 5319.99,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-01-21",
+      "equity": 5319.99,
+      "cash": 5319.99,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-01-28",
+      "equity": 5319.99,
+      "cash": 5319.99,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-04",
+      "equity": 5319.99,
+      "cash": 5319.99,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-11",
+      "equity": 5319.99,
+      "cash": 5319.99,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-19",
+      "equity": 5319.64,
+      "cash": 4554.57,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-02-26",
+      "equity": 5322.93,
+      "cash": 4554.57,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-03-05",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-12",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-19",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-26",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-02",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-09",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-16",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-24",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-01",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-08",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-15",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-22",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-30",
+      "equity": 5321.21,
+      "cash": 5321.21,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-06-06",
+      "equity": 5329.23,
+      "cash": 4558.83,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-06-13",
+      "equity": 5314.2,
+      "cash": 4558.83,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-06-23",
+      "equity": 5350.41,
+      "cash": 3241.85,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2025-06-30",
+      "equity": 5481.67,
+      "cash": 4853.08,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-07-08",
+      "equity": 5509.28,
+      "cash": 5509.28,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-07-15",
+      "equity": 5508.93,
+      "cash": 4773.38,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-07-22",
+      "equity": 5555.88,
+      "cash": 4773.38,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-07-29",
+      "equity": 5604.46,
+      "cash": 4026.29,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-08-05",
+      "equity": 5514.2,
+      "cash": 5514.2,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-08-12",
+      "equity": 5529.69,
+      "cash": 4831.86,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-08-19",
+      "equity": 5550.68,
+      "cash": 4695.3,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-08-26",
+      "equity": 5609.04,
+      "cash": 3311.01,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2025-09-03",
+      "equity": 5604.91,
+      "cash": 4812.41,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-09-10",
+      "equity": 5566.54,
+      "cash": 4755.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-09-17",
+      "equity": 5588.1,
+      "cash": 4755.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-09-24",
+      "equity": 5596.68,
+      "cash": 4755.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-10-01",
+      "equity": 5542.08,
+      "cash": 4880.22,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-10-08",
+      "equity": 5542.73,
+      "cash": 3334.3,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2025-10-15",
+      "equity": 5529.71,
+      "cash": 3651.82,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2025-10-22",
+      "equity": 5562.2,
+      "cash": 5123.23,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-10-29",
+      "equity": 5584.74,
+      "cash": 5123.23,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-11-05",
+      "equity": 5585.3,
+      "cash": 5123.23,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-11-12",
+      "equity": 5560.79,
+      "cash": 5560.79,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-11-19",
+      "equity": 5560.44,
+      "cash": 5010.69,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-11-26",
+      "equity": 5580.94,
+      "cash": 5010.69,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-12-04",
+      "equity": 5606.2,
+      "cash": 5010.69,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-12-11",
+      "equity": 5615.67,
+      "cash": 5615.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-12-18",
+      "equity": 5615.67,
+      "cash": 5615.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-12-26",
+      "equity": 5634.38,
+      "cash": 4429.12,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-01-05",
+      "equity": 5673.33,
+      "cash": 4429.12,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-01-12",
+      "equity": 5717.5,
+      "cash": 4429.12,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-01-20",
+      "equity": 5730.16,
+      "cash": 5730.16,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-01-27",
+      "equity": 5730.16,
+      "cash": 5730.16,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-02-03",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-02-10",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-02-18",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-02-25",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-04",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-11",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-18",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-25",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-01",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-09",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-16",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-23",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-30",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-07",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-14",
+      "equity": 5788.67,
+      "cash": 5788.67,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-21",
+      "equity": 5798.67,
+      "cash": 4993.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-05-29",
+      "equity": 5805.21,
+      "cash": 4993.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-06-05",
+      "equity": 5790.58,
+      "cash": 5790.58,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-06-12",
+      "equity": 5790.58,
+      "cash": 5790.58,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-06-22",
+      "equity": 5788.23,
+      "cash": 5194.72,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-06-29",
+      "equity": 5813.8,
+      "cash": 5256.61,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-07-07",
+      "equity": 5863.25,
+      "cash": 5863.25,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-07-14",
+      "equity": 5863.25,
+      "cash": 5863.25,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-07-21",
+      "equity": 5827.21,
+      "cash": 4653.63,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-07-28",
+      "equity": 5837.38,
+      "cash": 5837.38,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-08-04",
+      "equity": 5898.11,
+      "cash": 5264.45,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-08-11",
+      "equity": 5942.0,
+      "cash": 4326.54,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-08-18",
+      "equity": 5972.05,
+      "cash": 5200.03,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-08-25",
+      "equity": 5992.53,
+      "cash": 5200.03,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-09-01",
+      "equity": 5961.83,
+      "cash": 5961.83,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-09-09",
+      "equity": 5961.83,
+      "cash": 5961.83,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-09-16",
+      "equity": 5972.86,
+      "cash": 4406.04,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-09-23",
+      "equity": 6068.53,
+      "cash": 4064.8,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2026-09-30",
+      "equity": 6056.21,
+      "cash": 3238.97,
+      "open_positions_count": 4
+    },
+    {
+      "date": "2026-10-07",
+      "equity": 6058.56,
+      "cash": 4905.11,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-10-14",
+      "equity": 6151.82,
+      "cash": 6151.82,
+      "open_positions_count": 0
+    }
+  ]
+}

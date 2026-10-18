@@ -1,0 +1,3880 @@
+[
+  {
+    "ticker": "V",
+    "price": 402.61,
+    "ema_20": 380.41,
+    "ema20_slope_pct": 2.81,
+    "sma_50": 372.48,
+    "sma_200": 338.33,
+    "adx": 25.92,
+    "plus_di": 36.3,
+    "minus_di": 11.5,
+    "di_spread": 24.8,
+    "rsi_14": 73.6,
+    "stoch_k": 95.56,
+    "stoch_d": 93.28,
+    "atr_14": 6.91,
+    "rvol_20": 1.14,
+    "ret_1d_pct": 0.72,
+    "ret_5d_pct": 4.45,
+    "close_location_value": 0.57,
+    "candle_body_atr": 0.02,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 90,
+    "expert_summary": "Tendencia alcista sana (+DI 36.3 > -DI 11.5, sobre EMA20 $380.41 y SMA50 $372.48, Score 90/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $402.61 vs EMA20 $380.41 (pendiente 5d +2.81%), SMA50 $372.48, SMA200 $338.33"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 36.3 vs -DI 11.5 (Dif +24.8 \u00b7 ADX 25.9)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.72% (Cuerpo +0.02xATR \u00b7 Cierre en el 57% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 95.6 / %D 93.3 \u00b7 RSI(14) 73.6"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.14x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 392.24,
+    "provisional_take_profit": 423.35,
+    "updated_at": "2026-10-18T09:26:43.499867+00:00",
+    "rejection_reason": "Filtro de Compresi\u00f3n de Volatilidad: ATR%=1.72% < 1.80% (inercia insuficiente para alcanzar +2R en ventana swing).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 5.835808732683154,
+    "dist_sma50_pct": 8.089024914089347,
+    "dist_sma200_pct": 18.999201962580923,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "KO",
+    "price": 93.9,
+    "ema_20": 88.97,
+    "ema20_slope_pct": 2.05,
+    "sma_50": 88.17,
+    "sma_200": 80.14,
+    "adx": 22.48,
+    "plus_di": 36.9,
+    "minus_di": 11.2,
+    "di_spread": 25.6,
+    "rsi_14": 75.7,
+    "stoch_k": 97.77,
+    "stoch_d": 90.97,
+    "atr_14": 1.44,
+    "rvol_20": 1.44,
+    "ret_1d_pct": 2.07,
+    "ret_5d_pct": 6.64,
+    "close_location_value": 1.0,
+    "candle_body_atr": 0.63,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 90,
+    "expert_summary": "Tendencia alcista sana (+DI 36.9 > -DI 11.2, sobre EMA20 $88.97 y SMA50 $88.17, Score 90/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $93.90 vs EMA20 $88.97 (pendiente 5d +2.05%), SMA50 $88.17, SMA200 $80.14"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 36.9 vs -DI 11.2 (Dif +25.6 \u00b7 ADX 22.5)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +2.07% (Cuerpo +0.63xATR \u00b7 Cierre en el 100% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 97.8 / %D 91.0 \u00b7 RSI(14) 75.7"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.44x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 91.75,
+    "provisional_take_profit": 98.2,
+    "updated_at": "2026-10-18T09:26:43.583178+00:00",
+    "rejection_reason": "Filtro de Compresi\u00f3n de Volatilidad: ATR%=1.53% < 1.80% (inercia insuficiente para alcanzar +2R en ventana swing).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 5.5411936607845425,
+    "dist_sma50_pct": 6.498809118747878,
+    "dist_sma200_pct": 17.169952582979793,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "ABBV",
+    "price": 285.42,
+    "ema_20": 270.58,
+    "ema20_slope_pct": 2.56,
+    "sma_50": 260.92,
+    "sma_200": 230.77,
+    "adx": 30.72,
+    "plus_di": 31.4,
+    "minus_di": 9.1,
+    "di_spread": 22.2,
+    "rsi_14": 72.3,
+    "stoch_k": 82.96,
+    "stoch_d": 79.43,
+    "atr_14": 6.44,
+    "rvol_20": 1.19,
+    "ret_1d_pct": 0.71,
+    "ret_5d_pct": 3.87,
+    "close_location_value": 0.67,
+    "candle_body_atr": 0.28,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 90,
+    "expert_summary": "Tendencia alcista sana (+DI 31.4 > -DI 9.1, sobre EMA20 $270.58 y SMA50 $260.92, Score 90/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $285.42 vs EMA20 $270.58 (pendiente 5d +2.56%), SMA50 $260.92, SMA200 $230.77"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 31.4 vs -DI 9.1 (Dif +22.2 \u00b7 ADX 30.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.71% (Cuerpo +0.28xATR \u00b7 Cierre en el 67% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 83.0 / %D 79.4 \u00b7 RSI(14) 72.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.19x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 275.4,
+    "provisional_take_profit": 305.46,
+    "updated_at": "2026-10-18T09:26:43.913928+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 5.48451474610098,
+    "dist_sma50_pct": 9.389851295416218,
+    "dist_sma200_pct": 23.68158772804091,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "XOM",
+    "price": 178.98,
+    "ema_20": 168.49,
+    "ema20_slope_pct": 2.84,
+    "sma_50": 163.57,
+    "sma_200": 150.39,
+    "adx": 25.36,
+    "plus_di": 33.6,
+    "minus_di": 10.3,
+    "di_spread": 23.3,
+    "rsi_14": 73.0,
+    "stoch_k": 99.09,
+    "stoch_d": 92.74,
+    "atr_14": 3.64,
+    "rvol_20": 1.12,
+    "ret_1d_pct": 2.46,
+    "ret_5d_pct": 5.94,
+    "close_location_value": 0.96,
+    "candle_body_atr": 0.68,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 90,
+    "expert_summary": "Tendencia alcista sana (+DI 33.6 > -DI 10.3, sobre EMA20 $168.49 y SMA50 $163.57, Score 90/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $178.98 vs EMA20 $168.49 (pendiente 5d +2.84%), SMA50 $163.57, SMA200 $150.39"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 33.6 vs -DI 10.3 (Dif +23.3 \u00b7 ADX 25.4)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +2.46% (Cuerpo +0.68xATR \u00b7 Cierre en el 96% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 99.1 / %D 92.7 \u00b7 RSI(14) 73.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.12x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 173.42,
+    "provisional_take_profit": 190.1,
+    "updated_at": "2026-10-18T09:26:44.000351+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 6.225888776781993,
+    "dist_sma50_pct": 9.421042978541296,
+    "dist_sma200_pct": 19.01057251147018,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "CVX",
+    "price": 224.99,
+    "ema_20": 212.45,
+    "ema20_slope_pct": 2.44,
+    "sma_50": 206.86,
+    "sma_200": 187.56,
+    "adx": 21.35,
+    "plus_di": 31.1,
+    "minus_di": 11.9,
+    "di_spread": 19.2,
+    "rsi_14": 70.8,
+    "stoch_k": 98.63,
+    "stoch_d": 92.65,
+    "atr_14": 4.55,
+    "rvol_20": 1.16,
+    "ret_1d_pct": 2.59,
+    "ret_5d_pct": 6.14,
+    "close_location_value": 0.93,
+    "candle_body_atr": 0.69,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 90,
+    "expert_summary": "Tendencia alcista sana (+DI 31.1 > -DI 11.9, sobre EMA20 $212.45 y SMA50 $206.86, Score 90/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $224.99 vs EMA20 $212.45 (pendiente 5d +2.44%), SMA50 $206.86, SMA200 $187.56"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 31.1 vs -DI 11.9 (Dif +19.2 \u00b7 ADX 21.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +2.59% (Cuerpo +0.69xATR \u00b7 Cierre en el 93% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 98.6 / %D 92.6 \u00b7 RSI(14) 70.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.16x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 218.05,
+    "provisional_take_profit": 238.87,
+    "updated_at": "2026-10-18T09:26:44.009459+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 5.9025653094845945,
+    "dist_sma50_pct": 8.764381707434978,
+    "dist_sma200_pct": 19.956280656856475,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "PEP",
+    "price": 131.49,
+    "ema_20": 128.95,
+    "ema20_slope_pct": -0.06,
+    "sma_50": 133.87,
+    "sma_200": 143.81,
+    "adx": 24.29,
+    "plus_di": 25.7,
+    "minus_di": 15.3,
+    "di_spread": 10.4,
+    "rsi_14": 54.6,
+    "stoch_k": 82.85,
+    "stoch_d": 68.07,
+    "atr_14": 2.73,
+    "rvol_20": 1.06,
+    "ret_1d_pct": 2.42,
+    "ret_5d_pct": 4.38,
+    "close_location_value": 0.96,
+    "candle_body_atr": 0.72,
+    "falling_knife": false,
+    "short_term_bias": "NEUTRAL_WAIT",
+    "quant_score": 79,
+    "expert_summary": "Fase de transici\u00f3n sin ventaja t\u00e1ctica clara (Score 79/100 \u00b7 +DI 25.7 / -DI 15.3).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $131.49 vs EMA20 $128.95 (pendiente 5d -0.06%), SMA50 $133.87, SMA200 $143.81"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 25.7 vs -DI 15.3 (Dif +10.4 \u00b7 ADX 24.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +2.42% (Cuerpo +0.72xATR \u00b7 Cierre en el 96% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 82.9 / %D 68.1 \u00b7 RSI(14) 54.6"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.06x media 20 sesiones"
+      }
+    ],
+    "market_regime": "NEUTRAL",
+    "signal_triggered": false,
+    "provisional_stop_loss": 127.31,
+    "provisional_take_profit": 139.85,
+    "updated_at": "2026-10-18T09:26:43.603384+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": 1.969755719271051,
+    "dist_sma50_pct": -1.7778441771868196,
+    "dist_sma200_pct": -8.56685905013559,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "PFE",
+    "price": 29.58,
+    "ema_20": 28.41,
+    "ema20_slope_pct": 1.53,
+    "sma_50": 27.97,
+    "sma_200": 26.03,
+    "adx": 23.68,
+    "plus_di": 34.2,
+    "minus_di": 16.1,
+    "di_spread": 18.1,
+    "rsi_14": 69.8,
+    "stoch_k": 89.13,
+    "stoch_d": 82.42,
+    "atr_14": 0.55,
+    "rvol_20": 0.94,
+    "ret_1d_pct": 0.48,
+    "ret_5d_pct": 4.6,
+    "close_location_value": 0.5,
+    "candle_body_atr": -0.25,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 77,
+    "expert_summary": "Tendencia alcista sana (+DI 34.2 > -DI 16.1, sobre EMA20 $28.41 y SMA50 $27.97, Score 77/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $29.58 vs EMA20 $28.41 (pendiente 5d +1.53%), SMA50 $27.97, SMA200 $26.03"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 34.2 vs -DI 16.1 (Dif +18.1 \u00b7 ADX 23.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.48% (Cuerpo -0.25xATR \u00b7 Cierre en el 50% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 89.1 / %D 82.4 \u00b7 RSI(14) 69.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.94x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 28.75,
+    "provisional_take_profit": 31.24,
+    "updated_at": "2026-10-18T09:26:43.905126+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 4.1182682154171,
+    "dist_sma50_pct": 5.756167322130853,
+    "dist_sma200_pct": 13.638109873223192,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "JPM",
+    "price": 339.72,
+    "ema_20": 336.59,
+    "ema20_slope_pct": -0.2,
+    "sma_50": 346.69,
+    "sma_200": 319.46,
+    "adx": 22.01,
+    "plus_di": 28.2,
+    "minus_di": 23.1,
+    "di_spread": 5.1,
+    "rsi_14": 52.3,
+    "stoch_k": 76.77,
+    "stoch_d": 55.85,
+    "atr_14": 6.52,
+    "rvol_20": 1.03,
+    "ret_1d_pct": 1.25,
+    "ret_5d_pct": 2.02,
+    "close_location_value": 0.32,
+    "candle_body_atr": 0.04,
+    "falling_knife": false,
+    "short_term_bias": "NEUTRAL_WAIT",
+    "quant_score": 74,
+    "expert_summary": "Fase de transici\u00f3n sin ventaja t\u00e1ctica clara (Score 74/100 \u00b7 +DI 28.2 / -DI 23.1).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $339.72 vs EMA20 $336.59 (pendiente 5d -0.20%), SMA50 $346.69, SMA200 $319.46"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 28.2 vs -DI 23.1 (Dif +5.1 \u00b7 ADX 22.0)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +1.25% (Cuerpo +0.04xATR \u00b7 Cierre en el 32% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 76.8 / %D 55.8 \u00b7 RSI(14) 52.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.03x media 20 sesiones"
+      }
+    ],
+    "market_regime": "NEUTRAL",
+    "signal_triggered": false,
+    "provisional_stop_loss": 329.85,
+    "provisional_take_profit": 359.46,
+    "updated_at": "2026-10-18T09:26:43.364660+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": 0.9299147330580386,
+    "dist_sma50_pct": -2.01044160489197,
+    "dist_sma200_pct": 6.34195204407439,
+    "osc_state": "BULLISH_HOOK_READY"
+  },
+  {
+    "ticker": "MA",
+    "price": 617.42,
+    "ema_20": 583.57,
+    "ema20_slope_pct": 2.85,
+    "sma_50": 574.85,
+    "sma_200": 531.34,
+    "adx": 27.1,
+    "plus_di": 39.7,
+    "minus_di": 11.5,
+    "di_spread": 28.2,
+    "rsi_14": 75.3,
+    "stoch_k": 93.49,
+    "stoch_d": 95.53,
+    "atr_14": 10.23,
+    "rvol_20": 1.14,
+    "ret_1d_pct": 0.18,
+    "ret_5d_pct": 4.8,
+    "close_location_value": 0.45,
+    "candle_body_atr": -0.19,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 73,
+    "expert_summary": "Tendencia alcista sana (+DI 39.7 > -DI 11.5, sobre EMA20 $583.57 y SMA50 $574.85, Score 73/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $617.42 vs EMA20 $583.57 (pendiente 5d +2.85%), SMA50 $574.85, SMA200 $531.34"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 39.7 vs -DI 11.5 (Dif +28.2 \u00b7 ADX 27.1)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.18% (Cuerpo -0.19xATR \u00b7 Cierre en el 45% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 93.5 / %D 95.5 \u00b7 RSI(14) 75.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.14x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 602.08,
+    "provisional_take_profit": 648.1,
+    "updated_at": "2026-10-18T09:26:43.539425+00:00",
+    "rejection_reason": "Filtro de Compresi\u00f3n de Volatilidad: ATR%=1.66% < 1.80% (inercia insuficiente para alcanzar +2R en ventana swing).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 5.800503795602911,
+    "dist_sma50_pct": 7.405410106984419,
+    "dist_sma200_pct": 16.200549553957902,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "COST",
+    "price": 989.11,
+    "ema_20": 944.45,
+    "ema20_slope_pct": 2.09,
+    "sma_50": 933.79,
+    "sma_200": 964.32,
+    "adx": 26.36,
+    "plus_di": 37.6,
+    "minus_di": 9.0,
+    "di_spread": 28.6,
+    "rsi_14": 72.5,
+    "stoch_k": 81.59,
+    "stoch_d": 84.55,
+    "atr_14": 16.49,
+    "rvol_20": 1.09,
+    "ret_1d_pct": 1.13,
+    "ret_5d_pct": 4.46,
+    "close_location_value": 0.67,
+    "candle_body_atr": 0.4,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 72,
+    "expert_summary": "Tendencia alcista sana (+DI 37.6 > -DI 9.0, sobre EMA20 $944.45 y SMA50 $933.79, Score 72/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $989.11 vs EMA20 $944.45 (pendiente 5d +2.09%), SMA50 $933.79, SMA200 $964.32"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 37.6 vs -DI 9.0 (Dif +28.6 \u00b7 ADX 26.4)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +1.13% (Cuerpo +0.40xATR \u00b7 Cierre en el 67% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 81.6 / %D 84.5 \u00b7 RSI(14) 72.5"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.09x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 964.37,
+    "provisional_take_profit": 1038.59,
+    "updated_at": "2026-10-18T09:26:43.619876+00:00",
+    "rejection_reason": "Filtro de Compresi\u00f3n de Volatilidad: ATR%=1.67% < 1.80% (inercia insuficiente para alcanzar +2R en ventana swing).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 4.728678066599604,
+    "dist_sma50_pct": 5.924244209083419,
+    "dist_sma200_pct": 2.570723411315742,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "LLY",
+    "price": 1257.03,
+    "ema_20": 1185.78,
+    "ema20_slope_pct": 1.8,
+    "sma_50": 1180.17,
+    "sma_200": 1077.69,
+    "adx": 22.76,
+    "plus_di": 29.9,
+    "minus_di": 12.1,
+    "di_spread": 17.8,
+    "rsi_14": 68.6,
+    "stoch_k": 86.97,
+    "stoch_d": 75.75,
+    "atr_14": 35.8,
+    "rvol_20": 1.05,
+    "ret_1d_pct": 0.43,
+    "ret_5d_pct": 6.59,
+    "close_location_value": 0.25,
+    "candle_body_atr": 0.03,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 72,
+    "expert_summary": "Tendencia alcista sana (+DI 29.9 > -DI 12.1, sobre EMA20 $1185.78 y SMA50 $1180.17, Score 72/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $1257.03 vs EMA20 $1185.78 (pendiente 5d +1.80%), SMA50 $1180.17, SMA200 $1077.69"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 29.9 vs -DI 12.1 (Dif +17.8 \u00b7 ADX 22.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela +0.43% (Cuerpo +0.03xATR \u00b7 Cierre en el 25% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 87.0 / %D 75.8 \u00b7 RSI(14) 68.6"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.05x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 1198.84,
+    "provisional_take_profit": 1373.41,
+    "updated_at": "2026-10-18T09:26:43.930853+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 6.00870313211557,
+    "dist_sma50_pct": 6.512621063067177,
+    "dist_sma200_pct": 16.641149124516318,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "AAPL",
+    "price": 343.46,
+    "ema_20": 336.82,
+    "ema20_slope_pct": 1.06,
+    "sma_50": 325.69,
+    "sma_200": 292.14,
+    "adx": 17.78,
+    "plus_di": 27.3,
+    "minus_di": 17.3,
+    "di_spread": 10.0,
+    "rsi_14": 62.1,
+    "stoch_k": 79.01,
+    "stoch_d": 74.36,
+    "atr_14": 6.7,
+    "rvol_20": 1.62,
+    "ret_1d_pct": 0.43,
+    "ret_5d_pct": 2.03,
+    "close_location_value": 0.41,
+    "candle_body_atr": -0.39,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 71,
+    "expert_summary": "Tendencia alcista sana (+DI 27.3 > -DI 17.3, sobre EMA20 $336.82 y SMA50 $325.69, Score 71/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $343.46 vs EMA20 $336.82 (pendiente 5d +1.06%), SMA50 $325.69, SMA200 $292.14"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 27.3 vs -DI 17.3 (Dif +10.0 \u00b7 ADX 17.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.43% (Cuerpo -0.39xATR \u00b7 Cierre en el 41% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 79.0 / %D 74.4 \u00b7 RSI(14) 62.1"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.62x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 333.29,
+    "provisional_take_profit": 363.8,
+    "updated_at": "2026-10-18T09:26:43.649873+00:00",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 1.9713793717712684,
+    "dist_sma50_pct": 5.456108569498597,
+    "dist_sma200_pct": 17.566919969877453,
+    "osc_state": "BULLISH_HOOK_READY"
+  },
+  {
+    "ticker": "WMT",
+    "price": 118.81,
+    "ema_20": 110.93,
+    "ema20_slope_pct": 3.05,
+    "sma_50": 108.86,
+    "sma_200": 117.86,
+    "adx": 22.84,
+    "plus_di": 45.5,
+    "minus_di": 12.6,
+    "di_spread": 32.9,
+    "rsi_14": 73.0,
+    "stoch_k": 85.71,
+    "stoch_d": 85.82,
+    "atr_14": 2.45,
+    "rvol_20": 0.95,
+    "ret_1d_pct": 0.8,
+    "ret_5d_pct": 6.7,
+    "close_location_value": 0.52,
+    "candle_body_atr": 0.3,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 69,
+    "expert_summary": "Tendencia alcista sana (+DI 45.5 > -DI 12.6, sobre EMA20 $110.93 y SMA50 $108.86, Score 69/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $118.81 vs EMA20 $110.93 (pendiente 5d +3.05%), SMA50 $108.86, SMA200 $117.86"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 45.5 vs -DI 12.6 (Dif +32.9 \u00b7 ADX 22.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.80% (Cuerpo +0.30xATR \u00b7 Cierre en el 52% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 85.7 / %D 85.8 \u00b7 RSI(14) 73.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.95x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 115.05,
+    "provisional_take_profit": 126.33,
+    "updated_at": "2026-10-18T09:26:43.644468+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 7.103578833498599,
+    "dist_sma50_pct": 9.140180047767778,
+    "dist_sma200_pct": 0.8060410656711376,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "WFC",
+    "price": 83.87,
+    "ema_20": 82.76,
+    "ema20_slope_pct": -0.29,
+    "sma_50": 85.2,
+    "sma_200": 83.54,
+    "adx": 21.58,
+    "plus_di": 30.4,
+    "minus_di": 33.7,
+    "di_spread": -3.3,
+    "rsi_14": 52.4,
+    "stoch_k": 87.22,
+    "stoch_d": 60.4,
+    "atr_14": 2.06,
+    "rvol_20": 1.96,
+    "ret_1d_pct": 1.35,
+    "ret_5d_pct": 0.38,
+    "close_location_value": 0.49,
+    "candle_body_atr": 0.12,
+    "falling_knife": false,
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 66,
+    "expert_summary": "Pullback t\u00e1ctico controlado en estructura alcista (SMA50 $85.20 > SMA200 $83.54, CLV 49%, Score 66/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $83.87 vs EMA20 $82.76 (pendiente 5d -0.29%), SMA50 $85.20, SMA200 $83.54"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 30.4 vs -DI 33.7 (Dif -3.3 \u00b7 ADX 21.6)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +1.35% (Cuerpo +0.12xATR \u00b7 Cierre en el 49% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 87.2 / %D 60.4 \u00b7 RSI(14) 52.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.96x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_PULLBACK",
+    "signal_triggered": false,
+    "provisional_stop_loss": 80.62,
+    "provisional_take_profit": 90.37,
+    "updated_at": "2026-10-18T09:26:43.411589+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": 1.3412276462058959,
+    "dist_sma50_pct": -1.561032863849763,
+    "dist_sma200_pct": 0.39502034953315573,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "PYPL",
+    "price": 56.7,
+    "ema_20": 55.13,
+    "ema20_slope_pct": 1.61,
+    "sma_50": 56.03,
+    "sma_200": 49.83,
+    "adx": 23.42,
+    "plus_di": 32.7,
+    "minus_di": 14.9,
+    "di_spread": 17.8,
+    "rsi_14": 59.9,
+    "stoch_k": 79.95,
+    "stoch_d": 91.62,
+    "atr_14": 1.34,
+    "rvol_20": 0.99,
+    "ret_1d_pct": -0.8,
+    "ret_5d_pct": 2.11,
+    "close_location_value": 0.21,
+    "candle_body_atr": -0.49,
+    "falling_knife": false,
+    "short_term_bias": "PULLBACK_WATCH",
+    "quant_score": 63,
+    "expert_summary": "Pullback t\u00e1ctico controlado en estructura alcista (SMA50 $56.03 > SMA200 $49.83, CLV 21%, Score 63/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $56.70 vs EMA20 $55.13 (pendiente 5d +1.61%), SMA50 $56.03, SMA200 $49.83"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 32.7 vs -DI 14.9 (Dif +17.8 \u00b7 ADX 23.4)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -0.80% (Cuerpo -0.49xATR \u00b7 Cierre en el 21% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 79.9 / %D 91.6 \u00b7 RSI(14) 59.9"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.99x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_PULLBACK",
+    "signal_triggered": false,
+    "provisional_stop_loss": 54.59,
+    "provisional_take_profit": 60.92,
+    "updated_at": "2026-10-18T09:26:43.562847+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 2.847814257210231,
+    "dist_sma50_pct": 1.195787970729969,
+    "dist_sma200_pct": 13.786875376279358,
+    "osc_state": "COOLING_DOWN"
+  },
+  {
+    "ticker": "LMT",
+    "price": 552.09,
+    "ema_20": 521.42,
+    "ema20_slope_pct": 0.67,
+    "sma_50": 541.94,
+    "sma_200": 559.11,
+    "adx": 36.58,
+    "plus_di": 30.1,
+    "minus_di": 20.8,
+    "di_spread": 9.2,
+    "rsi_14": 64.9,
+    "stoch_k": 98.13,
+    "stoch_d": 73.96,
+    "atr_14": 11.93,
+    "rvol_20": 1.44,
+    "ret_1d_pct": 3.65,
+    "ret_5d_pct": 8.34,
+    "close_location_value": 0.94,
+    "candle_body_atr": 1.09,
+    "falling_knife": false,
+    "short_term_bias": "NEUTRAL_WAIT",
+    "quant_score": 63,
+    "expert_summary": "Fase de transici\u00f3n sin ventaja t\u00e1ctica clara (Score 63/100 \u00b7 +DI 30.1 / -DI 20.8).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $552.09 vs EMA20 $521.42 (pendiente 5d +0.67%), SMA50 $541.94, SMA200 $559.11"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 30.1 vs -DI 20.8 (Dif +9.2 \u00b7 ADX 36.6)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +3.65% (Cuerpo +1.09xATR \u00b7 Cierre en el 94% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 98.1 / %D 74.0 \u00b7 RSI(14) 64.9"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.44x media 20 sesiones"
+      }
+    ],
+    "market_regime": "NEUTRAL",
+    "signal_triggered": false,
+    "provisional_stop_loss": 533.68,
+    "provisional_take_profit": 588.91,
+    "updated_at": "2026-10-18T09:26:43.991388+00:00",
+    "rejection_reason": "Filtro Estad\u00edstico de Agotamiento Clim\u00e1tico: ADX 36.6 > 35.0 (riesgo elevado de reversi\u00f3n post-euforia).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": false,
+    "dist_ema20_pct": 5.882014498868489,
+    "dist_sma50_pct": 1.8729010591578361,
+    "dist_sma200_pct": -1.255566883082038,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "MRK",
+    "price": 145.95,
+    "ema_20": 145.06,
+    "ema20_slope_pct": 0.09,
+    "sma_50": 144.68,
+    "sma_200": 123.57,
+    "adx": 17.27,
+    "plus_di": 27.3,
+    "minus_di": 19.5,
+    "di_spread": 7.7,
+    "rsi_14": 52.2,
+    "stoch_k": 52.81,
+    "stoch_d": 49.81,
+    "atr_14": 3.86,
+    "rvol_20": 1.22,
+    "ret_1d_pct": 0.52,
+    "ret_5d_pct": 0.24,
+    "close_location_value": 0.16,
+    "candle_body_atr": -0.26,
+    "falling_knife": false,
+    "short_term_bias": "PULLBACK_WATCH",
+    "quant_score": 61,
+    "expert_summary": "Pullback t\u00e1ctico controlado en estructura alcista (SMA50 $144.68 > SMA200 $123.57, CLV 16%, Score 61/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $145.95 vs EMA20 $145.06 (pendiente 5d +0.09%), SMA50 $144.68, SMA200 $123.57"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 27.3 vs -DI 19.5 (Dif +7.7 \u00b7 ADX 17.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela +0.52% (Cuerpo -0.26xATR \u00b7 Cierre en el 16% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 52.8 / %D 49.8 \u00b7 RSI(14) 52.2"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.22x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_PULLBACK",
+    "signal_triggered": false,
+    "provisional_stop_loss": 139.77,
+    "provisional_take_profit": 158.31,
+    "updated_at": "2026-10-18T09:26:43.923010+00:00",
+    "rejection_reason": "Filtro Fractal de Kaufman: ER(10)=0.07 < 0.14 (ruido browniano err\u00e1tico de alta frecuencia).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 0.6135392251482051,
+    "dist_sma50_pct": 0.8777992811722295,
+    "dist_sma200_pct": 18.111192036902157,
+    "osc_state": "IDEAL_PULLBACK_READY"
+  },
+  {
+    "ticker": "UNH",
+    "price": 401.43,
+    "ema_20": 383.57,
+    "ema20_slope_pct": 1.7,
+    "sma_50": 386.09,
+    "sma_200": 355.62,
+    "adx": 29.09,
+    "plus_di": 29.6,
+    "minus_di": 12.9,
+    "di_spread": 16.8,
+    "rsi_14": 63.3,
+    "stoch_k": 75.37,
+    "stoch_d": 72.54,
+    "atr_14": 12.08,
+    "rvol_20": 1.37,
+    "ret_1d_pct": -1.29,
+    "ret_5d_pct": 5.83,
+    "close_location_value": 0.35,
+    "candle_body_atr": -0.74,
+    "falling_knife": false,
+    "short_term_bias": "PULLBACK_WATCH",
+    "quant_score": 61,
+    "expert_summary": "Tendencia alcista sana (+DI 29.6 > -DI 12.9, sobre EMA20 $383.57 y SMA50 $386.09, Score 61/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $401.43 vs EMA20 $383.57 (pendiente 5d +1.70%), SMA50 $386.09, SMA200 $355.62"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 29.6 vs -DI 12.9 (Dif +16.8 \u00b7 ADX 29.1)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela -1.29% (Cuerpo -0.74xATR \u00b7 Cierre en el 35% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 75.4 / %D 72.5 \u00b7 RSI(14) 63.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.37x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 381.55,
+    "provisional_take_profit": 441.19,
+    "updated_at": "2026-10-18T09:26:43.938483+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 4.65625570300076,
+    "dist_sma50_pct": 3.973166878189032,
+    "dist_sma200_pct": 12.88172768685676,
+    "osc_state": "BULLISH_HOOK_READY"
+  },
+  {
+    "ticker": "DIS",
+    "price": 110.59,
+    "ema_20": 106.87,
+    "ema20_slope_pct": 1.68,
+    "sma_50": 106.11,
+    "sma_200": 103.1,
+    "adx": 20.39,
+    "plus_di": 37.2,
+    "minus_di": 14.0,
+    "di_spread": 23.2,
+    "rsi_14": 65.4,
+    "stoch_k": 81.8,
+    "stoch_d": 85.64,
+    "atr_14": 2.11,
+    "rvol_20": 1.01,
+    "ret_1d_pct": -0.08,
+    "ret_5d_pct": 2.35,
+    "close_location_value": 0.22,
+    "candle_body_atr": -0.42,
+    "falling_knife": false,
+    "short_term_bias": "PULLBACK_WATCH",
+    "quant_score": 57,
+    "expert_summary": "Tendencia alcista sana (+DI 37.2 > -DI 14.0, sobre EMA20 $106.87 y SMA50 $106.11, Score 57/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $110.59 vs EMA20 $106.87 (pendiente 5d +1.68%), SMA50 $106.11, SMA200 $103.10"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 37.2 vs -DI 14.0 (Dif +23.2 \u00b7 ADX 20.4)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -0.08% (Cuerpo -0.42xATR \u00b7 Cierre en el 22% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 81.8 / %D 85.6 \u00b7 RSI(14) 65.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.01x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BULLISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 107.39,
+    "provisional_take_profit": 116.99,
+    "updated_at": "2026-10-18T09:26:43.717248+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 3.480864601852717,
+    "dist_sma50_pct": 4.222033738573183,
+    "dist_sma200_pct": 7.264791464597488,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "JNJ",
+    "price": 255.56,
+    "ema_20": 259.68,
+    "ema20_slope_pct": -1.2,
+    "sma_50": 264.92,
+    "sma_200": 242.3,
+    "adx": 16.43,
+    "plus_di": 25.9,
+    "minus_di": 31.2,
+    "di_spread": -5.3,
+    "rsi_14": 43.8,
+    "stoch_k": 38.88,
+    "stoch_d": 27.31,
+    "atr_14": 6.2,
+    "rvol_20": 0.89,
+    "ret_1d_pct": 0.9,
+    "ret_5d_pct": -2.25,
+    "close_location_value": 0.44,
+    "candle_body_atr": 0.01,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 53,
+    "expert_summary": "Rotura bajista corto plazo (-DI 31.2 > +DI 25.9, bajo EMA20 $259.68, vela +0.9%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $255.56 vs EMA20 $259.68 (pendiente 5d -1.20%), SMA50 $264.92, SMA200 $242.30"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 25.9 vs -DI 31.2 (Dif -5.3 \u00b7 ADX 16.4)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.90% (Cuerpo +0.01xATR \u00b7 Cierre en el 44% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 38.9 / %D 27.3 \u00b7 RSI(14) 43.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.89x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 245.8,
+    "provisional_take_profit": 275.08,
+    "updated_at": "2026-10-18T09:26:43.894859+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_BREAKDOWN: -DI 31.2 > +DI 25.9, precio bajo EMA20 $259.68).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -1.5865680837954421,
+    "dist_sma50_pct": -3.533142080628119,
+    "dist_sma200_pct": 5.472554684275687,
+    "osc_state": "IDEAL_PULLBACK_READY"
+  },
+  {
+    "ticker": "UPS",
+    "price": 97.48,
+    "ema_20": 95.86,
+    "ema20_slope_pct": 0.36,
+    "sma_50": 99.23,
+    "sma_200": 102.37,
+    "adx": 34.65,
+    "plus_di": 24.9,
+    "minus_di": 19.8,
+    "di_spread": 5.1,
+    "rsi_14": 53.7,
+    "stoch_k": 72.28,
+    "stoch_d": 82.57,
+    "atr_14": 2.01,
+    "rvol_20": 1.1,
+    "ret_1d_pct": -0.36,
+    "ret_5d_pct": 3.08,
+    "close_location_value": 0.27,
+    "candle_body_atr": -0.5,
+    "falling_knife": false,
+    "short_term_bias": "NEUTRAL_WAIT",
+    "quant_score": 50,
+    "expert_summary": "Fase de transici\u00f3n sin ventaja t\u00e1ctica clara (Score 50/100 \u00b7 +DI 24.9 / -DI 19.8).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $97.48 vs EMA20 $95.86 (pendiente 5d +0.36%), SMA50 $99.23, SMA200 $102.37"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 24.9 vs -DI 19.8 (Dif +5.1 \u00b7 ADX 34.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela -0.36% (Cuerpo -0.50xATR \u00b7 Cierre en el 27% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 72.3 / %D 82.6 \u00b7 RSI(14) 53.7"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.10x media 20 sesiones"
+      }
+    ],
+    "market_regime": "NEUTRAL",
+    "signal_triggered": false,
+    "provisional_stop_loss": 94.41,
+    "provisional_take_profit": 103.62,
+    "updated_at": "2026-10-18T09:26:44.018030+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": 1.6899645316086005,
+    "dist_sma50_pct": -1.7635795626322683,
+    "dist_sma200_pct": -4.776790075217349,
+    "osc_state": "COOLING_DOWN"
+  },
+  {
+    "ticker": "NKE",
+    "price": 37.13,
+    "ema_20": 35.82,
+    "ema20_slope_pct": 0.62,
+    "sma_50": 37.4,
+    "sma_200": 46.64,
+    "adx": 25.3,
+    "plus_di": 27.4,
+    "minus_di": 19.9,
+    "di_spread": 7.5,
+    "rsi_14": 58.4,
+    "stoch_k": 87.46,
+    "stoch_d": 79.89,
+    "atr_14": 1.14,
+    "rvol_20": 0.67,
+    "ret_1d_pct": -0.03,
+    "ret_5d_pct": 6.97,
+    "close_location_value": 0.23,
+    "candle_body_atr": -0.47,
+    "falling_knife": false,
+    "short_term_bias": "NEUTRAL_WAIT",
+    "quant_score": 46,
+    "expert_summary": "Fase de transici\u00f3n sin ventaja t\u00e1ctica clara (Score 46/100 \u00b7 +DI 27.4 / -DI 19.9).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $37.13 vs EMA20 $35.82 (pendiente 5d +0.62%), SMA50 $37.40, SMA200 $46.64"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 27.4 vs -DI 19.9 (Dif +7.5 \u00b7 ADX 25.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -0.03% (Cuerpo -0.47xATR \u00b7 Cierre en el 23% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 87.5 / %D 79.9 \u00b7 RSI(14) 58.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.67x media 20 sesiones"
+      }
+    ],
+    "market_regime": "NEUTRAL",
+    "signal_triggered": false,
+    "provisional_stop_loss": 35.25,
+    "provisional_take_profit": 40.89,
+    "updated_at": "2026-10-18T09:26:43.660724+00:00",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": 3.6571747627024074,
+    "dist_sma50_pct": -0.721925133689829,
+    "dist_sma200_pct": -20.3902229845626,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "MCD",
+    "price": 242.97,
+    "ema_20": 239.59,
+    "ema20_slope_pct": -0.03,
+    "sma_50": 251.82,
+    "sma_200": 282.79,
+    "adx": 41.76,
+    "plus_di": 22.3,
+    "minus_di": 24.1,
+    "di_spread": -1.8,
+    "rsi_14": 52.3,
+    "stoch_k": 82.7,
+    "stoch_d": 78.49,
+    "atr_14": 4.41,
+    "rvol_20": 1.1,
+    "ret_1d_pct": 0.19,
+    "ret_5d_pct": 3.29,
+    "close_location_value": 0.27,
+    "candle_body_atr": -0.3,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 38,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $282.79 y EMA20 $239.59, -DI 24.1 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $242.97 vs EMA20 $239.59 (pendiente 5d -0.03%), SMA50 $251.82, SMA200 $282.79"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 22.3 vs -DI 24.1 (Dif -1.8 \u00b7 ADX 41.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.19% (Cuerpo -0.30xATR \u00b7 Cierre en el 27% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 82.7 / %D 78.5 \u00b7 RSI(14) 52.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.10x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 236.34,
+    "provisional_take_profit": 256.23,
+    "updated_at": "2026-10-18T09:26:43.693587+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 24.1 > +DI 22.3, precio bajo EMA20 $239.59).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": 1.41074335322843,
+    "dist_sma50_pct": -3.5144150583750275,
+    "dist_sma200_pct": -14.081120265921715,
+    "osc_state": "EXTENDED_OVERBOUGHT"
+  },
+  {
+    "ticker": "HON",
+    "price": 211.41,
+    "ema_20": 210.21,
+    "ema20_slope_pct": -0.24,
+    "sma_50": 214.45,
+    "sma_200": 229.19,
+    "adx": 14.7,
+    "plus_di": 21.0,
+    "minus_di": 18.5,
+    "di_spread": 2.4,
+    "rsi_14": 50.8,
+    "stoch_k": 60.34,
+    "stoch_d": 41.79,
+    "atr_14": 4.33,
+    "rvol_20": 1.24,
+    "ret_1d_pct": 0.43,
+    "ret_5d_pct": 1.77,
+    "close_location_value": 0.26,
+    "candle_body_atr": -0.0,
+    "falling_knife": false,
+    "short_term_bias": "NEUTRAL_WAIT",
+    "quant_score": 38,
+    "expert_summary": "Rango lateral de baja direccionalidad (ADX 14.7 < 20, RSI 50.8, Score 38/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $211.41 vs EMA20 $210.21 (pendiente 5d -0.24%), SMA50 $214.45, SMA200 $229.19"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 21.0 vs -DI 18.5 (Dif +2.4 \u00b7 ADX 14.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.43% (Cuerpo -0.00xATR \u00b7 Cierre en el 26% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 60.3 / %D 41.8 \u00b7 RSI(14) 50.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.24x media 20 sesiones"
+      }
+    ],
+    "market_regime": "LATERAL_RANGE",
+    "signal_triggered": false,
+    "provisional_stop_loss": 204.78,
+    "provisional_take_profit": 224.67,
+    "updated_at": "2026-10-18T09:26:43.972609+00:00",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": 0.5708577137148512,
+    "dist_sma50_pct": -1.4175798554441559,
+    "dist_sma200_pct": -7.757755573977923,
+    "osc_state": "BULLISH_HOOK_READY"
+  },
+  {
+    "ticker": "UBER",
+    "price": 70.35,
+    "ema_20": 70.44,
+    "ema20_slope_pct": 0.24,
+    "sma_50": 73.1,
+    "sma_200": 74.21,
+    "adx": 17.72,
+    "plus_di": 17.7,
+    "minus_di": 19.8,
+    "di_spread": -2.1,
+    "rsi_14": 48.4,
+    "stoch_k": 64.4,
+    "stoch_d": 68.67,
+    "atr_14": 1.88,
+    "rvol_20": 0.93,
+    "ret_1d_pct": -1.29,
+    "ret_5d_pct": -1.62,
+    "close_location_value": 0.29,
+    "candle_body_atr": -0.35,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 38,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $74.21 y EMA20 $70.44, -DI 19.8 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $70.35 vs EMA20 $70.44 (pendiente 5d +0.24%), SMA50 $73.10, SMA200 $74.21"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 17.7 vs -DI 19.8 (Dif -2.1 \u00b7 ADX 17.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela -1.29% (Cuerpo -0.35xATR \u00b7 Cierre en el 29% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 64.4 / %D 68.7 \u00b7 RSI(14) 48.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.93x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 67.33,
+    "provisional_take_profit": 76.39,
+    "updated_at": "2026-10-18T09:26:43.813150+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 19.8 > +DI 17.7, precio bajo EMA20 $70.44).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -0.1277683134582672,
+    "dist_sma50_pct": -3.761969904240766,
+    "dist_sma200_pct": -5.201455329470422,
+    "osc_state": "COOLING_DOWN"
+  },
+  {
+    "ticker": "BA",
+    "price": 190.21,
+    "ema_20": 192.32,
+    "ema20_slope_pct": -1.44,
+    "sma_50": 205.37,
+    "sma_200": 219.5,
+    "adx": 29.96,
+    "plus_di": 19.9,
+    "minus_di": 27.9,
+    "di_spread": -8.1,
+    "rsi_14": 43.5,
+    "stoch_k": 50.41,
+    "stoch_d": 27.81,
+    "atr_14": 5.08,
+    "rvol_20": 0.86,
+    "ret_1d_pct": 0.78,
+    "ret_5d_pct": -0.08,
+    "close_location_value": 0.6,
+    "candle_body_atr": 0.02,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 38,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $219.50 y EMA20 $192.32, -DI 27.9 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $190.21 vs EMA20 $192.32 (pendiente 5d -1.44%), SMA50 $205.37, SMA200 $219.50"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 19.9 vs -DI 27.9 (Dif -8.1 \u00b7 ADX 30.0)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +0.78% (Cuerpo +0.02xATR \u00b7 Cierre en el 60% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 50.4 / %D 27.8 \u00b7 RSI(14) 43.5"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.86x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 182.05,
+    "provisional_take_profit": 206.53,
+    "updated_at": "2026-10-18T09:26:43.981468+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 27.9 > +DI 19.9, precio bajo EMA20 $192.32).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -1.097129783693836,
+    "dist_sma50_pct": -7.3817987047767435,
+    "dist_sma200_pct": -13.343963553530749,
+    "osc_state": "IDEAL_PULLBACK_READY"
+  },
+  {
+    "ticker": "NFLX",
+    "price": 70.53,
+    "ema_20": 71.3,
+    "ema20_slope_pct": -0.27,
+    "sma_50": 75.09,
+    "sma_200": 82.88,
+    "adx": 20.92,
+    "plus_di": 24.7,
+    "minus_di": 31.9,
+    "di_spread": -7.2,
+    "rsi_14": 45.5,
+    "stoch_k": 61.1,
+    "stoch_d": 74.26,
+    "atr_14": 1.89,
+    "rvol_20": 1.25,
+    "ret_1d_pct": -2.86,
+    "ret_5d_pct": 0.33,
+    "close_location_value": 0.36,
+    "candle_body_atr": 0.35,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 37,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $82.88 y EMA20 $71.30, -DI 31.9 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $70.53 vs EMA20 $71.30 (pendiente 5d -0.27%), SMA50 $75.09, SMA200 $82.88"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 24.7 vs -DI 31.9 (Dif -7.2 \u00b7 ADX 20.9)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela -2.86% (Cuerpo +0.35xATR \u00b7 Cierre en el 36% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 61.1 / %D 74.3 \u00b7 RSI(14) 45.5"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.25x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 67.49,
+    "provisional_take_profit": 76.61,
+    "updated_at": "2026-10-18T09:26:43.752774+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 31.9 > +DI 24.7, precio bajo EMA20 $71.30).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -1.0799438990182273,
+    "dist_sma50_pct": -6.072712744706355,
+    "dist_sma200_pct": -14.90106177606177,
+    "osc_state": "COOLING_DOWN"
+  },
+  {
+    "ticker": "DKNG",
+    "price": 18.9,
+    "ema_20": 20.22,
+    "ema20_slope_pct": -2.98,
+    "sma_50": 22.74,
+    "sma_200": 24.97,
+    "adx": 21.56,
+    "plus_di": 13.0,
+    "minus_di": 27.8,
+    "di_spread": -14.9,
+    "rsi_14": 36.6,
+    "stoch_k": 18.46,
+    "stoch_d": 21.57,
+    "atr_14": 1.04,
+    "rvol_20": 1.18,
+    "ret_1d_pct": -2.12,
+    "ret_5d_pct": -3.47,
+    "close_location_value": 0.46,
+    "candle_body_atr": -0.48,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 37,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $24.97 y EMA20 $20.22, -DI 27.8 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $18.90 vs EMA20 $20.22 (pendiente 5d -2.98%), SMA50 $22.74, SMA200 $24.97"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 13.0 vs -DI 27.8 (Dif -14.9 \u00b7 ADX 21.6)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela -2.12% (Cuerpo -0.48xATR \u00b7 Cierre en el 46% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 18.5 / %D 21.6 \u00b7 RSI(14) 36.6"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.18x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 16.87,
+    "provisional_take_profit": 22.96,
+    "updated_at": "2026-10-18T09:26:44.378804+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 27.8 > +DI 13.0, precio bajo EMA20 $20.22).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -6.52818991097923,
+    "dist_sma50_pct": -16.886543535620053,
+    "dist_sma200_pct": -24.309171005206252,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "META",
+    "price": 709.33,
+    "ema_20": 719.44,
+    "ema20_slope_pct": 1.51,
+    "sma_50": 654.96,
+    "sma_200": 631.07,
+    "adx": 34.57,
+    "plus_di": 24.2,
+    "minus_di": 18.5,
+    "di_spread": 5.7,
+    "rsi_14": 50.3,
+    "stoch_k": 9.66,
+    "stoch_d": 42.41,
+    "atr_14": 25.3,
+    "rvol_20": 0.95,
+    "ret_1d_pct": -3.72,
+    "ret_5d_pct": -1.3,
+    "close_location_value": 0.19,
+    "candle_body_atr": -1.08,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 37,
+    "expert_summary": "Rotura bajista corto plazo (-DI 18.5 > +DI 24.2, bajo EMA20 $719.44, vela -3.7%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $709.33 vs EMA20 $719.44 (pendiente 5d +1.51%), SMA50 $654.96, SMA200 $631.07"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 24.2 vs -DI 18.5 (Dif +5.7 \u00b7 ADX 34.6)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -3.72% (Cuerpo -1.08xATR \u00b7 Cierre en el 19% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 9.7 / %D 42.4 \u00b7 RSI(14) 50.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 0.95x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 666.02,
+    "provisional_take_profit": 795.95,
+    "updated_at": "2026-10-18T09:26:43.735791+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -3.72% (cuerpo -1.08xATR, CLV 19%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": -1.4052596463916398,
+    "dist_sma50_pct": 8.301270306583607,
+    "dist_sma200_pct": 12.401159934714055,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "GE",
+    "price": 313.83,
+    "ema_20": 313.21,
+    "ema20_slope_pct": -0.63,
+    "sma_50": 330.03,
+    "sma_200": 323.01,
+    "adx": 22.97,
+    "plus_di": 22.9,
+    "minus_di": 23.0,
+    "di_spread": -0.1,
+    "rsi_14": 47.1,
+    "stoch_k": 63.83,
+    "stoch_d": 46.93,
+    "atr_14": 7.52,
+    "rvol_20": 1.06,
+    "ret_1d_pct": 0.59,
+    "ret_5d_pct": 1.83,
+    "close_location_value": 0.08,
+    "candle_body_atr": -0.13,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 34,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $323.01 y EMA20 $313.21, -DI 23.0 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $313.83 vs EMA20 $313.21 (pendiente 5d -0.63%), SMA50 $330.03, SMA200 $323.01"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 22.9 vs -DI 23.0 (Dif -0.1 \u00b7 ADX 23.0)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela +0.59% (Cuerpo -0.13xATR \u00b7 Cierre en el 8% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 63.8 / %D 46.9 \u00b7 RSI(14) 47.1"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.06x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 302.02,
+    "provisional_take_profit": 337.45,
+    "updated_at": "2026-10-18T09:26:43.963057+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 23.0 > +DI 22.9, precio bajo EMA20 $313.21).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": true,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": 0.19795025701606098,
+    "dist_sma50_pct": -4.908644668666482,
+    "dist_sma200_pct": -2.842017275006968,
+    "osc_state": "BULLISH_HOOK_READY"
+  },
+  {
+    "ticker": "DE",
+    "price": 641.86,
+    "ema_20": 659.59,
+    "ema20_slope_pct": -1.37,
+    "sma_50": 655.38,
+    "sma_200": 594.14,
+    "adx": 18.66,
+    "plus_di": 21.9,
+    "minus_di": 31.3,
+    "di_spread": -9.4,
+    "rsi_14": 42.7,
+    "stoch_k": 31.89,
+    "stoch_d": 38.22,
+    "atr_14": 18.87,
+    "rvol_20": 0.95,
+    "ret_1d_pct": -1.35,
+    "ret_5d_pct": 3.37,
+    "close_location_value": 0.29,
+    "candle_body_atr": -0.57,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 32,
+    "expert_summary": "Rotura bajista corto plazo (-DI 31.3 > +DI 21.9, bajo EMA20 $659.59, vela -1.4%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $641.86 vs EMA20 $659.59 (pendiente 5d -1.37%), SMA50 $655.38, SMA200 $594.14"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 21.9 vs -DI 31.3 (Dif -9.4 \u00b7 ADX 18.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela -1.35% (Cuerpo -0.57xATR \u00b7 Cierre en el 29% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 31.9 / %D 38.2 \u00b7 RSI(14) 42.7"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.95x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 610.98,
+    "provisional_take_profit": 703.62,
+    "updated_at": "2026-10-18T09:26:43.954306+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_BREAKDOWN: -DI 31.3 > +DI 21.9, precio bajo EMA20 $659.59).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -2.6880334753407444,
+    "dist_sma50_pct": -2.0629253257652023,
+    "dist_sma200_pct": 8.031777022250653,
+    "osc_state": "NEUTRAL"
+  },
+  {
+    "ticker": "PLTR",
+    "price": 186.03,
+    "ema_20": 193.02,
+    "ema20_slope_pct": 2.38,
+    "sma_50": 182.57,
+    "sma_200": 152.65,
+    "adx": 33.22,
+    "plus_di": 24.7,
+    "minus_di": 24.6,
+    "di_spread": 0.2,
+    "rsi_14": 46.3,
+    "stoch_k": 5.55,
+    "stoch_d": 50.9,
+    "atr_14": 7.76,
+    "rvol_20": 1.44,
+    "ret_1d_pct": -7.22,
+    "ret_5d_pct": -11.01,
+    "close_location_value": 0.08,
+    "candle_body_atr": -2.03,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 32,
+    "expert_summary": "Rotura bajista corto plazo (-DI 24.6 > +DI 24.7, bajo EMA20 $193.02, vela -7.2%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $186.03 vs EMA20 $193.02 (pendiente 5d +2.38%), SMA50 $182.57, SMA200 $152.65"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 24.7 vs -DI 24.6 (Dif +0.2 \u00b7 ADX 33.2)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -7.22% (Cuerpo -2.03xATR \u00b7 Cierre en el 8% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 5.5 / %D 50.9 \u00b7 RSI(14) 46.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.44x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 172.19,
+    "provisional_take_profit": 213.71,
+    "updated_at": "2026-10-18T09:26:43.763689+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -7.22% (cuerpo -2.03xATR, CLV 8%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": -3.6213863848305916,
+    "dist_sma50_pct": 1.8951634989319208,
+    "dist_sma200_pct": 21.86701604978709,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "MSFT",
+    "price": 529.05,
+    "ema_20": 522.54,
+    "ema20_slope_pct": 1.8,
+    "sma_50": 505.37,
+    "sma_200": 434.03,
+    "adx": 37.72,
+    "plus_di": 26.6,
+    "minus_di": 18.8,
+    "di_spread": 7.8,
+    "rsi_14": 57.4,
+    "stoch_k": 54.67,
+    "stoch_d": 71.37,
+    "atr_14": 12.01,
+    "rvol_20": 1.11,
+    "ret_1d_pct": -1.93,
+    "ret_5d_pct": -1.13,
+    "close_location_value": 0.24,
+    "candle_body_atr": -1.02,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 31,
+    "expert_summary": "Rotura bajista corto plazo (-DI 18.8 > +DI 26.6, bajo EMA20 $522.54, vela -1.9%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $529.05 vs EMA20 $522.54 (pendiente 5d +1.80%), SMA50 $505.37, SMA200 $434.03"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 26.6 vs -DI 18.8 (Dif +7.8 \u00b7 ADX 37.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -1.93% (Cuerpo -1.02xATR \u00b7 Cierre en el 24% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 54.7 / %D 71.4 \u00b7 RSI(14) 57.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.11x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 510.36,
+    "provisional_take_profit": 566.43,
+    "updated_at": "2026-10-18T09:26:43.671189+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -1.93% (cuerpo -1.02xATR, CLV 24%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 1.2458376392237898,
+    "dist_sma50_pct": 4.685675841462681,
+    "dist_sma200_pct": 21.892495910420937,
+    "osc_state": "NEUTRAL"
+  },
+  {
+    "ticker": "CRM",
+    "price": 240.7,
+    "ema_20": 235.01,
+    "ema20_slope_pct": 1.26,
+    "sma_50": 229.9,
+    "sma_200": 198.3,
+    "adx": 17.88,
+    "plus_di": 31.1,
+    "minus_di": 17.7,
+    "di_spread": 13.4,
+    "rsi_14": 55.8,
+    "stoch_k": 64.49,
+    "stoch_d": 74.4,
+    "atr_14": 9.07,
+    "rvol_20": 0.93,
+    "ret_1d_pct": -2.45,
+    "ret_5d_pct": 5.05,
+    "close_location_value": 0.23,
+    "candle_body_atr": -1.08,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 26,
+    "expert_summary": "Rotura bajista corto plazo (-DI 17.7 > +DI 31.1, bajo EMA20 $235.01, vela -2.4%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $240.70 vs EMA20 $235.01 (pendiente 5d +1.26%), SMA50 $229.90, SMA200 $198.30"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 31.1 vs -DI 17.7 (Dif +13.4 \u00b7 ADX 17.9)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -2.45% (Cuerpo -1.08xATR \u00b7 Cierre en el 23% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 64.5 / %D 74.4 \u00b7 RSI(14) 55.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 0.93x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 224.95,
+    "provisional_take_profit": 272.2,
+    "updated_at": "2026-10-18T09:26:43.801787+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -2.45% (cuerpo -1.08xATR, CLV 23%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 2.421173567082251,
+    "dist_sma50_pct": 4.697694649847752,
+    "dist_sma200_pct": 21.381744831064033,
+    "osc_state": "COOLING_DOWN"
+  },
+  {
+    "ticker": "SHOP",
+    "price": 169.52,
+    "ema_20": 160.8,
+    "ema20_slope_pct": 6.01,
+    "sma_50": 149.35,
+    "sma_200": 129.7,
+    "adx": 24.73,
+    "plus_di": 29.3,
+    "minus_di": 18.4,
+    "di_spread": 10.9,
+    "rsi_14": 61.0,
+    "stoch_k": 70.46,
+    "stoch_d": 83.9,
+    "atr_14": 7.8,
+    "rvol_20": 1.48,
+    "ret_1d_pct": -4.84,
+    "ret_5d_pct": -0.78,
+    "close_location_value": 0.17,
+    "candle_body_atr": -1.05,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 25,
+    "expert_summary": "Rotura bajista corto plazo (-DI 18.4 > +DI 29.3, bajo EMA20 $160.80, vela -4.8%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $169.52 vs EMA20 $160.80 (pendiente 5d +6.01%), SMA50 $149.35, SMA200 $129.70"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 29.3 vs -DI 18.4 (Dif +10.9 \u00b7 ADX 24.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -4.84% (Cuerpo -1.05xATR \u00b7 Cierre en el 17% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 70.5 / %D 83.9 \u00b7 RSI(14) 61.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.48x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 155.19,
+    "provisional_take_profit": 198.18,
+    "updated_at": "2026-10-18T09:26:44.309041+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -4.84% (cuerpo -1.05xATR, CLV 17%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": true,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": 5.422885572139302,
+    "dist_sma50_pct": 13.505189152996328,
+    "dist_sma200_pct": 30.701619121048594,
+    "osc_state": "COOLING_DOWN"
+  },
+  {
+    "ticker": "GOOGL",
+    "price": 340.59,
+    "ema_20": 346.57,
+    "ema20_slope_pct": 0.31,
+    "sma_50": 344.49,
+    "sma_200": 340.56,
+    "adx": 16.82,
+    "plus_di": 20.6,
+    "minus_di": 19.2,
+    "di_spread": 1.4,
+    "rsi_14": 44.5,
+    "stoch_k": 21.26,
+    "stoch_d": 52.16,
+    "atr_14": 8.91,
+    "rvol_20": 1.14,
+    "ret_1d_pct": -2.47,
+    "ret_5d_pct": -3.15,
+    "close_location_value": 0.13,
+    "candle_body_atr": -0.86,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 24,
+    "expert_summary": "Rotura bajista corto plazo (-DI 19.2 > +DI 20.6, bajo EMA20 $346.57, vela -2.5%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $340.59 vs EMA20 $346.57 (pendiente 5d +0.31%), SMA50 $344.49, SMA200 $340.56"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 20.6 vs -DI 19.2 (Dif +1.4 \u00b7 ADX 16.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -2.47% (Cuerpo -0.86xATR \u00b7 Cierre en el 13% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 21.3 / %D 52.2 \u00b7 RSI(14) 44.5"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.14x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 326.36,
+    "provisional_take_profit": 369.05,
+    "updated_at": "2026-10-18T09:26:43.726318+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -2.47% (cuerpo -0.86xATR, CLV 13%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -1.7254811437804825,
+    "dist_sma50_pct": -1.1321083340590539,
+    "dist_sma200_pct": 0.008809020436919402,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "MS",
+    "price": 180.57,
+    "ema_20": 191.04,
+    "ema20_slope_pct": -2.43,
+    "sma_50": 204.33,
+    "sma_200": 193.07,
+    "adx": 40.85,
+    "plus_di": 14.5,
+    "minus_di": 37.5,
+    "di_spread": -23.0,
+    "rsi_14": 25.4,
+    "stoch_k": 23.06,
+    "stoch_d": 25.5,
+    "atr_14": 4.96,
+    "rvol_20": 0.94,
+    "ret_1d_pct": -0.84,
+    "ret_5d_pct": -4.97,
+    "close_location_value": 0.08,
+    "candle_body_atr": -0.43,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 22,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $193.07 y EMA20 $191.04, -DI 37.5 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $180.57 vs EMA20 $191.04 (pendiente 5d -2.43%), SMA50 $204.33, SMA200 $193.07"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 14.5 vs -DI 37.5 (Dif -23.0 \u00b7 ADX 40.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -0.84% (Cuerpo -0.43xATR \u00b7 Cierre en el 8% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 23.1 / %D 25.5 \u00b7 RSI(14) 25.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 0.94x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 172.56,
+    "provisional_take_profit": 196.59,
+    "updated_at": "2026-10-18T09:26:43.460055+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 37.5 > +DI 14.5, precio bajo EMA20 $191.04).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -5.480527638190955,
+    "dist_sma50_pct": -11.628248421670834,
+    "dist_sma200_pct": -6.4743357331537785,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "GS",
+    "price": 881.26,
+    "ema_20": 910.56,
+    "ema20_slope_pct": -1.66,
+    "sma_50": 973.13,
+    "sma_200": 952.67,
+    "adx": 34.8,
+    "plus_di": 20.4,
+    "minus_di": 29.0,
+    "di_spread": -8.6,
+    "rsi_14": 34.3,
+    "stoch_k": 30.89,
+    "stoch_d": 32.01,
+    "atr_14": 24.87,
+    "rvol_20": 1.05,
+    "ret_1d_pct": -1.12,
+    "ret_5d_pct": -1.57,
+    "close_location_value": 0.13,
+    "candle_body_atr": -0.59,
+    "falling_knife": false,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 19,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $952.67 y EMA20 $910.56, -DI 29.0 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $881.26 vs EMA20 $910.56 (pendiente 5d -1.66%), SMA50 $973.13, SMA200 $952.67"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 20.4 vs -DI 29.0 (Dif -8.6 \u00b7 ADX 34.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -1.12% (Cuerpo -0.59xATR \u00b7 Cierre en el 13% del rango diario) \u00b7 Sin capitulaci\u00f3n"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 30.9 / %D 32.0 \u00b7 RSI(14) 34.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.05x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 840.89,
+    "provisional_take_profit": 962.0,
+    "updated_at": "2026-10-18T09:26:43.437657+00:00",
+    "rejection_reason": "Presi\u00f3n vendedora de corto plazo activa (BEARISH_TREND: -DI 29.0 > +DI 20.4, precio bajo EMA20 $910.56).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -3.2178000351432035,
+    "dist_sma50_pct": -9.44067082506962,
+    "dist_sma200_pct": -7.495775032277701,
+    "osc_state": "NEUTRAL"
+  },
+  {
+    "ticker": "AFRM",
+    "price": 74.01,
+    "ema_20": 74.04,
+    "ema20_slope_pct": 1.01,
+    "sma_50": 73.71,
+    "sma_200": 66.81,
+    "adx": 12.36,
+    "plus_di": 23.4,
+    "minus_di": 25.9,
+    "di_spread": -2.4,
+    "rsi_14": 50.3,
+    "stoch_k": 47.91,
+    "stoch_d": 51.9,
+    "atr_14": 4.05,
+    "rvol_20": 0.86,
+    "ret_1d_pct": -2.52,
+    "ret_5d_pct": -8.29,
+    "close_location_value": 0.23,
+    "candle_body_atr": -0.55,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 19,
+    "expert_summary": "Rotura bajista corto plazo (-DI 25.9 > +DI 23.4, bajo EMA20 $74.04, vela -2.5%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $74.01 vs EMA20 $74.04 (pendiente 5d +1.01%), SMA50 $73.71, SMA200 $66.81"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 23.4 vs -DI 25.9 (Dif -2.4 \u00b7 ADX 12.4)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -2.52% (Cuerpo -0.55xATR \u00b7 Cierre en el 23% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 47.9 / %D 51.9 \u00b7 RSI(14) 50.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 0.86x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 66.15,
+    "provisional_take_profit": 89.73,
+    "updated_at": "2026-10-18T09:26:44.347683+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -2.52% (cuerpo -0.55xATR, CLV 23%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": true,
+    "above_sma200": true,
+    "dist_ema20_pct": -0.04051863857374546,
+    "dist_sma50_pct": 0.4070004070004225,
+    "dist_sma200_pct": 10.776829815895827,
+    "osc_state": "IDEAL_PULLBACK_READY"
+  },
+  {
+    "ticker": "AMZN",
+    "price": 250.0,
+    "ema_20": 254.31,
+    "ema20_slope_pct": 0.16,
+    "sma_50": 257.08,
+    "sma_200": 242.73,
+    "adx": 13.26,
+    "plus_di": 18.4,
+    "minus_di": 20.7,
+    "di_spread": -2.3,
+    "rsi_14": 45.0,
+    "stoch_k": 26.19,
+    "stoch_d": 50.34,
+    "atr_14": 5.95,
+    "rvol_20": 1.13,
+    "ret_1d_pct": -1.87,
+    "ret_5d_pct": -4.74,
+    "close_location_value": 0.2,
+    "candle_body_atr": -0.86,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 17,
+    "expert_summary": "Rotura bajista corto plazo (-DI 20.7 > +DI 18.4, bajo EMA20 $254.31, vela -1.9%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $250.00 vs EMA20 $254.31 (pendiente 5d +0.16%), SMA50 $257.08, SMA200 $242.73"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 18.4 vs -DI 20.7 (Dif -2.3 \u00b7 ADX 13.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -1.87% (Cuerpo -0.86xATR \u00b7 Cierre en el 20% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 26.2 / %D 50.3 \u00b7 RSI(14) 45.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.13x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 240.66,
+    "provisional_take_profit": 268.68,
+    "updated_at": "2026-10-18T09:26:43.696846+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -1.87% (cuerpo -0.86xATR, CLV 20%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -1.6947819590263862,
+    "dist_sma50_pct": -2.7540065349307548,
+    "dist_sma200_pct": 2.9950974333621763,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "CSCO",
+    "price": 107.39,
+    "ema_20": 111.77,
+    "ema20_slope_pct": 0.03,
+    "sma_50": 111.29,
+    "sma_200": 98.84,
+    "adx": 22.35,
+    "plus_di": 22.2,
+    "minus_di": 30.2,
+    "di_spread": -8.0,
+    "rsi_14": 41.6,
+    "stoch_k": 13.38,
+    "stoch_d": 45.55,
+    "atr_14": 3.03,
+    "rvol_20": 0.87,
+    "ret_1d_pct": -2.24,
+    "ret_5d_pct": -9.29,
+    "close_location_value": 0.09,
+    "candle_body_atr": -0.85,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 9,
+    "expert_summary": "Rotura bajista corto plazo (-DI 30.2 > +DI 22.2, bajo EMA20 $111.77, vela -2.2%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $107.39 vs EMA20 $111.77 (pendiente 5d +0.03%), SMA50 $111.29, SMA200 $98.84"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 22.2 vs -DI 30.2 (Dif -8.0 \u00b7 ADX 22.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -2.24% (Cuerpo -0.85xATR \u00b7 Cierre en el 9% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 13.4 / %D 45.6 \u00b7 RSI(14) 41.6"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 0.87x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 102.47,
+    "provisional_take_profit": 117.23,
+    "updated_at": "2026-10-18T09:26:43.834559+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -2.24% (cuerpo -0.85xATR, CLV 9%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -3.918761742864808,
+    "dist_sma50_pct": -3.5043579836463343,
+    "dist_sma200_pct": 8.65034399028733,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "NVDA",
+    "price": 214.13,
+    "ema_20": 225.56,
+    "ema20_slope_pct": -1.36,
+    "sma_50": 222.96,
+    "sma_200": 202.66,
+    "adx": 17.2,
+    "plus_di": 19.8,
+    "minus_di": 32.7,
+    "di_spread": -12.9,
+    "rsi_14": 37.6,
+    "stoch_k": 4.19,
+    "stoch_d": 14.72,
+    "atr_14": 5.96,
+    "rvol_20": 1.15,
+    "ret_1d_pct": -1.43,
+    "ret_5d_pct": -6.61,
+    "close_location_value": 0.15,
+    "candle_body_atr": -0.41,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 32.7 > +DI 19.8, bajo EMA20 $225.56, vela -1.4%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $214.13 vs EMA20 $225.56 (pendiente 5d -1.36%), SMA50 $222.96, SMA200 $202.66"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 19.8 vs -DI 32.7 (Dif -12.9 \u00b7 ADX 17.2)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -1.43% (Cuerpo -0.41xATR \u00b7 Cierre en el 15% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 4.2 / %D 14.7 \u00b7 RSI(14) 37.6"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.15x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 204.48,
+    "provisional_take_profit": 233.43,
+    "updated_at": "2026-10-18T09:26:43.637360+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -1.43% (cuerpo -0.41xATR, CLV 15%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -5.067387834722472,
+    "dist_sma50_pct": -3.9603516325798407,
+    "dist_sma200_pct": 5.659725648870028,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "AMD",
+    "price": 528.75,
+    "ema_20": 586.07,
+    "ema20_slope_pct": -1.88,
+    "sma_50": 537.14,
+    "sma_200": 394.25,
+    "adx": 22.24,
+    "plus_di": 19.7,
+    "minus_di": 31.3,
+    "di_spread": -11.7,
+    "rsi_14": 37.8,
+    "stoch_k": 1.46,
+    "stoch_d": 17.6,
+    "atr_14": 27.27,
+    "rvol_20": 1.06,
+    "ret_1d_pct": -5.95,
+    "ret_5d_pct": -13.05,
+    "close_location_value": 0.08,
+    "candle_body_atr": -0.69,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 31.3 > +DI 19.7, bajo EMA20 $586.07, vela -6.0%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $528.75 vs EMA20 $586.07 (pendiente 5d -1.88%), SMA50 $537.14, SMA200 $394.25"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 19.7 vs -DI 31.3 (Dif -11.7 \u00b7 ADX 22.2)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -5.95% (Cuerpo -0.69xATR \u00b7 Cierre en el 8% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 1.5 / %D 17.6 \u00b7 RSI(14) 37.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.06x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 476.86,
+    "provisional_take_profit": 632.53,
+    "updated_at": "2026-10-18T09:26:43.772730+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -5.95% (cuerpo -0.69xATR, CLV 8%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -9.780401658504964,
+    "dist_sma50_pct": -1.5619763934914523,
+    "dist_sma200_pct": 34.11540900443881,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "INTC",
+    "price": 89.85,
+    "ema_20": 105.86,
+    "ema20_slope_pct": -5.22,
+    "sma_50": 103.17,
+    "sma_200": 84.56,
+    "adx": 21.76,
+    "plus_di": 17.3,
+    "minus_di": 35.2,
+    "di_spread": -17.9,
+    "rsi_14": 31.4,
+    "stoch_k": 1.79,
+    "stoch_d": 8.47,
+    "atr_14": 5.85,
+    "rvol_20": 1.17,
+    "ret_1d_pct": -5.79,
+    "ret_5d_pct": -14.18,
+    "close_location_value": 0.13,
+    "candle_body_atr": -0.62,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 35.2 > +DI 17.3, bajo EMA20 $105.86, vela -5.8%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $89.85 vs EMA20 $105.86 (pendiente 5d -5.22%), SMA50 $103.17, SMA200 $84.56"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 17.3 vs -DI 35.2 (Dif -17.9 \u00b7 ADX 21.8)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -5.79% (Cuerpo -0.62xATR \u00b7 Cierre en el 13% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 1.8 / %D 8.5 \u00b7 RSI(14) 31.4"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.17x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 78.16,
+    "provisional_take_profit": 113.23,
+    "updated_at": "2026-10-18T09:26:43.824151+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -5.79% (cuerpo -0.62xATR, CLV 13%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -15.123748346873233,
+    "dist_sma50_pct": -12.91072986333237,
+    "dist_sma200_pct": 6.2559129612109645,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "HOOD",
+    "price": 98.87,
+    "ema_20": 109.28,
+    "ema20_slope_pct": -2.94,
+    "sma_50": 108.63,
+    "sma_200": 93.76,
+    "adx": 14.94,
+    "plus_di": 17.0,
+    "minus_di": 29.8,
+    "di_spread": -12.7,
+    "rsi_14": 36.8,
+    "stoch_k": 15.02,
+    "stoch_d": 19.95,
+    "atr_14": 5.9,
+    "rvol_20": 1.03,
+    "ret_1d_pct": -4.92,
+    "ret_5d_pct": -9.31,
+    "close_location_value": 0.2,
+    "candle_body_atr": -0.65,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 29.8 > +DI 17.0, bajo EMA20 $109.28, vela -4.9%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $98.87 vs EMA20 $109.28 (pendiente 5d -2.94%), SMA50 $108.63, SMA200 $93.76"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 17.0 vs -DI 29.8 (Dif -12.7 \u00b7 ADX 14.9)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -4.92% (Cuerpo -0.65xATR \u00b7 Cierre en el 20% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 15.0 / %D 20.0 \u00b7 RSI(14) 36.8"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.03x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 87.08,
+    "provisional_take_profit": 122.45,
+    "updated_at": "2026-10-18T09:26:44.301271+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -4.92% (cuerpo -0.65xATR, CLV 20%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -9.52598828696925,
+    "dist_sma50_pct": -8.984626714535572,
+    "dist_sma200_pct": 5.450085324232081,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "SNOW",
+    "price": 306.84,
+    "ema_20": 337.48,
+    "ema20_slope_pct": -0.21,
+    "sma_50": 333.1,
+    "sma_200": 233.95,
+    "adx": 21.51,
+    "plus_di": 20.4,
+    "minus_di": 29.1,
+    "di_spread": -8.7,
+    "rsi_14": 37.3,
+    "stoch_k": 6.73,
+    "stoch_d": 37.86,
+    "atr_14": 17.19,
+    "rvol_20": 1.95,
+    "ret_1d_pct": -8.43,
+    "ret_5d_pct": -16.82,
+    "close_location_value": 0.11,
+    "candle_body_atr": -1.92,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 29.1 > +DI 20.4, bajo EMA20 $337.48, vela -8.4%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $306.84 vs EMA20 $337.48 (pendiente 5d -0.21%), SMA50 $333.10, SMA200 $233.95"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 20.4 vs -DI 29.1 (Dif -8.7 \u00b7 ADX 21.5)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -8.43% (Cuerpo -1.92xATR \u00b7 Cierre en el 11% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 6.7 / %D 37.9 \u00b7 RSI(14) 37.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.95x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 273.2,
+    "provisional_take_profit": 374.12,
+    "updated_at": "2026-10-18T09:26:44.316629+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -8.43% (cuerpo -1.92xATR, CLV 11%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -9.079056536683668,
+    "dist_sma50_pct": -7.88351846292406,
+    "dist_sma200_pct": 31.15622996366745,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "CRWD",
+    "price": 227.39,
+    "ema_20": 252.62,
+    "ema20_slope_pct": -1.34,
+    "sma_50": 233.17,
+    "sma_200": 160.56,
+    "adx": 22.17,
+    "plus_di": 18.2,
+    "minus_di": 31.5,
+    "di_spread": -13.3,
+    "rsi_14": 39.0,
+    "stoch_k": 4.47,
+    "stoch_d": 14.43,
+    "atr_14": 12.39,
+    "rvol_20": 1.58,
+    "ret_1d_pct": -7.02,
+    "ret_5d_pct": -17.32,
+    "close_location_value": 0.12,
+    "candle_body_atr": -1.58,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 31.5 > +DI 18.2, bajo EMA20 $252.62, vela -7.0%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $227.39 vs EMA20 $252.62 (pendiente 5d -1.34%), SMA50 $233.17, SMA200 $160.56"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 18.2 vs -DI 31.5 (Dif -13.3 \u00b7 ADX 22.2)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -7.02% (Cuerpo -1.58xATR \u00b7 Cierre en el 12% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 4.5 / %D 14.4 \u00b7 RSI(14) 39.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.58x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 203.38,
+    "provisional_take_profit": 275.41,
+    "updated_at": "2026-10-18T09:26:44.324272+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -7.02% (cuerpo -1.58xATR, CLV 12%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -9.987332752751175,
+    "dist_sma50_pct": -2.478878071793113,
+    "dist_sma200_pct": 41.623069257598395,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "PANW",
+    "price": 342.0,
+    "ema_20": 384.41,
+    "ema20_slope_pct": -1.63,
+    "sma_50": 373.27,
+    "sma_200": 260.68,
+    "adx": 18.24,
+    "plus_di": 19.0,
+    "minus_di": 32.9,
+    "di_spread": -13.9,
+    "rsi_14": 37.0,
+    "stoch_k": 2.64,
+    "stoch_d": 18.12,
+    "atr_14": 19.01,
+    "rvol_20": 1.62,
+    "ret_1d_pct": -7.63,
+    "ret_5d_pct": -18.33,
+    "close_location_value": 0.07,
+    "candle_body_atr": -1.66,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 32.9 > +DI 19.0, bajo EMA20 $384.41, vela -7.6%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $342.00 vs EMA20 $384.41 (pendiente 5d -1.63%), SMA50 $373.27, SMA200 $260.68"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 19.0 vs -DI 32.9 (Dif -13.9 \u00b7 ADX 18.2)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -7.63% (Cuerpo -1.66xATR \u00b7 Cierre en el 7% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 2.6 / %D 18.1 \u00b7 RSI(14) 37.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.62x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 304.9,
+    "provisional_take_profit": 416.2,
+    "updated_at": "2026-10-18T09:26:44.331733+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -7.63% (cuerpo -1.66xATR, CLV 7%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -11.03249135038111,
+    "dist_sma50_pct": -8.37731400862646,
+    "dist_sma200_pct": 31.195335276967928,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "NET",
+    "price": 296.3,
+    "ema_20": 334.92,
+    "ema20_slope_pct": -2.02,
+    "sma_50": 319.92,
+    "sma_200": 242.25,
+    "adx": 20.75,
+    "plus_di": 15.3,
+    "minus_di": 30.6,
+    "di_spread": -15.3,
+    "rsi_14": 35.9,
+    "stoch_k": 6.5,
+    "stoch_d": 14.68,
+    "atr_14": 17.63,
+    "rvol_20": 1.44,
+    "ret_1d_pct": -6.33,
+    "ret_5d_pct": -17.91,
+    "close_location_value": 0.18,
+    "candle_body_atr": -1.29,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 30.6 > +DI 15.3, bajo EMA20 $334.92, vela -6.3%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $296.30 vs EMA20 $334.92 (pendiente 5d -2.02%), SMA50 $319.92, SMA200 $242.25"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 15.3 vs -DI 30.6 (Dif -15.3 \u00b7 ADX 20.7)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -6.33% (Cuerpo -1.29xATR \u00b7 Cierre en el 18% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 6.5 / %D 14.7 \u00b7 RSI(14) 35.9"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.44x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 261.09,
+    "provisional_take_profit": 366.72,
+    "updated_at": "2026-10-18T09:26:44.339185+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -6.33% (cuerpo -1.29xATR, CLV 18%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -11.531111907321153,
+    "dist_sma50_pct": -7.383095773943486,
+    "dist_sma200_pct": 22.31166150670795,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "ARM",
+    "price": 227.8,
+    "ema_20": 269.07,
+    "ema20_slope_pct": -5.93,
+    "sma_50": 267.88,
+    "sma_200": 223.44,
+    "adx": 20.13,
+    "plus_di": 17.9,
+    "minus_di": 34.9,
+    "di_spread": -17.0,
+    "rsi_14": 34.5,
+    "stoch_k": 1.37,
+    "stoch_d": 9.03,
+    "atr_14": 17.48,
+    "rvol_20": 0.79,
+    "ret_1d_pct": -6.94,
+    "ret_5d_pct": -14.45,
+    "close_location_value": 0.09,
+    "candle_body_atr": -0.65,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 1,
+    "expert_summary": "Rotura bajista corto plazo (-DI 34.9 > +DI 17.9, bajo EMA20 $269.07, vela -6.9%). Evitar compras.",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $227.80 vs EMA20 $269.07 (pendiente 5d -5.93%), SMA50 $267.88, SMA200 $223.44"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 17.9 vs -DI 34.9 (Dif -17.0 \u00b7 ADX 20.1)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -6.94% (Cuerpo -0.65xATR \u00b7 Cierre en el 9% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 1.4 / %D 9.0 \u00b7 RSI(14) 34.5"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 0.79x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_BREAKDOWN",
+    "signal_triggered": false,
+    "provisional_stop_loss": 192.83,
+    "provisional_take_profit": 297.74,
+    "updated_at": "2026-10-18T09:26:44.363369+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -6.94% (cuerpo -0.65xATR, CLV 9%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": true,
+    "dist_ema20_pct": -15.338016129631688,
+    "dist_sma50_pct": -14.961923249216062,
+    "dist_sma200_pct": 1.9513068385248897,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "BAC",
+    "price": 51.23,
+    "ema_20": 54.54,
+    "ema20_slope_pct": -2.49,
+    "sma_50": 58.93,
+    "sma_200": 54.75,
+    "adx": 48.35,
+    "plus_di": 15.4,
+    "minus_di": 44.6,
+    "di_spread": -29.1,
+    "rsi_14": 24.1,
+    "stoch_k": 31.32,
+    "stoch_d": 32.71,
+    "atr_14": 1.32,
+    "rvol_20": 1.51,
+    "ret_1d_pct": -0.91,
+    "ret_5d_pct": -5.69,
+    "close_location_value": 0.01,
+    "candle_body_atr": -0.69,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $54.75 y EMA20 $54.54, -DI 44.6 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $51.23 vs EMA20 $54.54 (pendiente 5d -2.49%), SMA50 $58.93, SMA200 $54.75"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 15.4 vs -DI 44.6 (Dif -29.1 \u00b7 ADX 48.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -0.91% (Cuerpo -0.69xATR \u00b7 Cierre en el 1% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 31.3 / %D 32.7 \u00b7 RSI(14) 24.1"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.51x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 49.13,
+    "provisional_take_profit": 55.43,
+    "updated_at": "2026-10-18T09:26:43.388643+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -0.91% (cuerpo -0.69xATR, CLV 1%).",
+    "cluster_id": "FINANCE_CONSUMER",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -6.068940227356073,
+    "dist_sma50_pct": -13.066349906668934,
+    "dist_sma200_pct": -6.429223744292243,
+    "osc_state": "NEUTRAL"
+  },
+  {
+    "ticker": "TSLA",
+    "price": 354.72,
+    "ema_20": 368.07,
+    "ema20_slope_pct": -0.31,
+    "sma_50": 359.46,
+    "sma_200": 387.99,
+    "adx": 14.07,
+    "plus_di": 26.8,
+    "minus_di": 28.2,
+    "di_spread": -1.4,
+    "rsi_14": 42.2,
+    "stoch_k": 20.71,
+    "stoch_d": 44.53,
+    "atr_14": 11.85,
+    "rvol_20": 1.79,
+    "ret_1d_pct": -2.13,
+    "ret_5d_pct": -7.31,
+    "close_location_value": 0.25,
+    "candle_body_atr": -1.22,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $387.99 y EMA20 $368.07, -DI 28.2 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $354.72 vs EMA20 $368.07 (pendiente 5d -0.31%), SMA50 $359.46, SMA200 $387.99"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 26.8 vs -DI 28.2 (Dif -1.4 \u00b7 ADX 14.1)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -2.13% (Cuerpo -1.22xATR \u00b7 Cierre en el 25% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 20.7 / %D 44.5 \u00b7 RSI(14) 42.2"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.79x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 334.76,
+    "provisional_take_profit": 394.64,
+    "updated_at": "2026-10-18T09:26:43.744242+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -2.13% (cuerpo -1.22xATR, CLV 25%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -3.6270274676012626,
+    "dist_sma50_pct": -1.3186446336170792,
+    "dist_sma200_pct": -8.57496327224928,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "AVGO",
+    "price": 328.75,
+    "ema_20": 354.13,
+    "ema20_slope_pct": -1.65,
+    "sma_50": 365.32,
+    "sma_200": 367.06,
+    "adx": 18.91,
+    "plus_di": 17.3,
+    "minus_di": 35.6,
+    "di_spread": -18.3,
+    "rsi_14": 34.9,
+    "stoch_k": 0.33,
+    "stoch_d": 16.93,
+    "atr_14": 11.57,
+    "rvol_20": 1.33,
+    "ret_1d_pct": -4.52,
+    "ret_5d_pct": -9.07,
+    "close_location_value": 0.02,
+    "candle_body_atr": -0.84,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $367.06 y EMA20 $354.13, -DI 35.6 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $328.75 vs EMA20 $354.13 (pendiente 5d -1.65%), SMA50 $365.32, SMA200 $367.06"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 17.3 vs -DI 35.6 (Dif -18.3 \u00b7 ADX 18.9)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -4.52% (Cuerpo -0.84xATR \u00b7 Cierre en el 2% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 0.3 / %D 16.9 \u00b7 RSI(14) 34.9"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.33x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 309.02,
+    "provisional_take_profit": 368.21,
+    "updated_at": "2026-10-18T09:26:43.782558+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -4.52% (cuerpo -0.84xATR, CLV 2%).",
+    "cluster_id": "TECH_GROWTH",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -7.1668596278202905,
+    "dist_sma50_pct": -10.01040183948319,
+    "dist_sma200_pct": -10.436985778891735,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "CAT",
+    "price": 730.76,
+    "ema_20": 793.17,
+    "ema20_slope_pct": -3.1,
+    "sma_50": 812.76,
+    "sma_200": 804.16,
+    "adx": 18.22,
+    "plus_di": 16.2,
+    "minus_di": 39.7,
+    "di_spread": -23.5,
+    "rsi_14": 30.7,
+    "stoch_k": 15.47,
+    "stoch_d": 13.32,
+    "atr_14": 27.44,
+    "rvol_20": 1.14,
+    "ret_1d_pct": -0.66,
+    "ret_5d_pct": -8.71,
+    "close_location_value": 0.14,
+    "candle_body_atr": -0.13,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $804.16 y EMA20 $793.17, -DI 39.7 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $730.76 vs EMA20 $793.17 (pendiente 5d -3.10%), SMA50 $812.76, SMA200 $804.16"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 16.2 vs -DI 39.7 (Dif -23.5 \u00b7 ADX 18.2)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -0.66% (Cuerpo -0.13xATR \u00b7 Cierre en el 14% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 15.5 / %D 13.3 \u00b7 RSI(14) 30.7"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.14x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 683.17,
+    "provisional_take_profit": 825.94,
+    "updated_at": "2026-10-18T09:26:43.946846+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -0.66% (cuerpo -0.13xATR, CLV 14%).",
+    "cluster_id": "HEALTH_INDUSTRIAL",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -7.86842669289055,
+    "dist_sma50_pct": -10.089079186967863,
+    "dist_sma200_pct": -9.127536808595302,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "SOFI",
+    "price": 14.55,
+    "ema_20": 15.73,
+    "ema20_slope_pct": -3.57,
+    "sma_50": 17.09,
+    "sma_200": 18.37,
+    "adx": 23.11,
+    "plus_di": 14.5,
+    "minus_di": 28.2,
+    "di_spread": -13.7,
+    "rsi_14": 34.7,
+    "stoch_k": 28.87,
+    "stoch_d": 23.78,
+    "atr_14": 0.69,
+    "rvol_20": 1.17,
+    "ret_1d_pct": -3.58,
+    "ret_5d_pct": -7.91,
+    "close_location_value": 0.18,
+    "candle_body_atr": -0.76,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $18.37 y EMA20 $15.73, -DI 28.2 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $14.55 vs EMA20 $15.73 (pendiente 5d -3.57%), SMA50 $17.09, SMA200 $18.37"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 14.5 vs -DI 28.2 (Dif -13.7 \u00b7 ADX 23.1)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -3.58% (Cuerpo -0.76xATR \u00b7 Cierre en el 18% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 28.9 / %D 23.8 \u00b7 RSI(14) 34.7"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.17x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 13.28,
+    "provisional_take_profit": 17.09,
+    "updated_at": "2026-10-18T09:26:44.285962+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -3.58% (cuerpo -0.76xATR, CLV 18%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -7.501589319771136,
+    "dist_sma50_pct": -14.862492685781154,
+    "dist_sma200_pct": -20.79477408818726,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "COIN",
+    "price": 173.16,
+    "ema_20": 181.6,
+    "ema20_slope_pct": -1.22,
+    "sma_50": 177.63,
+    "sma_200": 182.32,
+    "adx": 17.04,
+    "plus_di": 15.8,
+    "minus_di": 20.7,
+    "di_spread": -5.0,
+    "rsi_14": 45.0,
+    "stoch_k": 21.3,
+    "stoch_d": 27.81,
+    "atr_14": 11.14,
+    "rvol_20": 1.1,
+    "ret_1d_pct": -5.79,
+    "ret_5d_pct": -3.47,
+    "close_location_value": 0.3,
+    "candle_body_atr": -0.71,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $182.32 y EMA20 $181.60, -DI 20.7 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $173.16 vs EMA20 $181.60 (pendiente 5d -1.22%), SMA50 $177.63, SMA200 $182.32"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 15.8 vs -DI 20.7 (Dif -5.0 \u00b7 ADX 17.0)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -5.79% (Cuerpo -0.71xATR \u00b7 Cierre en el 30% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 21.3 / %D 27.8 \u00b7 RSI(14) 45.0"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.10x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 150.89,
+    "provisional_take_profit": 217.7,
+    "updated_at": "2026-10-18T09:26:44.293885+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -5.79% (cuerpo -0.71xATR, CLV 30%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -4.647577092511012,
+    "dist_sma50_pct": -2.5164668130383374,
+    "dist_sma200_pct": -5.024133391838524,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "SMCI",
+    "price": 31.63,
+    "ema_20": 39.26,
+    "ema20_slope_pct": -5.27,
+    "sma_50": 38.67,
+    "sma_200": 32.47,
+    "adx": 26.32,
+    "plus_di": 16.0,
+    "minus_di": 32.6,
+    "di_spread": -16.6,
+    "rsi_14": 30.2,
+    "stoch_k": 1.39,
+    "stoch_d": 7.77,
+    "atr_14": 2.55,
+    "rvol_20": 1.29,
+    "ret_1d_pct": -9.86,
+    "ret_5d_pct": -24.44,
+    "close_location_value": 0.06,
+    "candle_body_atr": -1.12,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $32.47 y EMA20 $39.26, -DI 32.6 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $31.63 vs EMA20 $39.26 (pendiente 5d -5.27%), SMA50 $38.67, SMA200 $32.47"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 16.0 vs -DI 32.6 (Dif -16.6 \u00b7 ADX 26.3)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -9.86% (Cuerpo -1.12xATR \u00b7 Cierre en el 6% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 1.4 / %D 7.8 \u00b7 RSI(14) 30.2"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.29x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 26.53,
+    "provisional_take_profit": 41.83,
+    "updated_at": "2026-10-18T09:26:44.355361+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -9.86% (cuerpo -1.12xATR, CLV 6%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -19.434538970962812,
+    "dist_sma50_pct": -18.205327126971817,
+    "dist_sma200_pct": -2.5870033877425316,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "RIVN",
+    "price": 12.42,
+    "ema_20": 14.14,
+    "ema20_slope_pct": -4.95,
+    "sma_50": 15.28,
+    "sma_200": 15.83,
+    "adx": 34.11,
+    "plus_di": 8.6,
+    "minus_di": 36.3,
+    "di_spread": -27.7,
+    "rsi_14": 23.1,
+    "stoch_k": 2.0,
+    "stoch_d": 6.2,
+    "atr_14": 0.6,
+    "rvol_20": 1.04,
+    "ret_1d_pct": -4.61,
+    "ret_5d_pct": -11.03,
+    "close_location_value": 0.07,
+    "candle_body_atr": -1.22,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $15.83 y EMA20 $14.14, -DI 36.3 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $12.42 vs EMA20 $14.14 (pendiente 5d -4.95%), SMA50 $15.28, SMA200 $15.83"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 8.6 vs -DI 36.3 (Dif -27.7 \u00b7 ADX 34.1)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -4.61% (Cuerpo -1.22xATR \u00b7 Cierre en el 7% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 2.0 / %D 6.2 \u00b7 RSI(14) 23.1"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.04x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 11.3,
+    "provisional_take_profit": 14.66,
+    "updated_at": "2026-10-18T09:26:44.370646+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -4.61% (cuerpo -1.22xATR, CLV 7%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -12.164073550212168,
+    "dist_sma50_pct": -18.71727748691099,
+    "dist_sma200_pct": -21.541377132027797,
+    "osc_state": "OVERSOLD_BASE"
+  },
+  {
+    "ticker": "MARA",
+    "price": 7.53,
+    "ema_20": 10.15,
+    "ema20_slope_pct": -9.88,
+    "sma_50": 10.87,
+    "sma_200": 10.95,
+    "adx": 23.04,
+    "plus_di": 14.8,
+    "minus_di": 39.7,
+    "di_spread": -24.8,
+    "rsi_14": 22.9,
+    "stoch_k": 2.2,
+    "stoch_d": 4.94,
+    "atr_14": 0.76,
+    "rvol_20": 1.1,
+    "ret_1d_pct": -9.6,
+    "ret_5d_pct": -21.97,
+    "close_location_value": 0.14,
+    "candle_body_atr": -0.75,
+    "falling_knife": true,
+    "short_term_bias": "SHORT_PRESSURE",
+    "quant_score": 0,
+    "expert_summary": "Tendencia bajista primaria y t\u00e1ctica (bajo SMA200 $10.95 y EMA20 $10.15, -DI 39.7 dominante).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": false,
+        "detail": "Precio $7.53 vs EMA20 $10.15 (pendiente 5d -9.88%), SMA50 $10.87, SMA200 $10.95"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": false,
+        "detail": "+DI 14.8 vs -DI 39.7 (Dif -24.8 \u00b7 ADX 23.0)"
+      },
+      {
+        "label": "Acci\u00f3n del Precio y Vela (Anti-Falling Knife)",
+        "passed": false,
+        "detail": "Vela -9.60% (Cuerpo -0.75xATR \u00b7 Cierre en el 14% del rango diario) \u00b7 \u00a1ALERTA CUCHILLO CAYENDO!"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": false,
+        "detail": "Stoch %K 2.2 / %D 4.9 \u00b7 RSI(14) 22.9"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": false,
+        "detail": "RVOL 1.10x media 20 sesiones"
+      }
+    ],
+    "market_regime": "BEARISH_TREND",
+    "signal_triggered": false,
+    "provisional_stop_loss": 6.01,
+    "provisional_take_profit": 10.57,
+    "updated_at": "2026-10-18T09:26:44.386294+00:00",
+    "rejection_reason": "Bloqueado por Escudo Anti-Cuchillo Cayendo: ca\u00edda -9.60% (cuerpo -0.75xATR, CLV 14%).",
+    "cluster_id": "HIGH_BETA_EXPANSION",
+    "above_ema20": false,
+    "above_sma50": false,
+    "above_sma200": false,
+    "dist_ema20_pct": -25.8128078817734,
+    "dist_sma50_pct": -30.72677092916283,
+    "dist_sma200_pct": -31.23287671232876,
+    "osc_state": "OVERSOLD_BASE"
+  }
+]

@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --canvas: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --buy-bg: #ecfdf5;
+  --buy: #059669;
+  --sell-bg: #fff1f2;
+  --sell: #e11d48;
+  --scan-bg: #eff6ff;
+  --scan: #2563eb;
+  --warn-bg: #fffbeb;
+  --warn: #b45309;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-buy-bg: var(--buy-bg);
+  --color-buy: var(--buy);
+  --color-sell-bg: var(--sell-bg);
+  --color-sell: var(--sell);
+  --color-scan-bg: var(--scan-bg);
+  --color-scan: var(--scan);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* Single-screen command center: zero page scroll */
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+@keyframes flash-up {
+  0% { background-color: #d1fae5; }
+  100% { background-color: transparent; }
+}
+@keyframes flash-down {
+  0% { background-color: #ffe4e6; }
+  100% { background-color: transparent; }
+}
+.flash-up { animation: flash-up 900ms ease-out; }
+.flash-down { animation: flash-down 900ms ease-out; }
+
+@keyframes scan-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+.scan-dot { animation: scan-pulse 1.4s ease-in-out infinite; }

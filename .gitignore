@@ -1,0 +1,67 @@
+# Variables de entorno y credenciales sensibles (¡NUNCA SUBIR A GIT!)
+.env
+.env.*
+*.env
+!.env.example
+
+# Base de datos, credenciales y logs de n8n
+n8n_data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.journal
+
+# Dependencias y builds de Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Python y entornos virtuales
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing y caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs del sistema y temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev.log
+
+# IDEs y sistema operativo
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini

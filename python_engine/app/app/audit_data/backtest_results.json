@@ -1,0 +1,822 @@
+{
+  "summary": {
+    "initial_capital_usd": 5000.0,
+    "final_equity_usd": 5415.33,
+    "net_profit_usd": 415.33,
+    "total_return_pct": 8.31,
+    "total_closed_trades": 41,
+    "winning_trades": 19,
+    "losing_trades": 22,
+    "win_rate_pct": 46.3,
+    "profit_factor": 1.71,
+    "max_drawdown_usd": 155.85,
+    "max_drawdown_pct": 3.03,
+    "circuit_breaker_triggered": false,
+    "avg_trade_pnl_usd": 10.13,
+    "avg_r_multiple": 0.27
+  },
+  "cluster_breakdown": {
+    "HIGH_BETA_EXPANSION": {
+      "trades": 6,
+      "wins": 4,
+      "pnl": 262.11,
+      "win_rate_pct": 66.7
+    },
+    "TECH_GROWTH": {
+      "trades": 12,
+      "wins": 4,
+      "pnl": -65.75,
+      "win_rate_pct": 33.3
+    },
+    "FINANCE_CONSUMER": {
+      "trades": 10,
+      "wins": 4,
+      "pnl": 14.79,
+      "win_rate_pct": 40.0
+    },
+    "HEALTH_INDUSTRIAL": {
+      "trades": 13,
+      "wins": 7,
+      "pnl": 204.18,
+      "win_rate_pct": 53.8
+    }
+  },
+  "sample_trades": [
+    {
+      "ticker": "DKNG",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2025-08-13",
+      "exit_date": "2025-08-26",
+      "bars_held": 8,
+      "entry_price": 43.16,
+      "exit_price": 47.66,
+      "shares": 21,
+      "stop_loss": 40.91,
+      "take_profit": 47.66,
+      "net_pnl_usd": 93.8,
+      "net_pnl_pct": 10.35,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.99
+    },
+    {
+      "ticker": "META",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-08-22",
+      "exit_date": "2025-09-02",
+      "bars_held": 5,
+      "entry_price": 751.73,
+      "exit_price": 723.08,
+      "shares": 1,
+      "stop_loss": 723.08,
+      "take_profit": 809.03,
+      "net_pnl_usd": -29.35,
+      "net_pnl_pct": -3.9,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.02
+    },
+    {
+      "ticker": "MSFT",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-08-22",
+      "exit_date": "2025-09-05",
+      "bars_held": 8,
+      "entry_price": 503.09,
+      "exit_price": 490.34,
+      "shares": 2,
+      "stop_loss": 490.34,
+      "take_profit": 528.59,
+      "net_pnl_usd": -26.2,
+      "net_pnl_pct": -2.6,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "AVGO",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-08-22",
+      "exit_date": "2025-09-05",
+      "bars_held": 8,
+      "entry_price": 291.33,
+      "exit_price": 319.37,
+      "shares": 3,
+      "stop_loss": 277.31,
+      "take_profit": 319.37,
+      "net_pnl_usd": 83.42,
+      "net_pnl_pct": 9.54,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.98
+    },
+    {
+      "ticker": "AMD",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-08-26",
+      "exit_date": "2025-09-05",
+      "bars_held": 6,
+      "entry_price": 166.62,
+      "exit_price": 156.05,
+      "shares": 4,
+      "stop_loss": 156.05,
+      "take_profit": 187.76,
+      "net_pnl_usd": -42.98,
+      "net_pnl_pct": -6.45,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.02
+    },
+    {
+      "ticker": "NKE",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-09-04",
+      "exit_date": "2025-09-12",
+      "bars_held": 5,
+      "entry_price": 72.94,
+      "exit_price": 70.35,
+      "shares": 10,
+      "stop_loss": 70.35,
+      "take_profit": 78.13,
+      "net_pnl_usd": -26.65,
+      "net_pnl_pct": -3.65,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.03
+    },
+    {
+      "ticker": "PEP",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-09-09",
+      "exit_date": "2025-10-01",
+      "bars_held": 15,
+      "entry_price": 137.53,
+      "exit_price": 137.57,
+      "shares": 5,
+      "stop_loss": 133.08,
+      "take_profit": 146.42,
+      "net_pnl_usd": -0.51,
+      "net_pnl_pct": -0.07,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": -0.02
+    },
+    {
+      "ticker": "AVGO",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-10-01",
+      "exit_date": "2025-10-23",
+      "bars_held": 15,
+      "entry_price": 330.93,
+      "exit_price": 341.75,
+      "shares": 2,
+      "stop_loss": 313.68,
+      "take_profit": 365.43,
+      "net_pnl_usd": 20.94,
+      "net_pnl_pct": 3.16,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 0.61
+    },
+    {
+      "ticker": "ABBV",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-10-27",
+      "exit_date": "2025-10-31",
+      "bars_held": 3,
+      "entry_price": 221.4,
+      "exit_price": 215.83,
+      "shares": 3,
+      "stop_loss": 215.83,
+      "take_profit": 232.55,
+      "net_pnl_usd": -17.42,
+      "net_pnl_pct": -2.62,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.04
+    },
+    {
+      "ticker": "MARA",
+      "cluster_id": "HIGH_BETA_EXPANSION",
+      "entry_date": "2025-10-24",
+      "exit_date": "2025-11-04",
+      "bars_held": 6,
+      "entry_price": 19.54,
+      "exit_price": 17.14,
+      "shares": 20,
+      "stop_loss": 17.14,
+      "take_profit": 24.34,
+      "net_pnl_usd": -48.7,
+      "net_pnl_pct": -12.45,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.01
+    },
+    {
+      "ticker": "TSLA",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-10-15",
+      "exit_date": "2025-11-06",
+      "bars_held": 15,
+      "entry_price": 435.15,
+      "exit_price": 445.91,
+      "shares": 1,
+      "stop_loss": 406.56,
+      "take_profit": 492.33,
+      "net_pnl_usd": 10.06,
+      "net_pnl_pct": 2.31,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 0.35
+    },
+    {
+      "ticker": "INTC",
+      "cluster_id": "TECH_GROWTH",
+      "entry_date": "2025-11-07",
+      "exit_date": "2025-11-14",
+      "bars_held": 4,
+      "entry_price": 38.13,
+      "exit_price": 35.28,
+      "shares": 17,
+      "stop_loss": 35.28,
+      "take_profit": 43.83,
+      "net_pnl_usd": -49.15,
+      "net_pnl_pct": -7.58,
+      "exit_reason": "STOP_LOSS_HIT",
+      "r_multiple": -1.01
+    },
+    {
+      "ticker": "KO",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-11-06",
+      "exit_date": "2025-11-21",
+      "bars_held": 10,
+      "entry_price": 67.27,
+      "exit_price": 70.27,
+      "shares": 11,
+      "stop_loss": 65.77,
+      "take_profit": 70.27,
+      "net_pnl_usd": 32.28,
+      "net_pnl_pct": 4.36,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.95
+    },
+    {
+      "ticker": "CAT",
+      "cluster_id": "HEALTH_INDUSTRIAL",
+      "entry_date": "2025-11-21",
+      "exit_date": "2025-12-05",
+      "bars_held": 8,
+      "entry_price": 547.09,
+      "exit_price": 599.96,
+      "shares": 1,
+      "stop_loss": 520.65,
+      "take_profit": 599.96,
+      "net_pnl_usd": 52.17,
+      "net_pnl_pct": 9.53,
+      "exit_reason": "TAKE_PROFIT_HIT",
+      "r_multiple": 1.97
+    },
+    {
+      "ticker": "PEP",
+      "cluster_id": "FINANCE_CONSUMER",
+      "entry_date": "2025-11-14",
+      "exit_date": "2025-12-09",
+      "bars_held": 15,
+      "entry_price": 140.17,
+      "exit_price": 140.37,
+      "shares": 8,
+      "stop_loss": 136.48,
+      "take_profit": 147.55,
+      "net_pnl_usd": 0.87,
+      "net_pnl_pct": 0.08,
+      "exit_reason": "TIME_EXPIRY_15D",
+      "r_multiple": 0.03
+    }
+  ],
+  "equity_curve": [
+    {
+      "date": "2025-01-15",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-01-23",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-01-30",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-06",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-13",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-21",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-02-28",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-07",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-14",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-21",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-03-28",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-04",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-11",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-21",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-04-28",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-05",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-12",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-19",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-05-27",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-06-03",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-06-10",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-06-17",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-06-25",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-07-02",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-07-10",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-07-17",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-07-24",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-07-31",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-08-07",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-08-14",
+      "equity": 5010.36,
+      "cash": 4093.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-08-21",
+      "equity": 5061.18,
+      "cash": 4093.29,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-08-28",
+      "equity": 5144.91,
+      "cash": 1794.01,
+      "open_positions_count": 4
+    },
+    {
+      "date": "2025-09-05",
+      "equity": 5064.39,
+      "cash": 4348.89,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-09-12",
+      "equity": 5053.75,
+      "cash": 4364.05,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-09-19",
+      "equity": 5045.25,
+      "cash": 4364.05,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-09-26",
+      "equity": 5038.9,
+      "cash": 4364.05,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-10-03",
+      "equity": 5061.06,
+      "cash": 4389.32,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-10-10",
+      "equity": 5033.79,
+      "cash": 4389.32,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-10-17",
+      "equity": 5086.63,
+      "cash": 3953.82,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-10-24",
+      "equity": 5070.34,
+      "cash": 4245.82,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-10-31",
+      "equity": 5050.36,
+      "cash": 4228.4,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-11-07",
+      "equity": 5031.67,
+      "cash": 3627.51,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-11-14",
+      "equity": 4989.06,
+      "cash": 3105.21,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-11-21",
+      "equity": 5002.53,
+      "cash": 3330.39,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-12-01",
+      "equity": 5044.5,
+      "cash": 3330.39,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2025-12-08",
+      "equity": 5060.62,
+      "cash": 3930.0,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-12-15",
+      "equity": 5052.59,
+      "cash": 5052.59,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2025-12-22",
+      "equity": 5058.39,
+      "cash": 4479.51,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2025-12-30",
+      "equity": 5049.41,
+      "cash": 3808.26,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-01-07",
+      "equity": 5073.19,
+      "cash": 3808.26,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-01-14",
+      "equity": 5138.18,
+      "cash": 5138.18,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-01-22",
+      "equity": 5138.18,
+      "cash": 5138.18,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-01-29",
+      "equity": 5138.18,
+      "cash": 5138.18,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-02-05",
+      "equity": 5193.15,
+      "cash": 4482.3,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-02-12",
+      "equity": 5200.35,
+      "cash": 4482.3,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-02-20",
+      "equity": 5178.39,
+      "cash": 4482.3,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-02-27",
+      "equity": 5159.92,
+      "cash": 5159.92,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-06",
+      "equity": 5159.92,
+      "cash": 5159.92,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-13",
+      "equity": 5138.11,
+      "cash": 3801.27,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-03-20",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-03-27",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-06",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-13",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-20",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-04-27",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-04",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-11",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-18",
+      "equity": 5110.77,
+      "cash": 5110.77,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-05-26",
+      "equity": 5110.42,
+      "cash": 4722.03,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-06-02",
+      "equity": 5095.62,
+      "cash": 5095.62,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-06-09",
+      "equity": 5095.62,
+      "cash": 5095.62,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-06-16",
+      "equity": 5095.27,
+      "cash": 4497.3,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-06-24",
+      "equity": 5074.47,
+      "cash": 3323.97,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2026-07-01",
+      "equity": 5098.26,
+      "cash": 3943.78,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-07-09",
+      "equity": 5141.51,
+      "cash": 3943.78,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-07-16",
+      "equity": 5154.86,
+      "cash": 4557.31,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-07-23",
+      "equity": 5184.13,
+      "cash": 3801.57,
+      "open_positions_count": 2
+    },
+    {
+      "date": "2026-07-30",
+      "equity": 5262.36,
+      "cash": 3636.45,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2026-08-06",
+      "equity": 5411.72,
+      "cash": 5411.72,
+      "open_positions_count": 0
+    },
+    {
+      "date": "2026-08-13",
+      "equity": 5413.54,
+      "cash": 4665.68,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-08-20",
+      "equity": 5446.37,
+      "cash": 4665.68,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-08-27",
+      "equity": 5402.27,
+      "cash": 3072.59,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2026-09-03",
+      "equity": 5443.97,
+      "cash": 2327.96,
+      "open_positions_count": 4
+    },
+    {
+      "date": "2026-09-11",
+      "equity": 5375.43,
+      "cash": 2220.84,
+      "open_positions_count": 4
+    },
+    {
+      "date": "2026-09-18",
+      "equity": 5335.4,
+      "cash": 3028.45,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2026-09-25",
+      "equity": 5405.32,
+      "cash": 2411.57,
+      "open_positions_count": 4
+    },
+    {
+      "date": "2026-10-02",
+      "equity": 5377.11,
+      "cash": 3195.84,
+      "open_positions_count": 3
+    },
+    {
+      "date": "2026-10-09",
+      "equity": 5394.25,
+      "cash": 4758.31,
+      "open_positions_count": 1
+    },
+    {
+      "date": "2026-10-16",
+      "equity": 5415.35,
+      "cash": 5415.35,
+      "open_positions_count": 0
+    }
+  ]
+}
