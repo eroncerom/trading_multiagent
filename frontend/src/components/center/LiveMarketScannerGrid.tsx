@@ -65,11 +65,15 @@ function getRegimeBadge(regime: string, fallingKnife?: boolean) {
 }
 
 const CLUSTERS_META: { id: string; label: string; count: number }[] = [
-  { id: "ALL", label: "Todos (60)", count: 60 },
-  { id: "TECH_GROWTH", label: "Tech & Software", count: 15 },
-  { id: "FINANCE_CONSUMER", label: "Finanzas & Consumo", count: 15 },
-  { id: "HEALTH_INDUSTRIAL", label: "Salud & Industria", count: 15 },
-  { id: "HIGH_BETA_EXPANSION", label: "High Beta & Crypto", count: 15 },
+  { id: "ALL", label: "Todos (120)", count: 120 },
+  { id: "TECH_GROWTH_A", label: "Tech Mega-Cap", count: 15 },
+  { id: "TECH_GROWTH_B", label: "Semis & Software", count: 15 },
+  { id: "FINANCE_CONSUMER_A", label: "Finanzas Core", count: 15 },
+  { id: "FINANCE_CONSUMER_B", label: "Consumo & Retail", count: 15 },
+  { id: "HEALTH_INDUSTRIAL_A", label: "Salud & Energía", count: 15 },
+  { id: "HEALTH_INDUSTRIAL_B", label: "MedTech & Industria", count: 15 },
+  { id: "HIGH_BETA_EXPANSION_A", label: "High Beta Core", count: 15 },
+  { id: "HIGH_BETA_EXPANSION_B", label: "Next-Gen Growth", count: 15 },
 ];
 
 export function LiveMarketScannerGrid({
@@ -83,7 +87,15 @@ export function LiveMarketScannerGrid({
 
   const filteredItems = React.useMemo(() => {
     if (activeCluster === "ALL") return marketWatch;
-    return marketWatch.filter((item) => item.cluster_id === activeCluster);
+    return marketWatch.filter((item) => {
+      if (item.cluster_id === activeCluster) return true;
+      // Compatibilidad hacia atrás con prefijos antiguos
+      if (activeCluster === "TECH_GROWTH_A" && item.cluster_id === "TECH_GROWTH") return true;
+      if (activeCluster === "FINANCE_CONSUMER_A" && item.cluster_id === "FINANCE_CONSUMER") return true;
+      if (activeCluster === "HEALTH_INDUSTRIAL_A" && item.cluster_id === "HEALTH_INDUSTRIAL") return true;
+      if (activeCluster === "HIGH_BETA_EXPANSION_A" && item.cluster_id === "HIGH_BETA_EXPANSION") return true;
+      return false;
+    });
   }, [marketWatch, activeCluster]);
 
   return (
@@ -93,9 +105,12 @@ export function LiveMarketScannerGrid({
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-scan animate-pulse" />
           <span className="text-xs font-bold text-ink">
-            Radar Cuantitativo Multiclúster (4 Subagentes · {marketWatch.length || 60} Activos)
+            Radar Cuantitativo Multiclúster (8 Subagentes · {marketWatch.length || 120} Activos)
           </span>
-          <span className="text-[11px] font-medium text-scan">· Barrido paralelo cada 10s</span>
+          <span className="text-[11px] font-medium text-scan">· Barrido paralelo 8 hilos</span>
+          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+            ⚡ Subagente Disparador Activo
+          </span>
         </div>
 
         <div className="flex items-center gap-2">

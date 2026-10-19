@@ -11,7 +11,7 @@ import httpx
 
 logger = logging.getLogger("quant-audit-agent")
 
-AUDIT_DIR = Path("/app/audit_data") if Path("/app").exists() else Path("python_engine/app/audit_data")
+AUDIT_DIR = Path("/app/audit_data") if Path("/app").exists() else Path(__file__).resolve().parent / "audit_data"
 AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
 TRADES_LEDGER_FILE = AUDIT_DIR / "trades_ledger.jsonl"
@@ -21,30 +21,50 @@ STRATEGY_PARAMS_FILE = AUDIT_DIR / "strategy_params.json"
 
 
 DEFAULT_CLUSTERS: dict[str, list[str]] = {
-    "TECH_GROWTH": [
+    "TECH_GROWTH_A": [
         "NVDA", "AAPL", "MSFT", "AMZN", "GOOGL",
         "META", "TSLA", "NFLX", "PLTR", "AMD",
         "AVGO", "CRM", "UBER", "INTC", "CSCO",
     ],
-    "FINANCE_CONSUMER": [
+    "TECH_GROWTH_B": [
+        "ORCL", "ADBE", "QCOM", "TXN", "AMAT",
+        "INTU", "NOW", "IBM", "MU", "LRCX",
+        "ADI", "KLAC", "SNPS", "CDNS", "MRVL",
+    ],
+    "FINANCE_CONSUMER_A": [
         "JPM", "BAC", "WFC", "GS", "MS",
         "V", "MA", "PYPL", "KO", "PEP",
         "COST", "WMT", "NKE", "MCD", "DIS",
     ],
-    "HEALTH_INDUSTRIAL": [
+    "FINANCE_CONSUMER_B": [
+        "AXP", "BLK", "C", "SCHW", "SPGI",
+        "PGR", "CB", "HD", "LOW", "TGT",
+        "SBUX", "TJX", "BKNG", "PM", "PG",
+    ],
+    "HEALTH_INDUSTRIAL_A": [
         "JNJ", "PFE", "ABBV", "MRK", "LLY",
         "UNH", "CAT", "DE", "GE", "HON",
         "BA", "LMT", "XOM", "CVX", "UPS",
     ],
-    "HIGH_BETA_EXPANSION": [
+    "HEALTH_INDUSTRIAL_B": [
+        "TMO", "ABT", "DHR", "ISRG", "AMGN",
+        "GILD", "VRTX", "BMY", "RTX", "ETN",
+        "UNP", "ADP", "COP", "SLB", "EOG",
+    ],
+    "HIGH_BETA_EXPANSION_A": [
         "SOFI", "COIN", "HOOD", "SHOP", "SNOW",
-        "CRWD", "PANW", "NET", "SQ", "AFRM",
+        "CRWD", "PANW", "NET", "XYZ", "AFRM",
         "SMCI", "ARM", "RIVN", "DKNG", "MARA",
+    ],
+    "HIGH_BETA_EXPANSION_B": [
+        "MELI", "SE", "DASH", "RBLX", "U",
+        "ROKU", "TTD", "APP", "DDOG", "ZS",
+        "MDB", "MSTR", "RIOT", "IONQ", "RKLB",
     ],
 }
 
 DEFAULT_STRATEGY_PARAMS: dict[str, Any] = {
-    "version": 7,
+    "version": 8,
     "stoch_k_window": 14,
     "stoch_d_smooth": 4,
     "adx_window": 14,
@@ -140,6 +160,15 @@ class IndependentAuditAgent:
             try:
                 data = json.loads(STRATEGY_PARAMS_FILE.read_text(encoding="utf-8"))
                 merged = {**DEFAULT_STRATEGY_PARAMS, **data}
+                existing_clusters = merged.get("clusters", {})
+                if len(existing_clusters) < 8 or "TECH_GROWTH_A" not in existing_clusters:
+                    logger.info("Migrando clusters a la arquitectura de 8 subagentes (120 activos)...")
+                    merged["clusters"] = DEFAULT_CLUSTERS
+                    merged["version"] = max(int(merged.get("version", 1)), 8)
+                    STRATEGY_PARAMS_FILE.write_text(
+                        json.dumps(merged, indent=2, ensure_ascii=False),
+                        encoding="utf-8",
+                    )
                 return merged
             except Exception as exc:
                 logger.warning(f"Error cargando strategy_params.json: {exc}")

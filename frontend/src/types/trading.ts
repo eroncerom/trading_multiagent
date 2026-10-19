@@ -50,6 +50,17 @@ export interface ScannerStatus {
   last_stop_reason: string | null;
   last_error: string | null;
   tickers_count: number;
+  clusters_count?: number;
+  active_subagents?: string[];
+  trigger_agent?: {
+    agent_name: string;
+    agent_role: string;
+    status: string;
+    signals_in_queue: number;
+    total_dispatched: number;
+    last_dispatched_at: string | null;
+    last_dispatched_ticker: string | null;
+  };
   macro_regime?: MacroRegimeState;
 }
 

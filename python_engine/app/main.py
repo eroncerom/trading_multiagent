@@ -23,6 +23,7 @@ from ta.volatility import AverageTrueRange
 
 import ai_advisor
 from audit_agent import AUDIT_DIR, DEFAULT_CLUSTERS, audit_agent, get_adaptive_allocation_pct
+from trigger_agent import trigger_agent, zero_loss_signal_bus
 
 MARKET_WATCH_CACHE_FILE = AUDIT_DIR / "market_watch_latest.json"
 
@@ -1882,7 +1883,11 @@ class AutonomousScannerWorker:
                     existing["first_seen_at"] if existing else opp["detected_at"]
                 )
 
+                # El 9º Subagente Disparador (TriggerExecutionAgent) calcula al céntimo niveles de SL, TP, Breakeven y Sizing
                 params = audit_agent.strategy_params
+                opp = trigger_agent.enrich_opportunity(opp, self.portfolio_value, params)
+                await zero_loss_signal_bus.emit_signal(opp)
+
                 carried = (existing or {}).get("ai_advice")
                 if carried and carried.get("status") in ("DONE", "PENDING"):
                     opp["ai_advice"] = carried
@@ -1914,8 +1919,8 @@ class AutonomousScannerWorker:
                             ticker=ticker,
                             shares=int(opp["order_sizing"]["shares_to_buy"]),
                             entry_limit_price=float(opp["entry_price"]),
-                            stop_loss_price=float(opp["order_sizing"]["stop_loss_price"]),
-                            take_profit_price=float(opp["order_sizing"]["take_profit_price"]),
+                            stop_loss_price=float(opp["stop_loss_price"]),
+                            take_profit_price=float(opp["take_profit_price"]),
                             order_type="marketable_limit",
                             time_in_force="gtc",
                         )
@@ -1924,6 +1929,9 @@ class AutonomousScannerWorker:
                             self.auto_executed_tickers_cooldown[ticker] = now_ts
                             opp["status"] = "AUTO_EXECUTED_BRACKET_OCO"
                             opp["execution"] = exec_res
+                            trigger_agent.total_dispatched += 1
+                            trigger_agent.last_dispatched_at = datetime.now(timezone.utc).isoformat()
+                            trigger_agent.last_dispatched_ticker = ticker
                             self.execution_history.insert(0, exec_res)
                             await asyncio.to_thread(
                                 audit_agent.record_trade_execution,
@@ -1942,6 +1950,13 @@ class AutonomousScannerWorker:
                     opp["ai_advice"] = cached or {"status": "PENDING"}
                 self.active_opportunities[ticker] = opp
                 if (opp["ai_advice"] or {}).get("status") == "PENDING":
+                    self.schedule_background_advice(ticker)
+
+            # Retener en active_opportunities las señales del bus con TTL activo para que no desaparezcan
+            for active_sig in zero_loss_signal_bus.get_active_signals():
+                sig_tk = active_sig["ticker"]
+                if sig_tk not in self.active_opportunities:
+                    self.active_opportunities[sig_tk] = active_sig
                     self.schedule_background_advice(ticker)
 
                 last_notified = self.last_webhook_notified_at.get(ticker, 0.0)
@@ -2097,6 +2112,13 @@ class AutonomousScannerWorker:
             "market_watch_count": len(self.market_watch),
             "strategy_params_version": audit_agent.strategy_params.get("version", 1),
             "macro_regime": _MACRO_REGIME_STATE["last_regime"],
+            "clusters_count": len(audit_agent.strategy_params.get("clusters") or DEFAULT_CLUSTERS),
+            "active_subagents": list((audit_agent.strategy_params.get("clusters") or DEFAULT_CLUSTERS).keys()),
+            "trigger_agent": trigger_agent.get_telemetry(),
+            "zero_loss_bus": {
+                "queue_size": zero_loss_signal_bus.queue_size,
+                "active_signals_count": len(zero_loss_signal_bus.get_active_signals()),
+            },
             "last_error": self.last_error,
         }
 
@@ -2369,6 +2391,7 @@ async def approve_opportunity_one_click(
 def dismiss_opportunity(ticker: str):
     symbol = ticker.strip().upper()
     removed = scanner_worker.active_opportunities.pop(symbol, None)
+    zero_loss_signal_bus.dismiss_signal(symbol)
     if not removed:
         raise HTTPException(status_code=404, detail=f"No existe oportunidad activa para {symbol}.")
     return {"status": "DISMISSED", "ticker": symbol}
