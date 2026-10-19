@@ -43,6 +43,7 @@ services:
   ngrok:
     image: ngrok/ngrok:latest
     container_name: trading_ngrok
+    profiles: ["tunnel"]
     restart: on-failure:3
     command:
       - "http"
