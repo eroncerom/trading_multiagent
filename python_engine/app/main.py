@@ -1666,12 +1666,14 @@ class AutonomousScannerWorker:
     def _sync_effective_portfolio(self, acct_info: dict[str, Any], reset_baseline: bool = False) -> None:
         if acct_info.get("connected") and acct_info.get("equity", 0) > 0:
             live_eq = float(acct_info["equity"])
+            last_eq = float(acct_info.get("last_equity") or live_eq)
             if reset_baseline or self.alpaca_baseline_equity is None:
-                self.alpaca_baseline_equity = live_eq
+                self.alpaca_baseline_equity = last_eq
             virtual_base = audit_agent.strategy_params.get("virtual_portfolio_base")
             if virtual_base is not None and float(virtual_base) > 0:
-                realized_and_unrealized_pnl = live_eq - self.alpaca_baseline_equity
-                self.portfolio_value = round(float(virtual_base) + realized_and_unrealized_pnl, 2)
+                # El PnL total acumulado de la sesión en Alpaca (incluye las ganancias latentes de posiciones abiertas)
+                session_pnl = float(acct_info.get("daily_pnl", live_eq - self.alpaca_baseline_equity))
+                self.portfolio_value = round(float(virtual_base) + session_pnl, 2)
                 self.portfolio_source = "VIRTUAL_POC_1000_ON_ALPACA"
             else:
                 self.portfolio_value = round(live_eq, 2)
@@ -3077,8 +3079,8 @@ async def build_live_summary() -> dict[str, Any]:
         "cash": acct.get("cash"),
         "daily_pnl_usd": acct.get("daily_pnl"),
         "daily_pnl_pct": (
-            round(acct["daily_pnl"] / acct["last_equity"] * 100.0, 3)
-            if acct.get("daily_pnl") is not None and acct.get("last_equity")
+            round(acct["daily_pnl"] / (float(audit_agent.strategy_params.get("virtual_portfolio_base") or acct["last_equity"])) * 100.0, 2)
+            if acct.get("daily_pnl") is not None and (audit_agent.strategy_params.get("virtual_portfolio_base") or acct.get("last_equity"))
             else None
         ),
         "open_risk_exposure_usd": round(open_risk_usd, 2),
