@@ -799,13 +799,23 @@ def analyze_single_ticker_df(
     regime = expert["regime"]
     signal_triggered = expert["signal_triggered"]
 
+    recent_swing_high = float(high.iloc[-21:-1].max()) if len(high) > 21 else float(high.iloc[:-1].max())
     stop_loss = round(current_close - (atr_sl_mult * curr_atr), 2)
     risk_distance = current_close - stop_loss
     take_profit = round(current_close + (tp_rr * risk_distance), 2)
 
+    # Ajuste de Take Profit por Swing High / Resistencia Estructural:
+    # Si existe una resistencia intermedia previa y el TP teórico queda por encima, ajustamos el TP a un 0.5%
+    # por debajo del swing high para asegurar fill, siempre que conserve al menos un R:R atractivo (>= 1.25R).
+    if recent_swing_high > current_close:
+        capped_tp = round(recent_swing_high * 0.995, 2)
+        if capped_tp < take_profit and (capped_tp - current_close) >= (risk_distance * 1.25):
+            take_profit = capped_tp
+
     snapshot = {
         "ticker": ticker,
         "price": round(current_close, 2),
+        "recent_swing_high": round(recent_swing_high, 2),
         "ema_20": round(curr_ema20, 2),
         "ema20_slope_pct": round(ema20_slope_5d_pct, 2),
         "sma_50": round(curr_sma50, 2),
@@ -851,6 +861,7 @@ def analyze_single_ticker_df(
         "short_term_bias": expert["short_term_bias"],
         "quant_score": expert["quant_score"],
         "falling_knife": expert["falling_knife"],
+        "recent_swing_high": round(recent_swing_high, 2),
         "expert_summary": expert["expert_summary"],
         "expert_criteria": expert["expert_criteria"],
         "entry_price": round(current_close, 2),
@@ -2714,6 +2725,104 @@ async def close_alpaca_position_immediately(ticker: str):
             raise HTTPException(status_code=400, detail=str(exc))
 
     return await asyncio.to_thread(_close)
+
+
+class ReplaceOrderPayload(BaseModel):
+    limit_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    qty: Optional[float] = None
+
+
+@app.post("/alpaca/orders/{order_id}/replace")
+async def replace_alpaca_order(order_id: str, payload: ReplaceOrderPayload):
+    """Reemplaza una orden activa en Alpaca (p. ej. ajustar el precio límite de TP o el stop de SL)."""
+    def _replace():
+        client, is_configured, _ = get_alpaca_trading_client()
+        if not is_configured or client is None:
+            raise HTTPException(status_code=400, detail="Alpaca client no está configurado.")
+        try:
+            from alpaca.trading.requests import ReplaceOrderRequest
+
+            kwargs = {}
+            if payload.limit_price is not None:
+                kwargs["limit_price"] = payload.limit_price
+            if payload.stop_price is not None:
+                kwargs["stop_price"] = payload.stop_price
+            if payload.qty is not None:
+                kwargs["qty"] = payload.qty
+
+            req = ReplaceOrderRequest(**kwargs)
+            res = client.replace_order_by_id(order_id, req)
+            return {
+                "status": "ORDER_REPLACED",
+                "old_order_id": order_id,
+                "new_order_id": str(res.id),
+                "limit_price": res.limit_price,
+                "stop_price": res.stop_price,
+                "order_status": str(res.status),
+            }
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    return await asyncio.to_thread(_replace)
+
+
+class AdjustPositionLevelsPayload(BaseModel):
+    take_profit_price: Optional[float] = None
+    stop_loss_price: Optional[float] = None
+
+
+@app.post("/alpaca/positions/{ticker}/adjust-levels")
+async def adjust_position_levels(ticker: str, payload: AdjustPositionLevelsPayload):
+    """Ajusta las órdenes OCO activas (Take Profit y/o Stop Loss) de una posición viva en Alpaca."""
+    symbol = ticker.strip().upper()
+
+    def _adjust():
+        client, is_configured, _ = get_alpaca_trading_client()
+        if not is_configured or client is None:
+            raise HTTPException(status_code=400, detail="Alpaca client no está configurado.")
+        try:
+            from alpaca.trading.requests import GetOrdersRequest, ReplaceOrderRequest
+            from alpaca.trading.enums import QueryOrderStatus
+
+            req = GetOrdersRequest(status=QueryOrderStatus.ALL, symbols=[symbol], limit=20)
+            orders = client.get_orders(req)
+            results = {}
+
+            for o in orders:
+                side_str = str(o.side).lower()
+                order_type_str = str(o.order_type).lower()
+                status_str = str(o.status).lower()
+
+                if "sell" in side_str:
+                    # Ajustar Take Profit (tipo Limit)
+                    if payload.take_profit_price is not None and "limit" in order_type_str:
+                        if status_str in ["new", "open", "accepted"]:
+                            res = client.replace_order_by_id(
+                                o.id, ReplaceOrderRequest(limit_price=payload.take_profit_price)
+                            )
+                            results["take_profit"] = {
+                                "old_id": str(o.id),
+                                "new_id": str(res.id),
+                                "new_limit": payload.take_profit_price,
+                            }
+                    # Ajustar Stop Loss (tipo Stop)
+                    if payload.stop_loss_price is not None and "stop" in order_type_str:
+                        if status_str in ["held", "new", "open", "accepted"]:
+                            res = client.replace_order_by_id(
+                                o.id, ReplaceOrderRequest(stop_price=payload.stop_loss_price)
+                            )
+                            results["stop_loss"] = {
+                                "old_id": str(o.id),
+                                "new_id": str(res.id),
+                                "new_stop": payload.stop_loss_price,
+                            }
+
+            return {"symbol": symbol, "status": "LEVELS_ADJUSTED", "adjusted": results}
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    return await asyncio.to_thread(_adjust)
 
 # =====================================================================
 # ENDPOINTS PARA LA GUI (FASE 2): VELAS, RESUMEN DE CARTERA, WEBSOCKET

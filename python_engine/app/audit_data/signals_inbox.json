@@ -1,1 +1,103 @@
-﻿{}
+{
+  "AMZN": {
+    "ticker": "AMZN",
+    "cluster_id": "TECH_GROWTH_A",
+    "market_regime": "BULLISH_TREND (SIMULACIÓN POC)",
+    "short_term_bias": "LONG_CONVICTION",
+    "quant_score": 91,
+    "falling_knife": false,
+    "expert_summary": "Tendencia alcista sana (+DI 24.6 > -DI 17.6, sobre EMA20 $255.08 y SMA50 $256.84, Score 91/100).",
+    "expert_criteria": [
+      {
+        "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
+        "passed": true,
+        "detail": "Precio $262.45 vs EMA20 $255.08 (pendiente 5d +0.25%), SMA50 $256.84, SMA200 $242.89"
+      },
+      {
+        "label": "Flujo Direccional DMI (+DI vs -DI)",
+        "passed": true,
+        "detail": "+DI 24.6 vs -DI 17.6 (Dif +7.0 · ADX 13.5)"
+      },
+      {
+        "label": "Acción del Precio y Vela (Anti-Falling Knife)",
+        "passed": true,
+        "detail": "Vela +4.98% (Cuerpo +1.11xATR · Cierre en el 85% del rango diario) · Sin capitulación"
+      },
+      {
+        "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
+        "passed": true,
+        "detail": "Stoch %K 92.9 / %D 55.3 · RSI(14) 57.3"
+      },
+      {
+        "label": "Volumen Institucional (RVOL 20d)",
+        "passed": true,
+        "detail": "RVOL 1.50x media 20 sesiones"
+      }
+    ],
+    "entry_price": 262.45,
+    "ema_20": 255.08,
+    "ema20_slope_pct": 0.25,
+    "sma_50": 256.84,
+    "sma_200": 242.89,
+    "atr_14": 6.5,
+    "rsi_14": 57.3,
+    "rvol_20": 1.5,
+    "ret_1d_pct": 4.98,
+    "ret_5d_pct": 1.13,
+    "close_location_value": 0.85,
+    "candle_body_atr": 1.11,
+    "stoch_k": 92.85,
+    "stoch_d": 55.3,
+    "adx": 13.5,
+    "plus_di": 24.6,
+    "minus_di": 17.6,
+    "di_spread": 7.0,
+    "portfolio_value_used": 5000.0,
+    "detected_at": "2026-10-19T20:23:06.998401+00:00",
+    "viable": true,
+    "order_sizing": {
+      "viable": true,
+      "shares_to_buy": 4,
+      "invested_capital": 1049.8,
+      "max_risk_eur": 39.0,
+      "expected_profit_eur": 78.0,
+      "commissions_eur": 0.7,
+      "commission_to_profit_ratio": 0.009,
+      "rejection_reason": null
+    },
+    "financial_metrics": {
+      "max_loss_with_commissions": 41.86,
+      "portfolio_risk_pct": 0.84,
+      "expected_net_profit": 81.62,
+      "net_reward_risk_ratio": 1.95,
+      "round_trip_commission": 0.7,
+      "commission_to_gross_profit_pct": 0.85
+    },
+    "macro_regime_status": "RISK_ON",
+    "ai_thesis": {
+      "source": "DETERMINISTIC_QUANT",
+      "lines": [
+        "Tendencia alcista sana (+DI 24.6 > -DI 17.6, sobre EMA20 $255.08 y SMA50 $256.84, Score 91/100).",
+        "Flujo DMI (+DI 24.6 vs -DI 17.6) · Stoch %K 92.8 / %D 55.3 · RSI 57.3 · Cierre diario en el 85% del rango.",
+        "Riesgo 0.84% (-$41.86) con salida OCO 1:2 (+$81.62 netos, comisiones 0.85% del beneficio)."
+      ]
+    },
+    "opportunity_id": "opp-amzn-1792441387",
+    "first_seen_at": "2026-10-19T20:23:06.998401+00:00",
+    "price": 262.45,
+    "stop_loss_price": 252.7,
+    "take_profit_price": 281.95,
+    "breakeven_trigger_price": 270.74,
+    "breakeven_lock_price": 263.23,
+    "trailing_trigger_price": 276.59,
+    "trailing_lock_price": 267.81,
+    "risk_per_share": 9.75,
+    "shares_to_buy": 4,
+    "sizing_viable": true,
+    "trigger_agent_ready": true,
+    "trigger_agent_timestamp": "2026-10-19T20:23:07.017423+00:00",
+    "queued_timestamp": 1792441387.0174437,
+    "bus_status": "QUEUED",
+    "status": "DISMISSED"
+  }
+}

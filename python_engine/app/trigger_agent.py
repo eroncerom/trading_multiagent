@@ -137,6 +137,7 @@ class TriggerExecutionAgent:
         entry_price: float,
         atr_14: float,
         strategy_params: dict[str, Any],
+        recent_swing_high: Optional[float] = None,
     ) -> dict[str, float]:
         """Calcula al céntimo la estructura completa de niveles OCO y salidas dinámicas."""
         mult_sl = float(strategy_params.get("atr_stop_loss_multiplier", 1.5))
@@ -153,6 +154,15 @@ class TriggerExecutionAgent:
 
         stop_loss_price = round(entry_price - risk_per_share, 2)
         take_profit_price = round(entry_price + (risk_per_share * rr_ratio), 2)
+
+        # Ajuste inteligente por resistencia estructural (Swing High reciente):
+        # Si existe un techo intermedio y el TP estándar queda por encima, se ajusta a un 0.5% por debajo
+        # del swing high para asegurar ejecución, siempre que preserve al menos un R:R atractivo (>= 1.25R).
+        if recent_swing_high and recent_swing_high > entry_price:
+            capped_tp = round(recent_swing_high * 0.995, 2)
+            if capped_tp < take_profit_price and (capped_tp - entry_price) >= (risk_per_share * 1.25):
+                take_profit_price = capped_tp
+
         breakeven_trigger_price = round(entry_price + (risk_per_share * be_trigger_r), 2)
         breakeven_lock_price = round(entry_price + (risk_per_share * be_lock_r), 2)
         trailing_trigger_price = round(entry_price + (risk_per_share * trail_trigger_r), 2)
@@ -167,7 +177,8 @@ class TriggerExecutionAgent:
             "breakeven_lock_price": breakeven_lock_price,
             "trailing_trigger_price": trailing_trigger_price,
             "trailing_lock_price": trailing_lock_price,
-            "reward_risk_ratio": rr_ratio,
+            "reward_risk_ratio": round((take_profit_price - entry_price) / max(0.01, risk_per_share), 2),
+            "recent_swing_high": recent_swing_high,
         }
 
     def calculate_position_sizing(
@@ -225,8 +236,11 @@ class TriggerExecutionAgent:
         """Enriquece una señal con todos los cálculos de niveles y tamaño listos para ejecución."""
         entry = float(raw_signal.get("entry_price") or raw_signal.get("price") or 0.0)
         atr = float(raw_signal.get("atr_14") or (entry * 0.02))
+        recent_swing_high = raw_signal.get("recent_swing_high")
 
-        brackets = self.calculate_bracket_levels(entry, atr, strategy_params)
+        brackets = self.calculate_bracket_levels(
+            entry, atr, strategy_params, recent_swing_high=recent_swing_high
+        )
         sizing = self.calculate_position_sizing(
             portfolio_value=portfolio_value,
             entry_price=entry,
