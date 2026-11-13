@@ -11,6 +11,7 @@ import ai_advisor
 from audit_agent import DEFAULT_STRATEGY_PARAMS
 from position_guardian import evaluate_position_guardian, extract_intraday_guardian_signals
 from three_tricks_engine import (
+    _fetch_alpaca_intraday_batch,
     evaluate_daily_structure,
     evaluate_three_tricks,
     extract_intraday_features,
@@ -403,6 +404,85 @@ class TestThreeTricksMotor(unittest.TestCase):
         self.assertEqual(data["min_net_profit_usd"], 8.0)
         self.assertTrue(data["auto_adapt_positions"])
         self.assertEqual(len(data["clusters"]), 17)
+
+    def test_9_alpaca_intraday_batch_uses_iex_and_fallback(self):
+        import os
+        import sys
+        import types
+        from unittest.mock import patch
+
+        recorded_reqs = []
+        idx = pd.MultiIndex.from_product(
+            [["AAPL", "BRK.B"], pd.date_range("2026-04-09 14:00", periods=3, freq="15min", tz="UTC")],
+            names=["symbol", "timestamp"],
+        )
+        fake_df = pd.DataFrame(
+            {
+                "open": [100.0, 100.5, 101.0, 400.0, 401.0, 402.0],
+                "high": [100.8, 101.2, 101.6, 401.5, 402.5, 403.5],
+                "low": [99.9, 100.3, 100.8, 399.5, 400.5, 401.5],
+                "close": [100.6, 101.0, 101.4, 401.0, 402.0, 403.0],
+                "volume": [10000.0, 12000.0, 15000.0, 5000.0, 6000.0, 7000.0],
+            },
+            index=idx,
+        )
+
+        class _EnumVal(str):
+            pass
+
+        fake_enums = types.ModuleType("alpaca.data.enums")
+        fake_enums.DataFeed = types.SimpleNamespace(IEX=_EnumVal("iex"), SIP=_EnumVal("sip"))
+        fake_enums.Adjustment = types.SimpleNamespace(SPLIT=_EnumVal("split"))
+
+        fake_tf = types.ModuleType("alpaca.data.timeframe")
+        fake_tf.TimeFrame = lambda amount, unit: (amount, unit)
+        fake_tf.TimeFrameUnit = types.SimpleNamespace(Minute="Minute")
+
+        fake_reqs = types.ModuleType("alpaca.data.requests")
+        fake_reqs.StockBarsRequest = lambda **kwargs: dict(kwargs)
+
+        class _FakeClient:
+            def __init__(self, key, sec):
+                pass
+
+            def get_stock_bars(self, req):
+                recorded_reqs.append(req)
+                if req.get("feed") == "sip":
+                    raise RuntimeError("403 subscription does not permit querying recent SIP data")
+                return types.SimpleNamespace(df=fake_df)
+
+        fake_hist = types.ModuleType("alpaca.data.historical")
+        fake_hist.StockHistoricalDataClient = _FakeClient
+
+        fake_alpaca = types.ModuleType("alpaca")
+        fake_alpaca_data = types.ModuleType("alpaca.data")
+
+        stub_mods = {
+            "alpaca": fake_alpaca,
+            "alpaca.data": fake_alpaca_data,
+            "alpaca.data.enums": fake_enums,
+            "alpaca.data.timeframe": fake_tf,
+            "alpaca.data.requests": fake_reqs,
+            "alpaca.data.historical": fake_hist,
+        }
+
+        with patch.dict(sys.modules, stub_mods), patch.dict(
+            os.environ, {"ALPACA_API_KEY": "pk_test", "ALPACA_SECRET_KEY": "sk_test", "ALPACA_DATA_FEED": ""}
+        ):
+            res = _fetch_alpaca_intraday_batch(["AAPL", "BRK-B"], "15m", 5)
+            self.assertIn("AAPL", res)
+            self.assertIn("BRK-B", res)
+            self.assertEqual(recorded_reqs[-1]["symbol_or_symbols"], ["AAPL", "BRK.B"])
+            self.assertEqual(recorded_reqs[-1]["feed"], "iex")
+            self.assertEqual(recorded_reqs[-1]["adjustment"], "split")
+
+        recorded_reqs.clear()
+        with patch.dict(sys.modules, stub_mods), patch.dict(
+            os.environ, {"ALPACA_API_KEY": "pk_test", "ALPACA_SECRET_KEY": "sk_test", "ALPACA_DATA_FEED": "sip"}
+        ):
+            res_fb = _fetch_alpaca_intraday_batch(["AAPL"], "15m", 5)
+            self.assertIn("AAPL", res_fb)
+            self.assertEqual([r["feed"] for r in recorded_reqs], ["sip", "iex"])
 
 
 if __name__ == "__main__":

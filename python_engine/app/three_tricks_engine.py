@@ -206,6 +206,7 @@ def _fetch_alpaca_intraday_batch(
         return {}
 
     try:
+        from alpaca.data.enums import Adjustment, DataFeed
         from alpaca.data.historical import StockHistoricalDataClient
         from alpaca.data.requests import StockBarsRequest
         from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
@@ -217,20 +218,48 @@ def _fetch_alpaca_intraday_batch(
         )
         client = StockHistoricalDataClient(api_key, secret_key)
         start_dt = datetime.now(timezone.utc) - timedelta(days=lookback_days)
-        req = StockBarsRequest(symbol_or_symbols=tickers, timeframe=tf, start=start_dt)
-        bars = client.get_stock_bars(req)
+        pref = os.getenv("ALPACA_DATA_FEED", "iex").strip().lower()
+        feeds_to_try = [DataFeed.SIP, DataFeed.IEX] if pref == "sip" else [DataFeed.IEX]
+
+        # Alpaca usa punto en clases de acciones (p.ej. BRK.B) mientras yfinance usa guion (BRK-B)
+        alpaca_to_orig = {tk.replace("-", "."): tk for tk in tickers}
+        alpaca_syms = list(alpaca_to_orig.keys())
+
+        bars = None
+        last_exc: Optional[Exception] = None
+        for feed_opt in feeds_to_try:
+            try:
+                req = StockBarsRequest(
+                    symbol_or_symbols=alpaca_syms,
+                    timeframe=tf,
+                    start=start_dt,
+                    feed=feed_opt,
+                    adjustment=Adjustment.SPLIT,
+                )
+                bars = client.get_stock_bars(req)
+                break
+            except Exception as exc_feed:
+                last_exc = exc_feed
+                continue
+        if bars is None:
+            raise last_exc or RuntimeError("No se pudieron obtener barras de Alpaca Data API")
+
         df_all = bars.df
         if df_all is None or df_all.empty:
             return {}
 
         out: dict[str, pd.DataFrame] = {}
         if isinstance(df_all.index, pd.MultiIndex):
-            for tk in tickers:
-                if tk in df_all.index.get_level_values(0):
-                    sub = df_all.loc[tk].copy()
-                    sub = _normalize_ohlcv(sub)
+            lvl0 = set(df_all.index.get_level_values(0))
+            for asym, orig_tk in alpaca_to_orig.items():
+                if asym in lvl0:
+                    sub = _normalize_ohlcv(df_all.loc[asym].copy())
                     if not sub.empty:
-                        out[tk] = sub
+                        out[orig_tk] = sub
+        elif len(alpaca_syms) == 1:
+            sub = _normalize_ohlcv(df_all.copy())
+            if not sub.empty:
+                out[alpaca_to_orig[alpaca_syms[0]]] = sub
         return out
     except Exception as exc:
         logger.debug(f"[AlpacaData-{timeframe_str}] Fallback a yfinance: {exc}")
