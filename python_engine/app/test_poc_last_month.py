@@ -55,7 +55,7 @@ def run_last_month_poc(
 
     raw = yf.download(
         download_list,
-        period="1y",
+        period="2y",
         interval="1d",
         group_by="ticker",
         threads=True,
@@ -79,15 +79,16 @@ def run_last_month_poc(
     # 2. Series de Tickers e Indicadores
     ticker_dfs = {}
     common_dates = None
+    spy_bench_df = benchmark_dfs.get("SPY")
     for t in all_tickers:
         try:
             tk = "XYZ" if t == "SQ" else t
             if tk not in raw.columns.get_level_values(0):
                 continue
             df_t = raw[tk].dropna(subset=["Open", "High", "Low", "Close"])
-            if len(df_t) < 60:
+            if len(df_t) < 210:
                 continue
-            df_t = evaluate_bar_signals(df_t, params)
+            df_t = evaluate_bar_signals(df_t, params, spy_bench_df)
             ticker_dfs[t] = df_t
             if common_dates is None:
                 common_dates = df_t.index
@@ -110,11 +111,14 @@ def run_last_month_poc(
         f"{sim_dates[0].strftime('%Y-%m-%d')} hasta {sim_dates[-1].strftime('%Y-%m-%d')}."
     )
 
-    # Parámetros del modelo
+    # Parámetros del modelo V34 (Sincronización 1:1 con Producción)
     be_trigger_r = float(params.get("breakeven_trigger_r", 0.85))
-    be_lock_r = float(params.get("breakeven_lock_r", 0.08))
-    t1_trigger_r = float(params.get("trailing_ratchet_trigger_r", 1.45))
-    t1_lock_r = float(params.get("trailing_ratchet_lock_r", 0.55))
+    be_lock_r = float(params.get("breakeven_lock_r", 0.15))
+    t1_trigger_r = float(params.get("trailing_ratchet_trigger_r", 1.40))
+    t1_lock_r = float(params.get("trailing_ratchet_lock_r", 0.65))
+    min_rr = float(params.get("min_reward_risk_ratio", 1.50))
+    max_swing_gain = float(params.get("max_single_swing_gain_pct", 0.12))
+    cap_tp_swing_high = bool(params.get("cap_tp_at_swing_high_in_uptrend", False))
     endogenous_scaling = bool(params.get("endogenous_atr_scaling_enabled", True))
     macro_gatekeeper_enabled = bool(params.get("macro_regime_gatekeeper_enabled", True))
     spy_thresh = float(params.get("macro_index_threshold_drop_pct", -0.75))
@@ -310,6 +314,7 @@ def run_last_month_poc(
                 today_raw_signals.append({
                     "ticker": ticker,
                     "cluster_id": ticker_to_cluster.get(ticker, "UNKNOWN"),
+                    "setup_archetype": str(row.get("setup_archetype", "HAMMER_ABSORPTION_MA")),
                     "close": float(row["Close"]),
                     "atr_pct": float(row["atr_pct"]),
                     "atr_14": float(row["atr_14"]),
@@ -318,6 +323,7 @@ def run_last_month_poc(
                     "stoch_d": float(row["stoch_d"]),
                     "rsi": float(row["rsi_14"]),
                     "er_10": float(row["er_10"]),
+                    "recent_swing_high": float(row.get("recent_swing_high", 0.0) or 0.0),
                     "pred_edge": float(row.get("pred_edge", 25.0)),
                 })
 
@@ -357,7 +363,18 @@ def run_last_month_poc(
                 risk_dist = close_p - sl_p
                 if risk_dist <= 0:
                     continue
-                tp_p = round(close_p + (tp_rr * risk_dist), 2)
+                raw_tp = round(close_p + (tp_rr * risk_dist), 2)
+                max_tp = round(close_p * (1.0 + max_swing_gain), 2)
+                tp_p = min(raw_tp, max_tp)
+
+                swing_h = float(sig.get("recent_swing_high", 0.0) or 0.0)
+                if cap_tp_swing_high and swing_h > close_p:
+                    capped_tp = round(swing_h * 0.992, 2)
+                    if capped_tp < tp_p:
+                        tp_p = capped_tp
+
+                if (tp_p - close_p) < (risk_dist * min_rr - 0.02):
+                    continue
 
                 max_alloc_pct, _ = get_adaptive_allocation_pct(portfolio_value, params)
                 max_loss = portfolio_value * max_risk_pct
@@ -370,11 +387,15 @@ def run_last_month_poc(
                 shares = min(shares_by_risk, shares_by_cap)
 
                 if shares >= 1:
+                    gross_expected_profit = (tp_p - close_p) * shares
+                    if gross_expected_profit <= 0 or ((commission_per_order * 2.0) / gross_expected_profit) > 0.10:
+                        continue
                     capital_needed = (shares * close_p) + commission_per_order
                     if cash >= capital_needed:
                         candidates.append({
                             "ticker": ticker,
                             "cluster_id": sig["cluster_id"],
+                            "setup_archetype": sig.get("setup_archetype", "HAMMER_ABSORPTION_MA"),
                             "close": close_p,
                             "sl": sl_p,
                             "tp": tp_p,
@@ -404,11 +425,12 @@ def run_last_month_poc(
                         "bars_held": 0,
                         "current_price": cand["close"],
                         "cluster_id": cand["cluster_id"],
+                        "setup_archetype": cand.get("setup_archetype", "HAMMER_ABSORPTION_MA"),
                         "stage": 0,
                     }
                     new_entries.append(cand["ticker"])
                     session_events.append(
-                        f"[{cand['ticker']}] Entrada aprobada: {cand['shares']} accs @ ${cand['close']:.2f} "
+                        f"[{cand['ticker']}] Entrada aprobada ({cand.get('setup_archetype', '')}): {cand['shares']} accs @ ${cand['close']:.2f} "
                         f"(SL: ${cand['sl']:.2f}, TP: ${cand['tp']:.2f}, Edge: {cand['pred_edge']:.1f})"
                     )
 
@@ -472,12 +494,15 @@ def run_last_month_poc(
 
     wins = [t for t in closed_trades if t["net_pnl_usd"] > 0]
     losses = [t for t in closed_trades if t["net_pnl_usd"] <= 0]
+    breakeven_trades = [t for t in closed_trades if t["exit_reason"] == "BREAKEVEN_STOP_HIT"]
+    strict_wins = [t for t in closed_trades if t["net_pnl_usd"] > 0 and t["exit_reason"] != "BREAKEVEN_STOP_HIT"]
     realized_net_pnl = sum(t["net_pnl_usd"] for t in closed_trades)
     final_equity = portfolio_value + unrealized_pnl
     total_net_pnl = final_equity - initial_capital
     total_return_pct = (total_net_pnl / initial_capital) * 100.0
 
     win_rate = (len(wins) / len(closed_trades) * 100.0) if closed_trades else 0.0
+    strict_win_rate = (len(strict_wins) / len(closed_trades) * 100.0) if closed_trades else 0.0
     gross_profits = sum(t["net_pnl_usd"] for t in wins)
     gross_losses = abs(sum(t["net_pnl_usd"] for t in losses))
     profit_factor = (gross_profits / gross_losses) if gross_losses > 0 else (99.0 if gross_profits > 0 else 0.0)
@@ -507,14 +532,19 @@ def run_last_month_poc(
     by_cluster = {}
     for t in closed_trades:
         cid = t["cluster_id"]
-        c_stats = by_cluster.setdefault(cid, {"trades": 0, "wins": 0, "pnl": 0.0})
+        c_stats = by_cluster.setdefault(cid, {"trades": 0, "wins": 0, "strict_wins": 0, "breakevens": 0, "pnl": 0.0})
         c_stats["trades"] += 1
         if t["net_pnl_usd"] > 0:
             c_stats["wins"] += 1
+            if t["exit_reason"] == "BREAKEVEN_STOP_HIT":
+                c_stats["breakevens"] += 1
+            else:
+                c_stats["strict_wins"] += 1
         c_stats["pnl"] = round(c_stats["pnl"] + t["net_pnl_usd"], 2)
 
     for cid, s in by_cluster.items():
         s["win_rate_pct"] = round((s["wins"] / s["trades"]) * 100.0, 1) if s["trades"] > 0 else 0.0
+        s["strict_win_rate_pct"] = round((s["strict_wins"] / s["trades"]) * 100.0, 1) if s["trades"] > 0 else 0.0
 
     report = {
         "period": {
@@ -531,8 +561,11 @@ def run_last_month_poc(
             "total_return_pct": round(total_return_pct, 2),
             "total_closed_trades": len(closed_trades),
             "winning_trades": len(wins),
+            "strict_winning_trades": len(strict_wins),
+            "breakeven_scratches": len(breakeven_trades),
             "losing_trades": len(losses),
             "win_rate_pct": round(win_rate, 1),
+            "strict_win_rate_pct": round(strict_win_rate, 1),
             "profit_factor": round(profit_factor, 2),
             "max_drawdown_usd": round(max_dd_usd, 2),
             "max_drawdown_pct": round(max_dd_pct, 2),
@@ -563,7 +596,7 @@ if __name__ == "__main__":
     s = rep["summary"]
     p = rep["period"]
     print("\n" + "=" * 70)
-    print("INFORME DE TESTING DE CONCEPTO: ÚLTIMO MES DE MERCADO")
+    print("INFORME DE TESTING DE CONCEPTO: ÚLTIMO MES DE MERCADO (V33 REALISTA)")
     print(f"Período: {p['start_date']} al {p['end_date']} ({p['trading_sessions']} sesiones)")
     print("=" * 70)
     print(f"Capital Inicial:         ${s['initial_capital_usd']:,.2f}")
@@ -572,7 +605,11 @@ if __name__ == "__main__":
     print(f"Beneficio Latente (MTM): ${s['unrealized_pnl_usd']:+,.2f}")
     print(f"Beneficio Neto Total:    ${s['total_net_profit_usd']:+,.2f}")
     print(f"Operaciones Cerradas:    {s['total_closed_trades']}")
-    print(f"Ratio de Acierto (Win):  {s['win_rate_pct']:.1f}% ({s['winning_trades']} Ganadoras / {s['losing_trades']} Perdedoras)")
+    print(
+        f"Acierto Estricto:        {s['strict_win_rate_pct']:.1f}% ({s['strict_winning_trades']}W Reales | "
+        f"{s['breakeven_scratches']} Breakeven | {s['losing_trades']}L)"
+    )
+    print(f"Acierto Nominal:         {s['win_rate_pct']:.1f}% (incluyendo Breakevens como >$0)")
     print(f"Profit Factor:           {s['profit_factor']:.2f}")
     print(f"Esperanza Matemática:    {s['avg_r_multiple']:+.2f} R (${s['avg_trade_pnl_usd']:+.2f}/trade)")
     print(f"Máximo Drawdown Mes:     {s['max_drawdown_pct']:.2f}% (-${s['max_drawdown_usd']:,.2f})")

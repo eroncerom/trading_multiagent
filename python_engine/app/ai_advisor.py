@@ -22,15 +22,17 @@ GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{mode
 VALID_VERDICTS = ("APPROVE", "CAUTION", "REJECT")
 
 SYSTEM_PROMPT = (
-    "Eres un trader institucional experto en posiciones de corto plazo (swing táctico de 1 a 10 sesiones) y "
-    "gestor de riesgo cuantitativo. Recibes un setup validado por el motor (régimen táctico, EMA20, SMA50, SMA200, "
-    "flujo direccional +DI/-DI, ADX, Estocástico 14/4, RSI 14, volumen relativo RVOL, anatomía de vela CLV y "
-    "score cuantitativo). Tu misión es proteger el capital y detectar trampas de corto plazo: 'cuchillos cayendo' "
-    "(velas de distribución o presión corta donde -DI supera a +DI pese a estar sobre la SMA200), earnings inminentes, "
-    "noticias bajistas, roturas de EMA20/SMA50 o falta de absorción compradora. Si el corto plazo presenta presión "
-    "vendedora ('SHORT_PRESSURE' o 'falling_knife') o catalizadores adversos, emite REJECT. Si hay dudas tácticas, "
-    "usa CAUTION. Solo emite APPROVE cuando la estructura de corto plazo, el flujo direccional y el contexto "
-    "fundamental estén limpios. Responde en español."
+    "Eres el Subagente #3 del Comité de Admisión (Especialista en Empresa, Catalizadores y Riesgo). "
+    "Evalúas entradas largas filtradas por el motor 'Los 3 Trucos' (Marea Diaria+VWAP, Pullback sin sobreprecio, "
+    "Ignición intradía 5m/15m con volumen). Tu misión es vetar trampas antes de arriesgar capital: "
+    "1) EMITE REJECT OBLIGATORIO si hay resultados (earnings) en las próximas 48 horas, investigación regulatoria, "
+    "downgrade severo reciente, dilución/oferta secundaria o noticia tóxica del ticker. "
+    "2) EMITE REJECT si el flujo direccional diario es bajista (-DI > +DI) o hay cuchillo cayendo (falling_knife). "
+    "3) EMITE REJECT si el precio entra sobreextendido tras subida vertical (dist_from_ema20_atr > 1.2), si el volumen "
+    "en velas rojas de corrección supera al de las verdes, o si el Take Profit supera resistencias inmediatas. "
+    "4) Usa CAUTION si no puedes verificar noticias recientes o el contexto macro sectorial está débil. "
+    "Solo emite APPROVE si el contexto de empresa está limpio, sin earnings en <48h, y el setup intradía tiene "
+    "recorrido realista sin trampas de liquidez. Responde en español."
 )
 
 RESPONSE_SCHEMA = {
@@ -99,39 +101,42 @@ def build_user_prompt(opp: dict[str, Any], portfolio_value: float) -> str:
     pct_sma = ((entry - sma) / sma * 100.0) if sma else None
     payload = {
         "ticker": opp.get("ticker"),
+        "motor": "LOS_3_TRUCOS_INTRADIA",
         "regimen_mercado": opp.get("market_regime"),
         "sesgo_corto_plazo": opp.get("short_term_bias"),
         "quant_score_0_100": opp.get("quant_score"),
         "diagnostico_experto": opp.get("expert_summary"),
         "precio_entrada": entry,
-        "ema_20_corto_plazo": opp.get("ema_20"),
-        "sma_50_medio_plazo": opp.get("sma_50"),
-        "sma_200_largo_plazo": sma,
+        "vwap_sesion": opp.get("vwap"),
+        "ema20_15m": opp.get("ema20_15m"),
+        "atr_15m": opp.get("atr_15m"),
+        "rsi_15m": opp.get("rsi_15m"),
+        "rvol_intradia": opp.get("rvol_intraday"),
+        "pullback_low": opp.get("pullback_low"),
+        "distancia_ema20_en_atrs": opp.get("dist_from_ema20_atr"),
+        "vol_promedio_velas_rojas_pb": opp.get("avg_red_pb_vol"),
+        "vol_promedio_velas_verdes_impulso": opp.get("avg_green_imp_vol"),
+        "ema_20_diaria": opp.get("ema_20"),
+        "sma_50_diaria": opp.get("sma_50"),
+        "sma_200_diaria": sma,
         "pct_sobre_sma200": round(pct_sma, 2) if pct_sma is not None else None,
         "adx_14": opp.get("adx"),
         "plus_di_compradores": opp.get("plus_di"),
         "minus_di_vendedores": opp.get("minus_di"),
         "di_spread": opp.get("di_spread"),
-        "rsi_14": opp.get("rsi_14"),
-        "estocastico_k": opp.get("stoch_k"),
-        "estocastico_d": opp.get("stoch_d"),
-        "rvol_20_volumen_relativo": opp.get("rvol_20"),
+        "rvol_20_diario": opp.get("rvol_20"),
         "retorno_1d_pct": opp.get("ret_1d_pct"),
-        "retorno_5d_pct": opp.get("ret_5d_pct"),
-        "close_location_value_0_1": opp.get("close_location_value"),
-        "cuerpo_vela_en_atrs": opp.get("candle_body_atr"),
         "alerta_cuchillo_cayendo": opp.get("falling_knife"),
-        "atr_14": opp.get("atr_14"),
-        "atr_pct_del_precio": round(float(opp.get("atr_14") or 0) / entry * 100, 2) if entry else None,
-        "stop_loss": sizing.get("stop_loss_price"),
-        "take_profit": sizing.get("take_profit_price"),
+        "resistencia_reciente_swing_high": opp.get("intraday_swing_high") or opp.get("recent_swing_high"),
+        "stop_loss": sizing.get("stop_loss_price") or opp.get("stop_loss_price"),
+        "take_profit": sizing.get("take_profit_price") or opp.get("take_profit_price"),
         "acciones": sizing.get("shares_to_buy"),
         "capital_asignado_usd": sizing.get("total_capital_allocated"),
         "riesgo_cartera_pct": metrics.get("portfolio_risk_pct"),
         "beneficio_neto_esperado_usd": metrics.get("expected_net_profit"),
         "cartera_usd": round(portfolio_value, 2),
     }
-    return "Setup de corto plazo a valorar (JSON):\n" + json.dumps(payload, ensure_ascii=False)
+    return "Setup Los 3 Trucos (intradía 5m/15m + 1D) a auditar por Comité #3 (JSON):\n" + json.dumps(payload, ensure_ascii=False)
 
 
 def _extract_text(data: dict[str, Any]) -> str:

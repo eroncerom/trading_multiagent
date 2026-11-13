@@ -18,13 +18,12 @@ export function CenterStage() {
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"RADAR" | "CHART">("RADAR");
 
-  // Transición automática al gráfico si aparece una oportunidad nueva
+  // Preseleccionar el primer ticker relevante sin forzar la vista del gráfico
   useEffect(() => {
-    if (opportunities.length > 0 && viewMode === "RADAR") {
+    if (opportunities.length > 0 && !selectedTicker) {
       setSelectedTicker(opportunities[0].ticker);
-      setViewMode("CHART");
     }
-  }, [opportunities.length]);
+  }, [opportunities.length, selectedTicker]);
 
   const activeOppForSelected = opportunities.find((o) => o.ticker === selectedTicker);
   const candlesQ = useCandles(selectedTicker);
@@ -84,6 +83,7 @@ export function CenterStage() {
           candleData={candlesQ.data}
           isLoadingCandles={candlesQ.isLoading}
           opportunity={activeOppForSelected}
+          totalAssets={marketWatch.length}
           onBackToRadar={() => setViewMode("RADAR")}
           onApprove={(t) => approveMutation.mutate(t)}
           onDismiss={(t) => dismissMutation.mutate(t)}

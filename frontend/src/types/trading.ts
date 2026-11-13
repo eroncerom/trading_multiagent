@@ -91,6 +91,17 @@ export interface LiveSummary {
   };
 }
 
+export interface NetZeroShieldInfo {
+  active: boolean;
+  banked_realized_pnl_usd: number;
+  banked_shares: number;
+  banked_exit_price: number | null;
+  zero_loss_sl_price: number;
+  realistic_ceiling_tp_price: number | null;
+  worst_case_net_total_usd: number;
+  target_net_total_usd: number;
+}
+
 export interface PositionItem {
   symbol: string;
   qty: number;
@@ -102,6 +113,12 @@ export interface PositionItem {
   unrealized_plpc: number;
   stop_loss_price: number | null;
   take_profit_price: number | null;
+  tp1_price?: number | null;
+  tp1_qty?: number | null;
+  tp2_price?: number | null;
+  tp2_qty?: number | null;
+  is_split_scale_out?: boolean;
+  net_zero_shield?: NetZeroShieldInfo | null;
   sl_to_tp_progress_pct: number | null;
 }
 
@@ -291,4 +308,204 @@ export interface CandleResponse {
 export interface StartEngineRequest {
   execution_mode: "MANUAL" | "FULL_AUTO";
   session_duration_minutes: number | null;
+}
+
+export interface CopilotMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  source?: string;
+  latency_ms?: number;
+  timestamp: string;
+}
+
+export interface CopilotQueryRequest {
+  query: string;
+  history?: { role: string; content: string }[];
+  quick_action?: "overview" | "market" | "watchlist" | "readiness";
+}
+
+export interface CopilotQueryResponse {
+  status: "DONE" | "FALLBACK" | "ERROR";
+  source: string;
+  reply: string;
+  latency_ms: number;
+  error?: string;
+}
+
+export interface ClusterHealthItem {
+  cluster_id: string;
+  sector_name: string;
+  benchmark_etf: string;
+  tickers_audited: number;
+  advancing_count: number;
+  advancing_pct: number;
+  bullish_regime_count: number;
+  oversold_Zone_count: number;
+  falling_knives_count: number;
+  avg_quant_score: number;
+  avg_stoch_k: number;
+  avg_ret_1d_pct: number;
+  top_ticker: string;
+  top_ticker_score: number;
+  status_badge: string;
+}
+
+export interface NearTriggerItem {
+  ticker: string;
+  cluster_id: string;
+  price: number;
+  stoch_k: number;
+  stoch_d: number;
+  kd_spread: number;
+  quant_score: number;
+  market_regime: string;
+  stage: string;
+  audit_note: string;
+}
+
+export interface Subagent11ClusterAudit {
+  subagent_id: string;
+  subagent_name: string;
+  status: string;
+  audited_at: string;
+  execution_latency_ms: number;
+  total_assets_audited: number;
+  clusters_audited: number;
+  math_integrity: {
+    valid_snapshots: number;
+    anomalies_detected: number;
+    integrity_score_pct: number;
+    anomalies: any[];
+  };
+  audited_opportunities: any[];
+  cluster_health_matrix: ClusterHealthItem[];
+  near_triggers_radar: NearTriggerItem[];
+  correlation_warnings: any[];
+}
+
+export interface ActivePositionDiagnostic {
+  symbol: string;
+  cluster_id: string;
+  sector_name: string;
+  sector_etf: string;
+  qty: number;
+  entry_price: number;
+  entry_date: string;
+  current_price: number;
+  unrealized_pl_usd: number;
+  unrealized_pl_pct: number;
+  current_r_multiple: number;
+  excursion_telemetry: {
+    peak_price_since_entry: number;
+    peak_date: string;
+    mfe_r: number;
+    mfe_total_usd: number;
+    trough_price_since_entry: number;
+    trough_date: string;
+    mae_r: number;
+    profit_giveback_pct: number;
+    worst_single_day_drop_pct: number;
+    worst_single_day_date: string | null;
+  };
+  realtime_variables: {
+    ema_20: number;
+    sma_50: number;
+    sma_200: number;
+    atr_14: number;
+    stoch_k: number;
+    stoch_d: number;
+    rsi_14: number;
+    plus_di: number;
+    minus_di: number;
+    di_spread: number;
+    clv_daily: number;
+    rvol_20: number;
+    vwap_15m: number;
+    above_vwap_15m: boolean;
+    vwap_spread_pct: number;
+    ema20_15m_slope_pct: number;
+    sector_etf_ret_1d_pct: number;
+    sector_etf_ret_5d_pct: number;
+    relative_strength_vs_sector_1d: number;
+    relative_strength_vs_sector_5d: number;
+    vix_level: number;
+    vix_roc_1d_pct: number;
+  };
+  regime_code: string;
+  urgency: "HIGH" | "MEDIUM" | "LOW";
+  action_required: boolean;
+  headline: string;
+  current_levels: {
+    stop_loss_price: number | null;
+    take_profit_price: number | null;
+    max_loss_usd: number;
+    target_profit_usd: number;
+  };
+  recommended_levels: {
+    stop_loss_price: number | null;
+    take_profit_price: number | null;
+    max_loss_usd: number;
+    target_profit_usd: number;
+    risk_reduction_usd: number;
+  };
+  proposal_explanation: {
+    why_proposed: string;
+    action_summary: string;
+    quantitative_evidence: string[];
+    decision_helper_note: string;
+  };
+}
+
+export interface DynamicAdjustmentAuditRecord {
+  adjustment_id: string;
+  timestamp: string;
+  symbol: string;
+  trigger_mode: string;
+  regime_code: string;
+  previous_levels: {
+    stop_loss_price: number | null;
+    take_profit_price: number | null;
+  };
+  new_levels: {
+    stop_loss_price: number | null;
+    take_profit_price: number | null;
+  };
+  headline: string;
+  why_proposed: string;
+  quantitative_evidence: string[];
+  alpaca_execution?: any;
+}
+
+export interface Subagent12PositionGuardian {
+  subagent_id: string;
+  subagent_name: string;
+  evaluated_at: string;
+  execution_latency_ms: number;
+  auto_adapt_enabled: boolean;
+  global_market_pulse: {
+    pulse_code: string;
+    headline: string;
+    spy_ret_1d_pct: number;
+    qqq_ret_1d_pct: number;
+    qqq_ret_5d_pct: number;
+    soxx_ret_1d_pct: number;
+    soxx_ret_5d_pct: number;
+    vix_level: number;
+    vix_roc_1d_pct: number;
+    vix_roc_5d_pct: number;
+    tnx_10y_yield: number;
+  };
+  active_positions_count: number;
+  actions_pending_count: number;
+  positions_diagnostics: ActivePositionDiagnostic[];
+  recent_adjustments_audit_log: DynamicAdjustmentAuditRecord[];
+}
+
+export interface LiveAuditIntelligenceResponse {
+  generated_at: string;
+  auto_adapt_positions: boolean;
+  subagent_11_cluster_audit: Subagent11ClusterAudit;
+  subagent_12_position_guardian: Subagent12PositionGuardian;
+  auto_executed_adjustments: DynamicAdjustmentAuditRecord[];
 }

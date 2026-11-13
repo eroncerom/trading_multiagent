@@ -12,6 +12,7 @@ interface InstantActionViewProps {
   candleData: CandleResponse | null | undefined;
   isLoadingCandles: boolean;
   opportunity: OpportunityItem | undefined;
+  totalAssets?: number;
   onBackToRadar: () => void;
   onApprove: (ticker: string) => void;
   onDismiss: (ticker: string) => void;
@@ -25,6 +26,7 @@ export function InstantActionView({
   candleData,
   isLoadingCandles,
   opportunity,
+  totalAssets,
   onBackToRadar,
   onApprove,
   onDismiss,
@@ -50,7 +52,7 @@ export function InstantActionView({
           onClick={onBackToRadar}
           className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" /> Volver al Radar (14 Activos)
+          <ArrowLeft className="h-4 w-4" /> Volver al Radar {totalAssets ? `(${totalAssets} Activos)` : ""}
         </button>
 
         <div className="flex items-center gap-2">

@@ -1,0 +1,67 @@
+{
+  "NVDA": {
+    "symbol": "NVDA",
+    "entry_price": 213.6425,
+    "entry_date": "2026-10-17",
+    "peak_price": 222.19,
+    "peak_date": "2026-10-21",
+    "mfe_r": 5.62,
+    "mfe_total_usd": 68.4,
+    "trough_price": 210.18,
+    "trough_date": "2026-10-23",
+    "mae_r": -2.28,
+    "updated_at": "2026-10-29T07:13:36.729345+00:00"
+  },
+  "MRK": {
+    "symbol": "MRK",
+    "entry_price": 146.74,
+    "entry_date": "2026-10-29",
+    "peak_price": 150.5,
+    "peak_date": "2026-10-29",
+    "mfe_r": 0.55,
+    "mfe_total_usd": 26.32,
+    "trough_price": 143.32,
+    "trough_date": "2026-10-29",
+    "mae_r": -0.5,
+    "updated_at": "2026-10-30T13:31:47.575515+00:00"
+  },
+  "PSX": {
+    "symbol": "PSX",
+    "entry_price": 283.04,
+    "entry_date": "2026-10-30",
+    "peak_price": 284.48,
+    "peak_date": "2026-10-30",
+    "mfe_r": 0.1,
+    "mfe_total_usd": 4.32,
+    "trough_price": 271.46,
+    "trough_date": "2026-11-03",
+    "mae_r": -0.78,
+    "updated_at": "2026-11-03T19:40:36.084464+00:00"
+  },
+  "MSFT": {
+    "symbol": "MSFT",
+    "entry_price": 527.71,
+    "entry_date": "2026-11-02",
+    "peak_price": 529.63,
+    "peak_date": "2026-11-02",
+    "mfe_r": 0.11,
+    "mfe_total_usd": 3.84,
+    "trough_price": 513.37,
+    "trough_date": "2026-11-02",
+    "mae_r": -0.82,
+    "updated_at": "2026-11-02T19:49:09.021561+00:00"
+  },
+  "UNH": {
+    "symbol": "UNH",
+    "entry_price": 413.33,
+    "entry_date": "2026-11-04",
+    "peak_price": 416.02,
+    "peak_date": "2026-11-04",
+    "mfe_r": 0.14,
+    "mfe_total_usd": 5.38,
+    "trough_price": 392.5,
+    "trough_date": "2026-11-04",
+    "mae_r": -1.09,
+    "updated_at": "2026-11-05T20:48:30.376912+00:00"
+  }
+}

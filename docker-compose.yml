@@ -11,7 +11,7 @@ services:
       - TZ=${TIMEZONE}
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       # URL pública necesaria para que Telegram devuelva la respuesta de los botones
-      - WEBHOOK_URL=https://giving-fog-subjects-vocal.trycloudflare.com
+      - WEBHOOK_URL=https://come-significantly-seattle-nationally.trycloudflare.com
     volumes:
       - ./n8n_data:/home/node/.n8n
     networks:
@@ -39,7 +39,27 @@ services:
     networks:
       - trading_net
 
-  # 3. Túnel seguro para Webhooks de Telegram en Local (Coste 0€)
+  # 3. Panel de Control y Radar Visual (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trading_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:8000
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - trading_net
+    depends_on:
+      - quant-engine
+
+  # 4. Túnel seguro para Webhooks de Telegram en Local (Coste 0€)
   ngrok:
     image: ngrok/ngrok:latest
     container_name: trading_ngrok

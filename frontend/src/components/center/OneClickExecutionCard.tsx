@@ -22,8 +22,20 @@ export function OneClickExecutionCard({
   isApproving,
   isDismissing,
 }: ExecutionCardProps) {
-  const sizing = opp.order_sizing;
-  const metrics = opp.financial_metrics;
+  const sizing = opp.order_sizing ?? {
+    shares_to_buy: (opp as any).shares ?? 0,
+    total_capital_allocated: (opp as any).total_capital_allocated ?? 0,
+    portfolio_allocation_pct: (opp as any).portfolio_allocation_pct ?? 0,
+    stop_loss_price: (opp as any).stop_loss_price ?? (opp as any).provisional_stop_loss ?? 0,
+    take_profit_price: (opp as any).take_profit_price ?? (opp as any).provisional_take_profit ?? 0,
+  };
+  const metrics = opp.financial_metrics ?? {
+    net_reward_risk_ratio: (opp as any).net_reward_risk_ratio ?? 2.0,
+    expected_net_profit: (opp as any).expected_net_profit ?? 0,
+    max_loss_with_commissions: (opp as any).max_loss_with_commissions ?? 0,
+    round_trip_commission: (opp as any).round_trip_commission ?? 0.70,
+    commission_to_gross_profit_pct: (opp as any).commission_to_gross_profit_pct ?? 0,
+  };
   const advice = opp.ai_advice;
 
   const verdict = advice?.verdict;
@@ -54,7 +66,7 @@ export function OneClickExecutionCard({
               </span>
             )}
             <span className="num text-xs font-semibold text-ink">
-              Entrada ${opp.entry_price.toFixed(2)}
+              Entrada ${opp.entry_price?.toFixed?.(2) ?? "0.00"}
             </span>
             {opp.plus_di != null && opp.minus_di != null && (
               <span className="num text-[11px] text-ink-soft">
@@ -68,13 +80,13 @@ export function OneClickExecutionCard({
             <div className="flex flex-col text-right">
               <span className="text-[10px] uppercase font-bold text-ink-soft">Posición</span>
               <span className="num text-xs font-bold text-ink">
-                {sizing.shares_to_buy} acc · ${sizing.total_capital_allocated.toFixed(2)} ({sizing.portfolio_allocation_pct}%)
+                {sizing?.shares_to_buy ?? 0} acc · ${(sizing?.total_capital_allocated ?? 0).toFixed(2)} ({sizing?.portfolio_allocation_pct ?? 0}%)
               </span>
             </div>
             <div className="flex flex-col text-right">
               <span className="text-[10px] uppercase font-bold text-ink-soft">Riesgo / Beneficio</span>
               <span className="num text-xs font-semibold text-buy">
-                1 : {metrics.net_reward_risk_ratio.toFixed(2)} (+${metrics.expected_net_profit.toFixed(2)})
+                1 : {(metrics?.net_reward_risk_ratio ?? 2).toFixed(2)} (+${(metrics?.expected_net_profit ?? 0).toFixed(2)})
               </span>
             </div>
           </div>
@@ -173,19 +185,19 @@ export function OneClickExecutionCard({
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-bold text-ink-soft">Stop Loss (-1.5xATR)</span>
             <span className="num font-bold text-sell">
-              ${sizing.stop_loss_price.toFixed(2)} (-${metrics.max_loss_with_commissions.toFixed(2)})
+              ${(sizing?.stop_loss_price ?? 0).toFixed(2)} (-${(metrics?.max_loss_with_commissions ?? 0).toFixed(2)})
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-bold text-ink-soft">Take Profit (+2R)</span>
             <span className="num font-bold text-buy">
-              ${sizing.take_profit_price.toFixed(2)} (+${metrics.expected_net_profit.toFixed(2)})
+              ${(sizing?.take_profit_price ?? 0).toFixed(2)} (+${(metrics?.expected_net_profit ?? 0).toFixed(2)})
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-bold text-ink-soft">Comisión Est.</span>
             <span className="num font-medium text-ink-soft">
-              ${metrics.round_trip_commission.toFixed(2)} ({metrics.commission_to_gross_profit_pct.toFixed(1)}%)
+              ${(metrics?.round_trip_commission ?? 0).toFixed(2)} ({(metrics?.commission_to_gross_profit_pct ?? 0).toFixed(1)}%)
             </span>
           </div>
         </div>

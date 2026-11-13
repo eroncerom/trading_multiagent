@@ -43,3 +43,11 @@ export function useAuditReports() {
     refetchInterval: 5000,
   });
 }
+
+export function useLiveAuditIntelligence() {
+  return useQuery({
+    queryKey: ["live-audit-intelligence"],
+    queryFn: api.getLiveAuditIntelligence,
+    refetchInterval: 8000,
+  });
+}

@@ -1,13 +1,17 @@
 "use client";
 
-import { Activity, ShieldAlert, ShieldCheck, AlertTriangle, WifiOff } from "lucide-react";
+import { Activity, ShieldAlert, ShieldCheck, AlertTriangle, WifiOff, Sparkles } from "lucide-react";
 import clsx from "clsx";
 import { EngineSessionController } from "./EngineSessionController";
 import { GlobalMarketClocks } from "./GlobalMarketClocks";
 import { LivePortfolioStrip } from "./LivePortfolioStrip";
 import { useLiveSummary, useScannerStatus } from "@/hooks/useTradingData";
 
-export function TopHeaderBar() {
+interface TopHeaderBarProps {
+  onOpenCopilot?: () => void;
+}
+
+export function TopHeaderBar({ onOpenCopilot }: TopHeaderBarProps = {}) {
   const statusQ = useScannerStatus();
   const summaryQ = useLiveSummary();
   const offline = statusQ.isError && summaryQ.isError;
@@ -23,12 +27,12 @@ export function TopHeaderBar() {
   return (
     <header className="flex h-[88px] shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-4">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-scan-bg text-scan">
-            {offline ? <WifiOff className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 shadow-md">
+            <img src="/app-icon.jpg" alt="Antigravity Logo" className="h-full w-full object-cover" />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold">Quant Center</span>
+            <span className="text-sm font-bold tracking-tight">Quant Center</span>
             <span className="flex items-center gap-1 text-[10px] font-medium text-ink-soft">
               <span
                 className={clsx(
@@ -87,6 +91,17 @@ export function TopHeaderBar() {
               <span>Amp {breadthPct.toFixed(0)}%</span>
             </div>
           </div>
+        )}
+
+        {onOpenCopilot && (
+          <button
+            onClick={onOpenCopilot}
+            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 shadow-2xs hover:bg-indigo-100 hover:border-indigo-300 transition-all cursor-pointer dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+            title="Abrir Copilot Táctico"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>Copilot IA</span>
+          </button>
         )}
       </div>
       <GlobalMarketClocks />

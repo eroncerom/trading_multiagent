@@ -1,409 +1,250 @@
 {
   "period": {
-    "start_date": "2026-09-21",
-    "end_date": "2026-10-19",
+    "start_date": "2026-10-05",
+    "end_date": "2026-11-02",
     "trading_sessions": 21
   },
   "summary": {
     "initial_capital_usd": 5000.0,
-    "final_equity_usd": 5081.6,
-    "realized_net_pnl_usd": 81.6,
+    "final_equity_usd": 5071.12,
+    "realized_net_pnl_usd": 71.12,
     "unrealized_pnl_usd": 0.0,
-    "total_net_profit_usd": 81.6,
-    "total_return_pct": 1.63,
-    "total_closed_trades": 2,
-    "winning_trades": 2,
+    "total_net_profit_usd": 71.12,
+    "total_return_pct": 1.42,
+    "total_closed_trades": 1,
+    "winning_trades": 1,
+    "strict_winning_trades": 1,
+    "breakeven_scratches": 0,
     "losing_trades": 0,
     "win_rate_pct": 100.0,
+    "strict_win_rate_pct": 100.0,
     "profit_factor": 99.0,
-    "max_drawdown_usd": 14.93,
-    "max_drawdown_pct": 0.3,
-    "avg_trade_pnl_usd": 40.8,
-    "avg_r_multiple": 1.02,
+    "max_drawdown_usd": 0.35,
+    "max_drawdown_pct": 0.01,
+    "avg_trade_pnl_usd": 71.12,
+    "avg_r_multiple": 1.98,
     "circuit_breaker_triggered": false,
-    "macro_vetoed_days": 4,
-    "total_signals_detected": 4,
-    "total_signals_vetoed": 2
+    "macro_vetoed_days": 5,
+    "total_signals_detected": 1,
+    "total_signals_vetoed": 0
   },
   "exit_reasons": {
-    "BREAKEVEN_STOP_HIT": 1,
     "TAKE_PROFIT_HIT": 1
   },
   "cluster_breakdown": {
-    "HEALTH_INDUSTRIAL_B": {
+    "UTILITIES_GRID_DIVIDEND": {
       "trades": 1,
       "wins": 1,
-      "pnl": 2.74,
-      "win_rate_pct": 100.0
-    },
-    "HEALTH_INDUSTRIAL_A": {
-      "trades": 1,
-      "wins": 1,
-      "pnl": 78.86,
-      "win_rate_pct": 100.0
+      "strict_wins": 1,
+      "breakevens": 0,
+      "pnl": 71.12,
+      "win_rate_pct": 100.0,
+      "strict_win_rate_pct": 100.0
     }
   },
   "active_open_positions": [],
   "closed_trades": [
     {
-      "ticker": "GILD",
-      "cluster_id": "HEALTH_INDUSTRIAL_B",
-      "entry_date": "2026-10-07",
-      "exit_date": "2026-10-13",
-      "bars_held": 3,
-      "entry_price": 146.85,
-      "exit_price": 147.28,
-      "shares": 8,
-      "stop_loss": 147.28,
-      "take_profit": 157.65,
-      "gross_pnl_usd": 3.44,
+      "ticker": "MDLZ",
+      "cluster_id": "UTILITIES_GRID_DIVIDEND",
+      "entry_date": "2026-10-29",
+      "exit_date": "2026-11-02",
+      "bars_held": 1,
+      "entry_price": 62.53,
+      "exit_price": 66.31,
+      "shares": 19,
+      "stop_loss": 63.76,
+      "take_profit": 66.31,
+      "gross_pnl_usd": 71.82,
       "commissions_usd": 0.7,
-      "net_pnl_usd": 2.74,
-      "net_pnl_pct": 0.23,
-      "exit_reason": "BREAKEVEN_STOP_HIT",
-      "r_multiple": 0.06
-    },
-    {
-      "ticker": "CVX",
-      "cluster_id": "HEALTH_INDUSTRIAL_A",
-      "entry_date": "2026-09-28",
-      "exit_date": "2026-10-14",
-      "bars_held": 11,
-      "entry_price": 206.37,
-      "exit_price": 219.63,
-      "shares": 6,
-      "stop_loss": 210.02,
-      "take_profit": 219.63,
-      "gross_pnl_usd": 79.56,
-      "commissions_usd": 0.7,
-      "net_pnl_usd": 78.86,
-      "net_pnl_pct": 6.37,
+      "net_pnl_usd": 71.12,
+      "net_pnl_pct": 5.98,
       "exit_reason": "TAKE_PROFIT_HIT",
       "r_multiple": 1.98
     }
   ],
   "equity_curve": [
     {
-      "date": "2026-09-21",
-      "equity": 5000.0,
-      "cash": 5000.0,
-      "open_positions": 0,
-      "spy_return_pct": 1.55,
-      "qqq_return_pct": 2.88
-    },
-    {
-      "date": "2026-09-22",
-      "equity": 5000.0,
-      "cash": 5000.0,
-      "open_positions": 0,
-      "spy_return_pct": -0.02,
-      "qqq_return_pct": 0.81
-    },
-    {
-      "date": "2026-09-23",
-      "equity": 5000.0,
-      "cash": 5000.0,
-      "open_positions": 0,
-      "spy_return_pct": -0.72,
-      "qqq_return_pct": -0.84
-    },
-    {
-      "date": "2026-09-24",
-      "equity": 5000.0,
-      "cash": 5000.0,
-      "open_positions": 0,
-      "spy_return_pct": -0.08,
-      "qqq_return_pct": -0.01
-    },
-    {
-      "date": "2026-09-25",
-      "equity": 5000.0,
-      "cash": 5000.0,
-      "open_positions": 0,
-      "spy_return_pct": 0.54,
-      "qqq_return_pct": 0.46
-    },
-    {
-      "date": "2026-09-28",
-      "equity": 4999.65,
-      "cash": 3761.43,
-      "open_positions": 1,
-      "spy_return_pct": -0.74,
-      "qqq_return_pct": -1.07
-    },
-    {
-      "date": "2026-09-29",
-      "equity": 4987.71,
-      "cash": 3761.43,
-      "open_positions": 1,
-      "spy_return_pct": -0.18,
-      "qqq_return_pct": 0.19
-    },
-    {
-      "date": "2026-09-30",
-      "equity": 4986.69,
-      "cash": 3761.43,
-      "open_positions": 1,
-      "spy_return_pct": -0.21,
-      "qqq_return_pct": 0.25
-    },
-    {
-      "date": "2026-10-01",
-      "equity": 5004.03,
-      "cash": 3761.43,
-      "open_positions": 1,
-      "spy_return_pct": 0.18,
-      "qqq_return_pct": 0.31
-    },
-    {
-      "date": "2026-10-02",
-      "equity": 5001.57,
-      "cash": 3761.43,
-      "open_positions": 1,
-      "spy_return_pct": 0.74,
-      "qqq_return_pct": 1.02
-    },
-    {
       "date": "2026-10-05",
-      "equity": 5000.25,
-      "cash": 3761.43,
-      "open_positions": 1,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": 0.67,
       "qqq_return_pct": 0.88
     },
     {
       "date": "2026-10-06",
-      "equity": 5006.91,
-      "cash": 3761.43,
-      "open_positions": 1,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": 0.55,
       "qqq_return_pct": 0.46
     },
     {
       "date": "2026-10-07",
-      "equity": 4991.98,
-      "cash": 2586.28,
-      "open_positions": 2,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": -0.24,
       "qqq_return_pct": -0.25
     },
     {
       "date": "2026-10-08",
-      "equity": 5032.38,
-      "cash": 2586.28,
-      "open_positions": 2,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": -0.42,
       "qqq_return_pct": -1.34
     },
     {
       "date": "2026-10-09",
-      "equity": 5067.52,
-      "cash": 2586.28,
-      "open_positions": 2,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": 0.6,
       "qqq_return_pct": 0.49
     },
     {
       "date": "2026-10-12",
-      "equity": 5079.72,
-      "cash": 2586.28,
-      "open_positions": 2,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": -0.06,
       "qqq_return_pct": -0.7
     },
     {
       "date": "2026-10-13",
-      "equity": 5070.55,
-      "cash": 3764.17,
-      "open_positions": 1,
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
       "spy_return_pct": -0.01,
       "qqq_return_pct": -0.33
     },
     {
       "date": "2026-10-14",
-      "equity": 5081.6,
-      "cash": 5081.6,
+      "equity": 5000.0,
+      "cash": 5000.0,
       "open_positions": 0,
       "spy_return_pct": -1.08,
       "qqq_return_pct": -1.97
     },
     {
       "date": "2026-10-15",
-      "equity": 5081.6,
-      "cash": 5081.6,
+      "equity": 5000.0,
+      "cash": 5000.0,
       "open_positions": 0,
       "spy_return_pct": 0.28,
       "qqq_return_pct": -0.13
     },
     {
       "date": "2026-10-16",
-      "equity": 5081.6,
-      "cash": 5081.6,
+      "equity": 5000.0,
+      "cash": 5000.0,
       "open_positions": 0,
       "spy_return_pct": -1.11,
       "qqq_return_pct": -2.5
     },
     {
       "date": "2026-10-19",
-      "equity": 5081.6,
-      "cash": 5081.6,
+      "equity": 5000.0,
+      "cash": 5000.0,
       "open_positions": 0,
       "spy_return_pct": 0.42,
       "qqq_return_pct": 1.21
+    },
+    {
+      "date": "2026-10-20",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": 0.34,
+      "qqq_return_pct": -0.1
+    },
+    {
+      "date": "2026-10-21",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": 0.53,
+      "qqq_return_pct": 1.05
+    },
+    {
+      "date": "2026-10-22",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": -1.18,
+      "qqq_return_pct": -2.86
+    },
+    {
+      "date": "2026-10-23",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": -0.52,
+      "qqq_return_pct": -0.01
+    },
+    {
+      "date": "2026-10-26",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": 0.71,
+      "qqq_return_pct": 1.11
+    },
+    {
+      "date": "2026-10-27",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": 0.56,
+      "qqq_return_pct": 1.27
+    },
+    {
+      "date": "2026-10-28",
+      "equity": 5000.0,
+      "cash": 5000.0,
+      "open_positions": 0,
+      "spy_return_pct": 0.34,
+      "qqq_return_pct": 0.6
+    },
+    {
+      "date": "2026-10-29",
+      "equity": 4999.65,
+      "cash": 3811.58,
+      "open_positions": 1,
+      "spy_return_pct": -0.38,
+      "qqq_return_pct": -1.42
+    },
+    {
+      "date": "2026-10-30",
+      "equity": 5045.44,
+      "cash": 3811.58,
+      "open_positions": 1,
+      "spy_return_pct": -1.77,
+      "qqq_return_pct": -3.47
+    },
+    {
+      "date": "2026-11-02",
+      "equity": 5071.12,
+      "cash": 5071.12,
+      "open_positions": 0,
+      "spy_return_pct": -0.48,
+      "qqq_return_pct": -1.36
     }
   ],
   "daily_journal": [
-    {
-      "date": "2026-09-21",
-      "macro_status": "RISK_ON",
-      "spy_ret_pct": 1.55,
-      "qqq_ret_pct": 2.88,
-      "advancing_ratio_pct": 80.0,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 0,
-      "equity": 5000.0,
-      "events": []
-    },
-    {
-      "date": "2026-09-22",
-      "macro_status": "RISK_ON",
-      "spy_ret_pct": -0.02,
-      "qqq_ret_pct": 0.81,
-      "advancing_ratio_pct": 55.8,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 0,
-      "equity": 5000.0,
-      "events": []
-    },
-    {
-      "date": "2026-09-23",
-      "macro_status": "RISK_OFF_VETO",
-      "spy_ret_pct": -0.72,
-      "qqq_ret_pct": -0.84,
-      "advancing_ratio_pct": 34.2,
-      "raw_signals_count": 1,
-      "raw_signal_tickers": [
-        "CVX"
-      ],
-      "new_entries": [],
-      "open_positions_count": 0,
-      "equity": 5000.0,
-      "events": [
-        "[MACRO VETO] Se bloquearon 1 señales (CVX) por caída de índices (SPY -0.72%, QQQ -0.84%, Amplitud 34.2%)"
-      ]
-    },
-    {
-      "date": "2026-09-24",
-      "macro_status": "RISK_ON",
-      "spy_ret_pct": -0.08,
-      "qqq_ret_pct": -0.01,
-      "advancing_ratio_pct": 45.0,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 0,
-      "equity": 5000.0,
-      "events": []
-    },
-    {
-      "date": "2026-09-25",
-      "macro_status": "RISK_ON",
-      "spy_ret_pct": 0.54,
-      "qqq_ret_pct": 0.46,
-      "advancing_ratio_pct": 57.5,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 0,
-      "equity": 5000.0,
-      "events": []
-    },
-    {
-      "date": "2026-09-28",
-      "macro_status": "CAUTION",
-      "spy_ret_pct": -0.74,
-      "qqq_ret_pct": -1.07,
-      "advancing_ratio_pct": 34.2,
-      "raw_signals_count": 1,
-      "raw_signal_tickers": [
-        "CVX"
-      ],
-      "new_entries": [
-        "CVX"
-      ],
-      "open_positions_count": 1,
-      "equity": 4999.65,
-      "events": [
-        "[CVX] Entrada aprobada: 6 accs @ $206.37 (SL: $199.74, TP: $219.63, Edge: 40.6)"
-      ]
-    },
-    {
-      "date": "2026-09-29",
-      "macro_status": "CAUTION",
-      "spy_ret_pct": -0.18,
-      "qqq_ret_pct": 0.19,
-      "advancing_ratio_pct": 34.2,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 4987.71,
-      "events": []
-    },
-    {
-      "date": "2026-09-30",
-      "macro_status": "CAUTION",
-      "spy_ret_pct": -0.21,
-      "qqq_ret_pct": 0.25,
-      "advancing_ratio_pct": 30.8,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 4986.69,
-      "events": []
-    },
-    {
-      "date": "2026-10-01",
-      "macro_status": "RISK_ON",
-      "spy_ret_pct": 0.18,
-      "qqq_ret_pct": 0.31,
-      "advancing_ratio_pct": 54.2,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 5004.03,
-      "events": []
-    },
-    {
-      "date": "2026-10-02",
-      "macro_status": "RISK_ON",
-      "spy_ret_pct": 0.74,
-      "qqq_ret_pct": 1.02,
-      "advancing_ratio_pct": 55.8,
-      "raw_signals_count": 0,
-      "raw_signal_tickers": [],
-      "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 5001.57,
-      "events": []
-    },
     {
       "date": "2026-10-05",
       "macro_status": "RISK_ON",
       "spy_ret_pct": 0.67,
       "qqq_ret_pct": 0.88,
-      "advancing_ratio_pct": 62.5,
+      "advancing_ratio_pct": 63.4,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 5000.25,
+      "open_positions_count": 0,
+      "equity": 5000.0,
       "events": []
     },
     {
@@ -411,12 +252,12 @@
       "macro_status": "RISK_ON",
       "spy_ret_pct": 0.55,
       "qqq_ret_pct": 0.46,
-      "advancing_ratio_pct": 62.5,
+      "advancing_ratio_pct": 61.0,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 5006.91,
+      "open_positions_count": 0,
+      "equity": 5000.0,
       "events": []
     },
     {
@@ -424,49 +265,38 @@
       "macro_status": "CAUTION",
       "spy_ret_pct": -0.24,
       "qqq_ret_pct": -0.25,
-      "advancing_ratio_pct": 38.3,
-      "raw_signals_count": 1,
-      "raw_signal_tickers": [
-        "GILD"
-      ],
-      "new_entries": [
-        "GILD"
-      ],
-      "open_positions_count": 2,
-      "equity": 4991.98,
-      "events": [
-        "[GILD] Entrada aprobada: 8 accs @ $146.85 (SL: $141.45, TP: $157.65, Edge: 39.1)"
-      ]
+      "advancing_ratio_pct": 30.9,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
     },
     {
       "date": "2026-10-08",
       "macro_status": "RISK_OFF_VETO",
       "spy_ret_pct": -0.42,
       "qqq_ret_pct": -1.34,
-      "advancing_ratio_pct": 48.3,
-      "raw_signals_count": 1,
-      "raw_signal_tickers": [
-        "GILD"
-      ],
+      "advancing_ratio_pct": 58.5,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
       "new_entries": [],
-      "open_positions_count": 2,
-      "equity": 5032.38,
-      "events": [
-        "[CVX] Breakeven activado: SL elevado a $206.90 (+0.08R)",
-        "[MACRO VETO] Se bloquearon 1 señales (GILD) por caída de índices (SPY -0.42%, QQQ -1.34%, Amplitud 48.3%)"
-      ]
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
     },
     {
       "date": "2026-10-09",
       "macro_status": "RISK_ON",
       "spy_ret_pct": 0.6,
       "qqq_ret_pct": 0.49,
-      "advancing_ratio_pct": 68.3,
+      "advancing_ratio_pct": 69.9,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
-      "open_positions_count": 2,
-      "equity": 5067.52,
+      "open_positions_count": 0,
+      "equity": 5000.0,
       "events": []
     },
     {
@@ -474,58 +304,51 @@
       "macro_status": "CAUTION",
       "spy_ret_pct": -0.06,
       "qqq_ret_pct": -0.7,
-      "advancing_ratio_pct": 49.2,
+      "advancing_ratio_pct": 54.5,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
-      "open_positions_count": 2,
-      "equity": 5079.72,
-      "events": [
-        "[CVX] Ratchet Trailing activado: SL elevado a $210.02 (+0.55R)",
-        "[GILD] Breakeven activado: SL elevado a $147.28 (+0.08R)"
-      ]
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
     },
     {
       "date": "2026-10-13",
       "macro_status": "CAUTION",
       "spy_ret_pct": -0.01,
       "qqq_ret_pct": -0.33,
-      "advancing_ratio_pct": 40.0,
+      "advancing_ratio_pct": 43.5,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
-      "open_positions_count": 1,
-      "equity": 5070.55,
-      "events": [
-        "[GILD] Cierre BREAKEVEN_STOP_HIT @ $147.28 | PnL: $+2.74 (+0.06R)"
-      ]
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
     },
     {
       "date": "2026-10-14",
       "macro_status": "RISK_OFF_VETO",
       "spy_ret_pct": -1.08,
       "qqq_ret_pct": -1.97,
-      "advancing_ratio_pct": 40.0,
+      "advancing_ratio_pct": 43.1,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
       "open_positions_count": 0,
-      "equity": 5081.6,
-      "events": [
-        "[CVX] Cierre TAKE_PROFIT_HIT @ $219.63 | PnL: $+78.86 (+1.98R)"
-      ]
+      "equity": 5000.0,
+      "events": []
     },
     {
       "date": "2026-10-15",
       "macro_status": "RISK_ON",
       "spy_ret_pct": 0.28,
       "qqq_ret_pct": -0.13,
-      "advancing_ratio_pct": 69.2,
+      "advancing_ratio_pct": 73.2,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
       "open_positions_count": 0,
-      "equity": 5081.6,
+      "equity": 5000.0,
       "events": []
     },
     {
@@ -533,12 +356,12 @@
       "macro_status": "RISK_OFF_VETO",
       "spy_ret_pct": -1.11,
       "qqq_ret_pct": -2.5,
-      "advancing_ratio_pct": 32.5,
+      "advancing_ratio_pct": 39.4,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
       "open_positions_count": 0,
-      "equity": 5081.6,
+      "equity": 5000.0,
       "events": []
     },
     {
@@ -546,13 +369,153 @@
       "macro_status": "RISK_ON",
       "spy_ret_pct": 0.42,
       "qqq_ret_pct": 1.21,
-      "advancing_ratio_pct": 46.7,
+      "advancing_ratio_pct": 45.5,
       "raw_signals_count": 0,
       "raw_signal_tickers": [],
       "new_entries": [],
       "open_positions_count": 0,
-      "equity": 5081.6,
+      "equity": 5000.0,
       "events": []
+    },
+    {
+      "date": "2026-10-20",
+      "macro_status": "RISK_ON",
+      "spy_ret_pct": 0.34,
+      "qqq_ret_pct": -0.1,
+      "advancing_ratio_pct": 72.4,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-21",
+      "macro_status": "RISK_ON",
+      "spy_ret_pct": 0.53,
+      "qqq_ret_pct": 1.05,
+      "advancing_ratio_pct": 60.2,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-22",
+      "macro_status": "RISK_OFF_VETO",
+      "spy_ret_pct": -1.18,
+      "qqq_ret_pct": -2.86,
+      "advancing_ratio_pct": 54.9,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-23",
+      "macro_status": "CAUTION",
+      "spy_ret_pct": -0.52,
+      "qqq_ret_pct": -0.01,
+      "advancing_ratio_pct": 32.5,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-26",
+      "macro_status": "RISK_ON",
+      "spy_ret_pct": 0.71,
+      "qqq_ret_pct": 1.11,
+      "advancing_ratio_pct": 58.5,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-27",
+      "macro_status": "RISK_ON",
+      "spy_ret_pct": 0.56,
+      "qqq_ret_pct": 1.27,
+      "advancing_ratio_pct": 54.9,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-28",
+      "macro_status": "RISK_ON",
+      "spy_ret_pct": 0.34,
+      "qqq_ret_pct": 0.6,
+      "advancing_ratio_pct": 53.3,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5000.0,
+      "events": []
+    },
+    {
+      "date": "2026-10-29",
+      "macro_status": "CAUTION",
+      "spy_ret_pct": -0.38,
+      "qqq_ret_pct": -1.42,
+      "advancing_ratio_pct": 67.5,
+      "raw_signals_count": 1,
+      "raw_signal_tickers": [
+        "MDLZ"
+      ],
+      "new_entries": [
+        "MDLZ"
+      ],
+      "open_positions_count": 1,
+      "equity": 4999.65,
+      "events": [
+        "[MDLZ] Entrada aprobada (HAMMER_ABSORPTION_MA): 19 accs @ $62.53 (SL: $60.64, TP: $66.31, Edge: 72.0)"
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "macro_status": "CAUTION",
+      "spy_ret_pct": -1.77,
+      "qqq_ret_pct": -3.47,
+      "advancing_ratio_pct": 37.8,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 1,
+      "equity": 5045.44,
+      "events": [
+        "[MDLZ] Ratchet Trailing activado: SL elevado a $63.76 (+0.65R)"
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "macro_status": "RISK_OFF_VETO",
+      "spy_ret_pct": -0.48,
+      "qqq_ret_pct": -1.36,
+      "advancing_ratio_pct": 56.3,
+      "raw_signals_count": 0,
+      "raw_signal_tickers": [],
+      "new_entries": [],
+      "open_positions_count": 0,
+      "equity": 5071.12,
+      "events": [
+        "[MDLZ] Cierre TAKE_PROFIT_HIT @ $66.31 | PnL: $+71.12 (+1.98R)"
+      ]
     }
   ]
 }

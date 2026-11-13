@@ -16,6 +16,10 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Quant Command Center",
   description: "Centro de comando del sistema de trading cuantitativo agéntico",
+  icons: {
+    icon: "/app-icon.jpg",
+    apple: "/app-icon.jpg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

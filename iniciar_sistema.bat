@@ -25,16 +25,16 @@ if %errorlevel% neq 0 (
 )
 
 echo [OK] Docker Desktop esta activo.
-echo Levantando contenedores (FastAPI + n8n)...
+echo Levantando contenedores (FastAPI + n8n + Frontend Next.js)...
 docker compose up -d
-echo [OK] Contenedores operativos en puertos 8000 (Backend) y 5678 (n8n).
+echo [OK] Contenedores operativos:
+echo   - Backend (Python FastAPI): http://localhost:8000
+echo   - Frontend (Next.js):        http://localhost:3000
+echo   - Orquestador (n8n):         http://localhost:5678
 echo.
 
-echo [2/3] Levantando Panel Web (Frontend Next.js)...
-cd frontend
-start "Frontend Web - Trading System" cmd /k "npm run dev"
-echo [OK] Servidor web iniciado. Esperando a que compile...
-timeout /t 5 /nobreak > nul
+echo [2/3] Esperando inicializacion de servicios...
+timeout /t 4 /nobreak > nul
 echo.
 
 echo [3/3] Abriendo panel de control en tu navegador...

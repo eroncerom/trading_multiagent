@@ -30,6 +30,7 @@ class ZeroLossSignalBus:
         self.ttl_seconds = ttl_seconds
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
         self._active_signals: dict[str, dict[str, Any]] = {}
+        self._counter: int = 0
         self._load_persisted_inbox()
 
     def _load_persisted_inbox(self) -> None:
@@ -79,13 +80,19 @@ class ZeroLossSignalBus:
         self.persist_inbox()
 
         # Prioridad invertida para heapq (0 = mayor prioridad)
+        # Se incluye un contador incremental único como desempate para evitar '<' not supported between instances of 'dict'
         priority = 100 - score
-        await self._queue.put((priority, ticker, raw_signal))
+        self._counter += 1
+        await self._queue.put((priority, self._counter, ticker, raw_signal))
         logger.info(f"[ZeroLossSignalBus] Señal {ticker} (Score {score}) encolada con éxito. Cola: {self._queue.qsize()}")
         return True
 
     async def get_next_signal(self) -> tuple[int, str, dict[str, Any]]:
-        return await self._queue.get()
+        item = await self._queue.get()
+        if len(item) == 4:
+            priority, _cnt, ticker, raw_signal = item
+            return (priority, ticker, raw_signal)
+        return item
 
     def task_done(self) -> None:
         self._queue.task_done()
@@ -98,9 +105,17 @@ class ZeroLossSignalBus:
             ts = sig.get("queued_timestamp", 0)
             if (now - ts) > self.ttl_seconds and sig.get("status") not in ("EXECUTED", "DISMISSED"):
                 sig["status"] = "EXPIRED"
-            if sig.get("status") != "DISMISSED":
+            if sig.get("status") not in ("DISMISSED", "EXECUTED"):
                 alive.append(sig)
         return alive
+
+    def mark_executed(self, ticker: str) -> bool:
+        """Retira definitivamente una señal ya ejecutada (o con posición abierta) del bus y del inbox."""
+        if ticker in self._active_signals:
+            self._active_signals.pop(ticker, None)
+            self.persist_inbox()
+            return True
+        return False
 
     def dismiss_signal(self, ticker: str) -> bool:
         if ticker in self._active_signals:
@@ -138,30 +153,54 @@ class TriggerExecutionAgent:
         atr_14: float,
         strategy_params: dict[str, Any],
         recent_swing_high: Optional[float] = None,
+        precalculated_tp: Optional[float] = None,
+        atr_15m: Optional[float] = None,
+        pullback_low: Optional[float] = None,
     ) -> dict[str, float]:
-        """Calcula al céntimo la estructura completa de niveles OCO y salidas dinámicas."""
-        mult_sl = float(strategy_params.get("atr_stop_loss_multiplier", 1.5))
-        rr_ratio = float(strategy_params.get("take_profit_reward_risk_ratio", 2.0))
-        be_trigger_r = float(strategy_params.get("breakeven_trigger_r", 0.85))
-        be_lock_r = float(strategy_params.get("breakeven_lock_r", 0.08))
-        trail_trigger_r = float(strategy_params.get("trailing_ratchet_trigger_r", 1.45))
-        trail_lock_r = float(strategy_params.get("trailing_ratchet_lock_r", 0.55))
+        """Calcula los niveles OCO anclados al pullback intradía (15m) con asimetría realista."""
+        atr_ref = float(atr_15m) if (atr_15m is not None and atr_15m > 0) else float(atr_14)
+        if atr_ref <= 0:
+            atr_ref = entry_price * 0.006
 
-        # Stop loss inicial a 1.5x ATR
-        risk_per_share = round(mult_sl * atr_14, 2)
+        sl_mult = float(strategy_params.get("atr_stop_loss_multiplier", 1.25))
+        sl_buffer = float(strategy_params.get("intraday_sl_buffer_atr", 0.25)) * atr_ref
+        min_atr_risk = float(strategy_params.get("intraday_sl_min_atr", 0.80)) * atr_ref
+        max_atr_risk = float(strategy_params.get("intraday_sl_max_atr", 1.50)) * atr_ref
+
+        if pullback_low is not None and 0 < float(pullback_low) < entry_price:
+            raw_risk = entry_price - (float(pullback_low) - sl_buffer)
+        else:
+            raw_risk = sl_mult * atr_ref
+
+        atr_clamped_risk = max(min_atr_risk, min(max_atr_risk, raw_risk))
+        min_pct_risk = entry_price * float(strategy_params.get("intraday_sl_min_price_pct", 0.003))
+        max_pct_risk = entry_price * float(strategy_params.get("intraday_sl_max_price_pct", 0.018))
+        risk_per_share = round(max(min_pct_risk, min(max_pct_risk, atr_clamped_risk)), 2)
         if risk_per_share <= 0:
-            risk_per_share = round(entry_price * 0.02, 2)
+            risk_per_share = round(max(0.05, entry_price * 0.005), 2)
 
         stop_loss_price = round(entry_price - risk_per_share, 2)
-        take_profit_price = round(entry_price + (risk_per_share * rr_ratio), 2)
 
-        # Ajuste inteligente por resistencia estructural (Swing High reciente):
-        # Si existe un techo intermedio y el TP estándar queda por encima, se ajusta a un 0.5% por debajo
-        # del swing high para asegurar ejecución, siempre que preserve al menos un R:R atractivo (>= 1.25R).
-        if recent_swing_high and recent_swing_high > entry_price:
-            capped_tp = round(recent_swing_high * 0.995, 2)
-            if capped_tp < take_profit_price and (capped_tp - entry_price) >= (risk_per_share * 1.25):
-                take_profit_price = capped_tp
+        rr_ratio = float(strategy_params.get("take_profit_reward_risk_ratio", 1.90))
+        max_gain_pct = float(strategy_params.get("max_single_swing_gain_pct", 0.04))
+        max_allowed_tp = round(entry_price * (1.0 + max_gain_pct), 2)
+        base_tp = round(entry_price + (risk_per_share * rr_ratio), 2)
+        take_profit_price = min(base_tp, max_allowed_tp)
+
+        if bool(strategy_params.get("cap_tp_at_swing_high_in_uptrend", True)):
+            if recent_swing_high and recent_swing_high > entry_price:
+                structural_ceiling = round(float(recent_swing_high) * 0.996, 2)
+                if structural_ceiling > entry_price:
+                    take_profit_price = min(take_profit_price, structural_ceiling)
+
+        be_trigger_r = float(strategy_params.get("breakeven_trigger_r", 0.60))
+        be_lock_r = float(strategy_params.get("breakeven_lock_r", 0.15))
+        trail_trigger_r = float(
+            strategy_params.get("trailing_stage1_trigger_r", strategy_params.get("trailing_ratchet_trigger_r", 1.00))
+        )
+        trail_lock_r = float(
+            strategy_params.get("trailing_stage1_lock_mfe_pct", strategy_params.get("trailing_ratchet_lock_r", 0.60))
+        )
 
         breakeven_trigger_price = round(entry_price + (risk_per_share * be_trigger_r), 2)
         breakeven_lock_price = round(entry_price + (risk_per_share * be_lock_r), 2)
@@ -188,43 +227,103 @@ class TriggerExecutionAgent:
         stop_loss_price: float,
         take_profit_price: float,
         strategy_params: dict[str, Any],
-        commission_per_order: float = 0.35,
-        max_comm_ratio: float = 0.10,
+        commission_per_order: Optional[float] = None,
+        max_comm_ratio: Optional[float] = None,
     ) -> dict[str, Any]:
-        """Calcula el dimensionamiento exacto de acciones respetando el 1% de riesgo de cartera."""
-        risk_pct = float(strategy_params.get("max_portfolio_risk_per_trade_pct", 0.01))
-        max_alloc_pct = float(strategy_params.get("max_position_allocation_pct", 0.25))
+        """Dimensiona acciones por riesgo de cartera (0.28%), comisiones ($1/orden) y beneficio neto mínimo."""
+        risk_pct = float(strategy_params.get("max_portfolio_risk_per_trade_pct", 0.0028))
+        eff_comm = float(
+            commission_per_order if commission_per_order is not None else strategy_params.get("commission_per_order", 1.0)
+        )
+        eff_max_comm_ratio = float(
+            max_comm_ratio if max_comm_ratio is not None else strategy_params.get("max_comm_ratio", 0.25)
+        )
+        min_net_profit_usd = float(strategy_params.get("min_net_profit_usd", 8.0))
 
+        if not strategy_params.get("use_adaptive_allocation_cap", True):
+            max_alloc_pct = float(strategy_params.get("max_position_allocation_pct", 0.30))
+            tier_label = f"FIXED_CAP ({round(max_alloc_pct * 100, 1)}%)"
+        elif portfolio_value <= 2000.0:
+            max_alloc_pct, tier_label = 0.40, "ADAPTIVE_STARTER_1K_2K (40%)"
+        elif portfolio_value <= 5000.0:
+            max_alloc_pct, tier_label = 0.30, "ADAPTIVE_GROWTH_2K_5K (30%)"
+        elif portfolio_value <= 15000.0:
+            max_alloc_pct, tier_label = 0.20, "ADAPTIVE_MEDIUM_5K_15K (20%)"
+        else:
+            max_alloc_pct, tier_label = 0.12, "ADAPTIVE_INSTITUTIONAL_15K+ (12%)"
+
+        round_trip_comm = eff_comm * 2.0
         max_risk_amount = portfolio_value * risk_pct
+        risk_budget_for_shares = max(0.0, max_risk_amount - round_trip_comm)
         max_capital_allowed = portfolio_value * max_alloc_pct
 
         risk_per_share = max(0.01, entry_price - stop_loss_price)
-        shares_by_risk = math.floor(max_risk_amount / risk_per_share)
-        shares_by_capital = math.floor(max_capital_allowed / entry_price)
+        shares_by_risk = math.floor(risk_budget_for_shares / risk_per_share)
+        shares_by_capital = math.floor(max(0.0, max_capital_allowed - round_trip_comm) / max(0.01, entry_price))
 
         final_shares = min(shares_by_risk, shares_by_capital)
 
-        # Validación del filtro de comisiones institucionales
-        expected_profit = (take_profit_price - entry_price) * final_shares
-        round_trip_comm = commission_per_order * 2.0
-        comm_ratio = (round_trip_comm / expected_profit) if expected_profit > 0 else 1.0
+        reward_per_share = take_profit_price - entry_price
+        achieved_rr = (reward_per_share / risk_per_share) if risk_per_share > 0 else 0.0
+        min_rr_threshold = float(strategy_params.get("min_reward_risk_ratio", 1.60))
 
-        viable = (final_shares > 0) and (comm_ratio <= max_comm_ratio)
+        gross_profit = reward_per_share * final_shares
+        net_profit = gross_profit - round_trip_comm
+        actual_max_loss = (final_shares * risk_per_share) + round_trip_comm
+        comm_ratio = (round_trip_comm / gross_profit) if gross_profit > 0 else 1.0
+        net_rr = (net_profit / actual_max_loss) if actual_max_loss > 0 else 0.0
+        invested_capital = round(final_shares * entry_price, 2)
+        min_required_net = max(round_trip_comm * 2.0, min_net_profit_usd)
+
+        viable = (
+            (final_shares > 0)
+            and (comm_ratio <= eff_max_comm_ratio)
+            and (achieved_rr >= min_rr_threshold)
+            and (net_profit >= min_required_net)
+        )
         reject_reason = None
         if final_shares <= 0:
-            reject_reason = f"Capital insuficiente para comprar 1 acción con riesgo del {risk_pct*100}%."
-        elif comm_ratio > max_comm_ratio:
-            reject_reason = f"Comisiones ({round_trip_comm:.2f}€) superan el {max_comm_ratio*100:.0f}% del beneficio esperado ({expected_profit:.2f}€)."
+            reject_reason = f"Capital insuficiente para comprar 1 acción con riesgo máximo del {risk_pct*100:.2f}%."
+        elif achieved_rr < min_rr_threshold:
+            reject_reason = (
+                f"Techo estructural demasiado cercano (${take_profit_price:.2f}): "
+                f"Ratio R:R bruto {achieved_rr:.2f}R (< {min_rr_threshold:.2f}R mínimo)."
+            )
+        elif net_profit < min_required_net:
+            reject_reason = (
+                f"Beneficio neto proyectado (${net_profit:.2f}) inferior al mínimo exigible "
+                f"(${min_required_net:.2f} neto tras ${round_trip_comm:.2f} de comisión)."
+            )
+        elif comm_ratio > eff_max_comm_ratio:
+            reject_reason = (
+                f"Comisiones (${round_trip_comm:.2f}) superan el {eff_max_comm_ratio*100:.0f}% "
+                f"del beneficio bruto (${gross_profit:.2f})."
+            )
 
         return {
             "viable": viable,
             "shares_to_buy": final_shares,
-            "invested_capital": round(final_shares * entry_price, 2),
-            "max_risk_eur": round(final_shares * risk_per_share, 2),
-            "expected_profit_eur": round(expected_profit, 2),
+            "invested_capital": invested_capital,
+            "total_capital_allocated": invested_capital,
+            "portfolio_allocation_pct": round((invested_capital / portfolio_value) * 100.0, 2) if portfolio_value > 0 else 0.0,
+            "max_capital_allowed_per_trade": round(max_capital_allowed, 2),
+            "allocation_tier": tier_label,
+            "entry_limit_price": round(entry_price, 2),
+            "stop_loss_price": round(stop_loss_price, 2),
+            "take_profit_price": round(take_profit_price, 2),
+            "max_risk_eur": round(actual_max_loss, 2),
+            "expected_profit_eur": round(net_profit, 2),
             "commissions_eur": round(round_trip_comm, 2),
             "commission_to_profit_ratio": round(comm_ratio, 4),
             "rejection_reason": reject_reason,
+            "financial_metrics": {
+                "max_loss_with_commissions": round(actual_max_loss, 2),
+                "portfolio_risk_pct": round((actual_max_loss / portfolio_value) * 100.0, 2) if portfolio_value > 0 else 0.0,
+                "expected_net_profit": round(net_profit, 2),
+                "net_reward_risk_ratio": round(net_rr, 2),
+                "round_trip_commission": round(round_trip_comm, 2),
+                "commission_to_gross_profit_pct": round(comm_ratio * 100.0, 2),
+            },
         }
 
     def enrich_opportunity(
@@ -233,13 +332,20 @@ class TriggerExecutionAgent:
         portfolio_value: float,
         strategy_params: dict[str, Any],
     ) -> dict[str, Any]:
-        """Enriquece una señal con todos los cálculos de niveles y tamaño listos para ejecución."""
+        """Enriquece una señal con niveles OCO intradía, métricas reales y tamaño listo para ejecución."""
         entry = float(raw_signal.get("entry_price") or raw_signal.get("price") or 0.0)
-        atr = float(raw_signal.get("atr_14") or (entry * 0.02))
-        recent_swing_high = raw_signal.get("recent_swing_high")
+        atr_15m = raw_signal.get("atr_15m")
+        atr = float(raw_signal.get("atr_14") or (entry * 0.01))
+        pullback_low = raw_signal.get("pullback_low")
+        recent_swing_high = raw_signal.get("intraday_swing_high") or raw_signal.get("recent_swing_high")
 
         brackets = self.calculate_bracket_levels(
-            entry, atr, strategy_params, recent_swing_high=recent_swing_high
+            entry,
+            atr,
+            strategy_params,
+            recent_swing_high=recent_swing_high,
+            atr_15m=float(atr_15m) if atr_15m is not None else None,
+            pullback_low=float(pullback_low) if pullback_low is not None else None,
         )
         sizing = self.calculate_position_sizing(
             portfolio_value=portfolio_value,
@@ -259,12 +365,17 @@ class TriggerExecutionAgent:
             "trailing_trigger_price": brackets["trailing_trigger_price"],
             "trailing_lock_price": brackets["trailing_lock_price"],
             "risk_per_share": brackets["risk_per_share"],
+            "reward_risk_ratio": brackets["reward_risk_ratio"],
             "order_sizing": sizing,
+            "financial_metrics": sizing["financial_metrics"],
             "shares_to_buy": sizing["shares_to_buy"],
             "sizing_viable": sizing["viable"],
+            "viable": sizing["viable"],
             "trigger_agent_ready": True,
             "trigger_agent_timestamp": datetime.now(timezone.utc).isoformat(),
         })
+        if not sizing["viable"] and sizing.get("rejection_reason"):
+            raw_signal["rejection_reason"] = sizing["rejection_reason"]
         return raw_signal
 
     def get_telemetry(self) -> dict[str, Any]:

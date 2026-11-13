@@ -16,13 +16,21 @@ import yfinance as yf
 from dotenv import load_dotenv, set_key
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.trend import ADXIndicator, EMAIndicator, SMAIndicator
 from ta.volatility import AverageTrueRange
 
 import ai_advisor
-from audit_agent import AUDIT_DIR, DEFAULT_CLUSTERS, audit_agent, get_adaptive_allocation_pct
+import copilot_agent
+from audit_agent import (
+    AUDIT_DIR,
+    CLUSTER_SECTOR_BENCHMARKS,
+    DEFAULT_CLUSTERS,
+    audit_agent,
+    get_adaptive_allocation_pct,
+)
 from trigger_agent import trigger_agent, zero_loss_signal_bus
 
 MARKET_WATCH_CACHE_FILE = AUDIT_DIR / "market_watch_latest.json"
@@ -58,10 +66,10 @@ def reload_env_config() -> dict[str, Any]:
         default_tickers = all_cluster_tickers
 
     return {
-        "max_risk_pct": float(os.getenv("MAX_PORTFOLIO_RISK_PCT", 0.01)),
-        "max_position_allocation_pct": float(os.getenv("MAX_POSITION_ALLOCATION_PCT", 0.35)),
-        "commission_per_order": float(os.getenv("BROKER_COMMISSION_PER_ORDER", 0.35)),
-        "max_comm_ratio": float(os.getenv("MAX_COMMISSION_TO_PROFIT_RATIO", 0.10)),
+        "max_risk_pct": float(os.getenv("MAX_PORTFOLIO_RISK_PCT", 0.0028)),
+        "max_position_allocation_pct": float(os.getenv("MAX_POSITION_ALLOCATION_PCT", 0.30)),
+        "commission_per_order": float(os.getenv("BROKER_COMMISSION_PER_ORDER", 1.0)),
+        "max_comm_ratio": float(os.getenv("MAX_COMMISSION_TO_PROFIT_RATIO", 0.25)),
         "default_portfolio_value": float(os.getenv("DEFAULT_PORTFOLIO_VALUE", 1000.0)),
         "default_interval_seconds": int(os.getenv("SCANNER_INTERVAL_SECONDS", 10)),
         "default_tickers": default_tickers,
@@ -126,6 +134,10 @@ class ScannerStartRequest(BaseModel):
         default=True,
         description="Si está activo, al terminar la sesión el Agente Auditor aplica automáticamente las correcciones de parámetros recomendadas.",
     )
+    auto_adapt_active_positions: Optional[bool] = Field(
+        default=None,
+        description="Si está activo, el Subagente #12 adapta automáticamente SL y TP de posiciones vivas en Alpaca ante giros de mercado. Si es null en FULL_AUTO se activa por defecto.",
+    )
     session_duration_minutes: Optional[int] = Field(
         default=None,
         ge=1,
@@ -149,6 +161,17 @@ class AlpacaCredentialsRequest(BaseModel):
     api_key: str = Field(..., min_length=5)
     secret_key: str = Field(..., min_length=5)
     paper: bool = True
+
+
+class IncubatorAddRequest(BaseModel):
+    ticker: str
+    replace_ticker: Optional[str] = None
+
+
+class IncubatorGraduateRequest(BaseModel):
+    ticker: str
+    target_cluster: str
+    replace_ticker: str
 
 
 # =====================================================================
@@ -197,6 +220,12 @@ def fetch_alpaca_account_sync() -> dict[str, Any]:
 
     try:
         acct = client.get_account()
+        unrealized_pl = 0.0
+        try:
+            raw_pos = client.get_all_positions()
+            unrealized_pl = round(sum(float(p.unrealized_pl) for p in raw_pos), 2)
+        except Exception as exc_pos:
+            logger.warning(f"Error consultando posiciones en Alpaca: {exc_pos}")
         return {
             "connected": True,
             "mode": "LIVE_PAPER" if cfg["alpaca_paper"] else "LIVE_BROKER",
@@ -209,6 +238,7 @@ def fetch_alpaca_account_sync() -> dict[str, Any]:
             "equity": float(acct.equity),
             "last_equity": float(getattr(acct, "last_equity", acct.equity)),
             "daily_pnl": round(float(acct.equity) - float(getattr(acct, "last_equity", acct.equity)), 2),
+            "unrealized_pnl": unrealized_pl,
             "cash": float(acct.cash),
             "buying_power": float(acct.buying_power),
             "daytrade_count": int(getattr(acct, "daytrade_count", 0) or 0),
@@ -240,648 +270,214 @@ def evaluate_risk_math(
     stop_loss_price: float,
     take_profit_price: float,
 ) -> dict[str, Any]:
-    cfg = reload_env_config()
-    max_risk_pct = float(
-        audit_agent.strategy_params.get("max_portfolio_risk_per_trade_pct", cfg["max_risk_pct"])
-    )
-    max_alloc_pct, tier_label = get_adaptive_allocation_pct(
-        portfolio_value, audit_agent.strategy_params
-    )
-    commission_per_order = cfg["commission_per_order"]
-    max_comm_ratio = cfg["max_comm_ratio"]
-
+    """Valida viabilidad, comisiones ($1/orden) y sizing usando el cálculo único de trigger_agent."""
     if entry_price <= stop_loss_price:
         return {"viable": False, "reason": "El Stop Loss debe ser inferior al precio de entrada."}
-
     if take_profit_price <= entry_price:
         return {"viable": False, "reason": "El Take Profit debe ser superior al precio de entrada."}
 
-    round_trip_commission = commission_per_order * 2.0
-    max_allowed_loss = portfolio_value * max_risk_pct
-    risk_budget_for_shares = max_allowed_loss - round_trip_commission
-
-    if risk_budget_for_shares <= 0:
-        return {"viable": False, "reason": "Las comisiones superan el 1% de riesgo de la cartera."}
-
-    risk_per_share = entry_price - stop_loss_price
-    shares_by_risk = math.floor(risk_budget_for_shares / risk_per_share)
-
-    # Tope de capital adaptativo según el tamaño actual de la cartera (35% en 1k-2k€, 25% en 2k-5k€, 15% en 5k-15k€, 10% en >15k€)
-    max_capital_per_trade = portfolio_value * max_alloc_pct
-    max_affordable_shares = math.floor((max_capital_per_trade - round_trip_commission) / entry_price)
-    shares = min(shares_by_risk, max_affordable_shares)
-    sizing_capped_by = (
-        f"CAPITAL_CAP_{tier_label}"
-        if max_affordable_shares < shares_by_risk
-        else f"RISK_LOSS_BUDGET ({round(max_risk_pct * 100, 1)}%)"
+    cfg = reload_env_config()
+    params = audit_agent.strategy_params
+    sizing = trigger_agent.calculate_position_sizing(
+        portfolio_value=portfolio_value,
+        entry_price=entry_price,
+        stop_loss_price=stop_loss_price,
+        take_profit_price=take_profit_price,
+        strategy_params=params,
+        commission_per_order=float(params.get("commission_per_order", cfg["commission_per_order"])),
+        max_comm_ratio=float(params.get("max_comm_ratio", cfg["max_comm_ratio"])),
     )
-
-    if shares < 1:
+    if not sizing["viable"]:
         return {
             "viable": False,
-            "reason": (
-                f"Tamaño de posición menor a 1 acción para respetar el tope de capital "
-                f"({round(max_alloc_pct*100, 1)}% = ${round(max_capital_per_trade, 2)}) o el 1% de riesgo (${round(max_allowed_loss, 2)})."
-            ),
+            "reason": sizing.get("rejection_reason") or "Operación rechazada por filtro de riesgo y comisiones.",
+            "order_sizing": sizing,
+            "financial_metrics": sizing["financial_metrics"],
         }
-
-    gross_profit = shares * (take_profit_price - entry_price)
-    net_profit = gross_profit - round_trip_commission
-    actual_max_loss = (shares * risk_per_share) + round_trip_commission
-    commission_weight = round_trip_commission / gross_profit if gross_profit > 0 else 1.0
-    net_reward_to_risk = net_profit / actual_max_loss if actual_max_loss > 0 else 0.0
-    allocated_capital = round(shares * entry_price, 2)
-
-    if net_profit <= round_trip_commission or commission_weight > max_comm_ratio:
-        return {
-            "viable": False,
-            "reason": (
-                f"Filtro de comisiones ({round(commission_weight*100, 1)}% > {round(max_comm_ratio*100, 0)}%) "
-                f"o beneficio neto insuficiente (${round(net_profit, 2)})."
-            ),
-        }
-
     return {
         "viable": True,
-        "order_sizing": {
-            "shares_to_buy": shares,
-            "total_capital_allocated": allocated_capital,
-            "portfolio_allocation_pct": round((allocated_capital / portfolio_value) * 100.0, 2),
-            "max_capital_allowed_per_trade": round(max_capital_per_trade, 2),
-            "allocation_tier": tier_label,
-            "sizing_capped_by": sizing_capped_by,
-            "entry_limit_price": round(entry_price, 2),
-            "stop_loss_price": round(stop_loss_price, 2),
-            "take_profit_price": round(take_profit_price, 2),
-        },
-        "financial_metrics": {
-            "max_loss_with_commissions": round(actual_max_loss, 2),
-            "portfolio_risk_pct": round((actual_max_loss / portfolio_value) * 100, 2),
-            "expected_net_profit": round(net_profit, 2),
-            "net_reward_risk_ratio": round(net_reward_to_risk, 2),
-            "round_trip_commission": round(round_trip_commission, 2),
-            "commission_to_gross_profit_pct": round(commission_weight * 100, 2),
-        },
+        "order_sizing": sizing,
+        "financial_metrics": sizing["financial_metrics"],
     }
 
 
 # =====================================================================
-# ESCANEO VECTORIZADO / CONCURRENTE DE MERCADO (CRITERIO EXPERTO CORTO PLAZO)
+# ESCANEO DE MERCADO CON MOTOR "LOS 3 TRUCOS" (1D CACHÉ + 15M/5M INTRADÍA)
 # =====================================================================
 
-def evaluate_short_term_expert_structure(
-    current_close: float,
-    open_price: float,
-    high_price: float,
-    low_price: float,
-    curr_ema20: float,
-    ema20_slope_5d_pct: float,
-    curr_sma50: float,
-    curr_sma200: float,
-    curr_adx: float,
-    plus_di: float,
-    minus_di: float,
-    curr_k: float,
-    curr_d: float,
-    prev_k: float,
-    prev_d: float,
-    rsi_14: float,
-    curr_atr: float,
-    rvol_20: float,
-    ret_1d_pct: float,
-    ret_3d_pct: float,
-    ret_5d_pct: float,
-    params: dict[str, Any],
-    er_10: float = 0.30,
-    ret_20d_pct: float = 1.0,
-) -> dict[str, Any]:
-    """
-    Motor de Evaluación Cuantitativa Experta para Corto Plazo (Swing Táctico 1-10 sesiones):
-    1. Flujo Direccional Real (DMI +DI vs -DI) y Techo de Agotamiento Parabólico (ADX <= 35).
-    2. Eficiencia Fractal de Kaufman (ER_10 >= 0.14) y Volatilidad Endógena (ATR% >= 1.80%).
-    3. Anatomía de Vela (Price Action) y Escudo Anti-Cuchillo Cayendo (Anti-Falling Knife).
-    4. Timing de Osciladores (Estocástico 14,4 + RSI 14) y Liquidez Institucional (RVOL 20).
-    """
-    adx_bull_min = float(params.get("adx_bullish_min", 19.0))
-    adx_exhaust_max = float(params.get("adx_exhaustion_max", 35.0))
-    adx_lat_max = float(params.get("adx_lateral_max", 20.0))
-    stoch_bull_os = float(params.get("stoch_bullish_oversold", 36.0))
-    stoch_lat_os = float(params.get("stoch_lateral_oversold", 20.0))
-    allow_lateral = bool(params.get("enable_lateral_regime_trades", True))
-    anti_knife_enabled = bool(params.get("anti_falling_knife_enabled", True))
-    max_bearish_body_atr = float(params.get("max_bearish_body_atr_for_entry", 0.80))
-    min_clv = float(params.get("min_close_location_value", 0.25))
-    min_quant_score = int(params.get("min_quant_score", 55))
-    min_atr_pct = float(params.get("min_atr_volatility_pct", 1.80))
-    min_er10 = float(params.get("min_kaufman_efficiency_ratio", 0.14))
-    min_rvol = float(params.get("min_relative_volume_rvol", 0.60))
-    min_ret20 = float(params.get("min_momentum_20d_pct", -2.0))
-    atr_pct = ((curr_atr / current_close) * 100.0) if current_close > 0 else 0.0
+from zoneinfo import ZoneInfo
 
-    candle_range = max(0.0001, high_price - low_price)
-    close_location_value = (current_close - low_price) / candle_range  # 0.0 = mínimo del día, 1.0 = máximo
-    candle_body = current_close - open_price
-    candle_body_atr = (candle_body / curr_atr) if curr_atr > 0 else 0.0
-    lower_wick = min(open_price, current_close) - low_price
-    lower_wick_ratio = lower_wick / candle_range
-    di_spread = plus_di - minus_di
+from three_tricks_engine import (
+    evaluate_daily_structure,
+    evaluate_three_tricks,
+    extract_intraday_features,
+    fetch_intraday_bars_batch,
+    get_cached_daily_batch,
+)
 
-    # Detección de "Cuchillo Cayendo" (Falling Knife) / Vela de Rotura Bajista de Corto Plazo
-    severe_bearish_candle = (candle_body_atr <= -max_bearish_body_atr) or (
-        ret_1d_pct <= -2.8 and close_location_value < min_clv
-    )
-    short_term_waterfall = (
-        ret_3d_pct <= -4.2
-        and current_close < curr_ema20
-        and minus_di > plus_di
-        and candle_body < 0
-    )
-    distribution_day = (
-        candle_body_atr < -0.55 and rvol_20 >= 1.25 and close_location_value < 0.35
-    )
-    falling_knife = bool(
-        anti_knife_enabled and (severe_bearish_candle or short_term_waterfall or distribution_day)
-    )
 
-    # Clasificación de Régimen en 5 estados reales de corto plazo
-    above_sma200 = current_close > curr_sma200
-    above_sma50 = current_close >= curr_sma50 * 0.995
-    above_ema20 = current_close >= curr_ema20 * 0.997
-    buyers_in_control = plus_di >= minus_di
-
-    if above_sma200 and (
-        falling_knife
-        or (current_close < curr_ema20 and minus_di > plus_di + 3.0)
-        or (current_close < curr_sma50 and ema20_slope_5d_pct < -0.35 and minus_di > plus_di)
-    ):
-        regime = "BEARISH_BREAKDOWN"
-    elif not above_sma200 and (minus_di > plus_di or current_close < curr_ema20):
-        regime = "BEARISH_TREND"
-    elif (
-        above_sma200
-        and above_ema20
-        and curr_ema20 >= curr_sma50 * 0.99
-        and buyers_in_control
-        and not falling_knife
-        and (curr_adx >= adx_bull_min or ema20_slope_5d_pct > 0.20)
-    ):
-        regime = "BULLISH_TREND"
-    elif (
-        above_sma200
-        and curr_sma50 >= curr_sma200 * 0.985
-        and not falling_knife
-        and minus_di <= plus_di + 5.0
-        and (above_sma50 or close_location_value >= 0.40)
-    ):
-        regime = "BULLISH_PULLBACK"
-    elif curr_adx < adx_lat_max and not falling_knife and abs(di_spread) < 12.0:
-        regime = "LATERAL_RANGE"
-    else:
-        regime = "NEUTRAL"
-
-    # Puntuación Cuantitativa Multi-Factor (0 - 100)
-    score = 0
-    criteria: list[dict[str, Any]] = []
-
-    # Criterio 1: Estructura Multi-Media (0-25 pts)
-    ma_pts = 0
-    if above_sma200:
-        ma_pts += 9
-    if curr_sma50 >= curr_sma200 and above_sma50:
-        ma_pts += 8
-    if above_ema20 or ema20_slope_5d_pct >= 0.0:
-        ma_pts += 8
-    score += ma_pts
-    criteria.append(
-        {
-            "label": "Estructura Multi-Media (EMA20 / SMA50 / SMA200)",
-            "passed": ma_pts >= 16,
-            "detail": (
-                f"Precio ${current_close:.2f} vs EMA20 ${curr_ema20:.2f} "
-                f"(pendiente 5d {ema20_slope_5d_pct:+.2f}%), SMA50 ${curr_sma50:.2f}, SMA200 ${curr_sma200:.2f}"
-            ),
-        }
-    )
-
-    # Criterio 2: Flujo Direccional DMI (+DI vs -DI) (0-20 pts)
-    if di_spread >= 5.0 and curr_adx >= adx_bull_min:
-        dmi_pts = 20
-    elif di_spread >= 0.0:
-        dmi_pts = 15
-    elif di_spread >= -4.0:
-        dmi_pts = 8
-    else:
-        dmi_pts = 0
-    score += dmi_pts
-    criteria.append(
-        {
-            "label": "Flujo Direccional DMI (+DI vs -DI)",
-            "passed": di_spread >= -2.0,
-            "detail": f"+DI {plus_di:.1f} vs -DI {minus_di:.1f} (Dif {di_spread:+.1f} · ADX {curr_adx:.1f})",
-        }
-    )
-
-    # Criterio 3: Price Action & Anti-Falling Knife (0-25 pts)
-    if falling_knife:
-        pa_pts = -20
-    else:
-        pa_pts = 0
-        if candle_body >= 0 or lower_wick_ratio >= 0.30:
-            pa_pts += 12
-        if close_location_value >= 0.45:
-            pa_pts += 8
-        elif close_location_value >= min_clv:
-            pa_pts += 4
-        if candle_body_atr > -0.50:
-            pa_pts += 5
-    score += pa_pts
-    criteria.append(
-        {
-            "label": "Acción del Precio y Vela (Anti-Falling Knife)",
-            "passed": not falling_knife and close_location_value >= min_clv,
-            "detail": (
-                f"Vela {ret_1d_pct:+.2f}% (Cuerpo {candle_body_atr:+.2f}xATR · Cierre en el "
-                f"{close_location_value*100:.0f}% del rango diario)"
-                + (" · ¡ALERTA CUCHILLO CAYENDO!" if falling_knife else " · Sin capitulación")
-            ),
-        }
-    )
-
-    # Criterio 4: Timing de Osciladores (Estocástico 14,4 + RSI 14) (0-20 pts)
-    stoch_cross_up = prev_k <= prev_d and curr_k > curr_d
-    stoch_rising_in_value = curr_k > curr_d and curr_k > prev_k and curr_k <= 40.0
-    osc_pts = 0
-    if stoch_cross_up and curr_k <= stoch_bull_os:
-        osc_pts += 14
-    elif stoch_cross_up or stoch_rising_in_value:
-        osc_pts += 10
-    elif curr_k <= stoch_bull_os:
-        osc_pts += 6
-
-    if 30.0 <= rsi_14 <= 60.0:
-        osc_pts += 6
-    elif 24.0 <= rsi_14 < 30.0:
-        osc_pts += 4
-    score += osc_pts
-    criteria.append(
-        {
-            "label": "Timing Corto Plazo (Stoch 14,4 + RSI 14)",
-            "passed": osc_pts >= 12,
-            "detail": f"Stoch %K {curr_k:.1f} / %D {curr_d:.1f} · RSI(14) {rsi_14:.1f}",
-        }
-    )
-
-    # Criterio 5: Volumen Relativo RVOL(20) (0-10 pts)
-    if candle_body >= 0 and rvol_20 >= 0.95:
-        vol_pts = 10
-    elif not falling_knife and rvol_20 <= 1.15:
-        vol_pts = 7
-    else:
-        vol_pts = 0
-    score += vol_pts
-    criteria.append(
-        {
-            "label": "Volumen Institucional (RVOL 20d)",
-            "passed": vol_pts >= 7,
-            "detail": f"RVOL {rvol_20:.2f}x media 20 sesiones",
-        }
-    )
-
-    quant_score = max(0, min(100, int(round(score))))
-
-    # Determinación de Sesgo de Corto Plazo (Largo vs Presión Corta)
-    if regime in ("BEARISH_BREAKDOWN", "BEARISH_TREND") or falling_knife or di_spread < -5.0:
-        short_term_bias = "SHORT_PRESSURE"
-    elif regime in ("BULLISH_TREND", "BULLISH_PULLBACK") and quant_score >= 65:
-        short_term_bias = "LONG_CONVICTION"
-    elif regime in ("BULLISH_TREND", "BULLISH_PULLBACK", "LATERAL_RANGE") and quant_score >= 50:
-        short_term_bias = "PULLBACK_WATCH"
-    else:
-        short_term_bias = "NEUTRAL_WAIT"
-
-    # Regla de Disparo Estricta Econométrica (100% Agnóstica a la Compañía)
-    signal_triggered = False
-    block_reason: Optional[str] = None
-    econometric_pass = (
-        curr_adx >= adx_bull_min
-        and curr_adx <= adx_exhaust_max
-        and atr_pct >= min_atr_pct
-        and er_10 >= min_er10
-        and rvol_20 >= min_rvol
-        and ret_20d_pct >= min_ret20
-        and buyers_in_control
-    )
-
-    if falling_knife:
-        block_reason = (
-            f"Bloqueado por Escudo Anti-Cuchillo Cayendo: caída {ret_1d_pct:+.2f}% "
-            f"(cuerpo {candle_body_atr:+.2f}xATR, CLV {close_location_value*100:.0f}%)."
-        )
-    elif regime in ("BEARISH_BREAKDOWN", "BEARISH_TREND"):
-        block_reason = (
-            f"Presión vendedora de corto plazo activa ({regime}: -DI {minus_di:.1f} > +DI {plus_di:.1f}, "
-            f"precio bajo EMA20 ${curr_ema20:.2f})."
-        )
-    elif curr_adx > adx_exhaust_max:
-        block_reason = (
-            f"Filtro Estadístico de Agotamiento Climático: ADX {curr_adx:.1f} > {adx_exhaust_max:.1f} "
-            "(riesgo elevado de reversión post-euforia)."
-        )
-    elif er_10 < min_er10:
-        block_reason = (
-            f"Filtro Fractal de Kaufman: ER(10)={er_10:.2f} < {min_er10:.2f} "
-            "(ruido browniano errático de alta frecuencia)."
-        )
-    elif atr_pct < min_atr_pct:
-        block_reason = (
-            f"Filtro de Compresión de Volatilidad: ATR%={atr_pct:.2f}% < {min_atr_pct:.2f}% "
-            "(inercia insuficiente para alcanzar +2R en ventana swing)."
-        )
-    elif regime in ("BULLISH_TREND", "BULLISH_PULLBACK"):
-        tactical_dip_trigger = (
-            (stoch_cross_up and curr_k <= stoch_bull_os)
-            or (
-                stoch_rising_in_value
-                and 30.0 <= rsi_14 <= 58.0
-                and close_location_value >= 0.45
-                and (above_sma50 or above_ema20)
-            )
-        )
-        if tactical_dip_trigger and econometric_pass and quant_score >= min_quant_score:
-            signal_triggered = True
-    elif regime == "LATERAL_RANGE" and allow_lateral:
-        if (
-            stoch_cross_up
-            and curr_k <= stoch_lat_os
-            and close_location_value >= 0.40
-            and er_10 >= min_er10
-            and atr_pct >= min_atr_pct
-            and quant_score >= min_quant_score
-        ):
-            signal_triggered = True
-
-    # Resumen diagnóstico ejecutivo de 1 frase
-    if regime == "BEARISH_BREAKDOWN":
-        expert_summary = (
-            f"Rotura bajista corto plazo (-DI {minus_di:.1f} > +DI {plus_di:.1f}, "
-            f"bajo EMA20 ${curr_ema20:.2f}, vela {ret_1d_pct:+.1f}%). Evitar compras."
-        )
-    elif regime == "BEARISH_TREND":
-        expert_summary = (
-            f"Tendencia bajista primaria y táctica (bajo SMA200 ${curr_sma200:.2f} y EMA20 ${curr_ema20:.2f}, "
-            f"-DI {minus_di:.1f} dominante)."
-        )
-    elif regime == "BULLISH_TREND":
-        expert_summary = (
-            f"Tendencia alcista sana (+DI {plus_di:.1f} > -DI {minus_di:.1f}, sobre EMA20 ${curr_ema20:.2f} "
-            f"y SMA50 ${curr_sma50:.2f}, Score {quant_score}/100)."
-        )
-    elif regime == "BULLISH_PULLBACK":
-        expert_summary = (
-            f"Pullback táctico controlado en estructura alcista (SMA50 ${curr_sma50:.2f} > SMA200 ${curr_sma200:.2f}, "
-            f"CLV {close_location_value*100:.0f}%, Score {quant_score}/100)."
-        )
-    elif regime == "LATERAL_RANGE":
-        expert_summary = (
-            f"Rango lateral de baja direccionalidad (ADX {curr_adx:.1f} < {adx_lat_max:.0f}, "
-            f"RSI {rsi_14:.1f}, Score {quant_score}/100)."
-        )
-    else:
-        expert_summary = (
-            f"Fase de transición sin ventaja táctica clara (Score {quant_score}/100 · "
-            f"+DI {plus_di:.1f} / -DI {minus_di:.1f})."
-        )
-
-    return {
-        "regime": regime,
-        "short_term_bias": short_term_bias,
-        "quant_score": quant_score,
-        "falling_knife": falling_knife,
-        "signal_triggered": signal_triggered,
-        "block_reason": block_reason,
-        "expert_summary": expert_summary,
-        "expert_criteria": criteria,
-        "close_location_value": round(close_location_value, 2),
-        "candle_body_atr": round(candle_body_atr, 2),
-        "di_spread": round(di_spread, 1),
-    }
+def _in_ny_opening_cooldown(opening_cooldown_mins: int) -> bool:
+    """Devuelve True durante los primeros N minutos desde las 09:30 ET en sesión regular."""
+    if opening_cooldown_mins <= 0:
+        return False
+    dt_ny = datetime.now(timezone.utc).astimezone(ZoneInfo("America/New_York"))
+    if dt_ny.weekday() >= 5:
+        return False
+    mins_ny = dt_ny.hour * 60 + dt_ny.minute
+    return (9 * 60 + 30) <= mins_ny < (9 * 60 + 30 + opening_cooldown_mins)
 
 
 def analyze_single_ticker_df(
     ticker: str,
     df: pd.DataFrame,
     portfolio_value: float,
+    df_15m: Optional[pd.DataFrame] = None,
+    df_5m: Optional[pd.DataFrame] = None,
+    daily_pre: Optional[dict[str, Any]] = None,
 ) -> tuple[Optional[dict[str, Any]], Optional[dict[str, Any]]]:
     """
-    Analiza el DataFrame OHLCV de un ticker con criterios expertos de corto plazo y devuelve:
-    (opportunity_dict | None, ticker_snapshot_dict | None)
+    Evalúa un activo combinando Capa 1 (1D) + Capa 2 (15m/5m) mediante "Los 3 Trucos"
+    y el Comité de Admisión #1 (Momento) y #2 (Volumen/Divergencia).
     """
-    if df is None or df.empty:
-        return None, None
-
-    if isinstance(df.columns, pd.MultiIndex):
-        df = df.copy()
-        if ticker in df.columns.get_level_values(0):
-            df = df[ticker]
-        elif ticker in df.columns.get_level_values(-1):
-            df.columns = df.columns.get_level_values(0)
-        else:
-            df.columns = df.columns.get_level_values(-1)
-
-    df = df.dropna(subset=["Close", "High", "Low"])
-    if len(df) < 55:
-        return None, None
-
-    close = df["Close"]
-    high = df["High"]
-    low = df["Low"]
-    open_s = df["Open"] if "Open" in df.columns else close
-    vol_s = df["Volume"] if "Volume" in df.columns else pd.Series(0.0, index=df.index)
-
-    stoch = StochasticOscillator(high=high, low=low, close=close, window=14, smooth_window=4)
-    k = stoch.stoch()
-    d = stoch.stoch_signal()
-
-    adx_ind = ADXIndicator(high=high, low=low, close=close, window=14)
-    adx = adx_ind.adx()
-    plus_di_s = adx_ind.adx_pos()
-    minus_di_s = adx_ind.adx_neg()
-
-    ema20 = EMAIndicator(close=close, window=20).ema_indicator()
-    sma50 = SMAIndicator(close=close, window=50).sma_indicator()
-    sma200 = SMAIndicator(close=close, window=200).sma_indicator()
-    rsi14 = RSIIndicator(close=close, window=14).rsi()
-    atr = AverageTrueRange(high=high, low=low, close=close, window=14).average_true_range()
-    vol_sma20 = vol_s.rolling(20).mean()
-
-    current_close = float(close.iloc[-1])
-    open_price = float(open_s.iloc[-1]) if not pd.isna(open_s.iloc[-1]) else current_close
-    high_price = float(high.iloc[-1])
-    low_price = float(low.iloc[-1])
-    prev_close = float(close.iloc[-2]) if len(close) >= 2 else current_close
-    close_3d = float(close.iloc[-4]) if len(close) >= 4 else prev_close
-    close_5d = float(close.iloc[-6]) if len(close) >= 6 else prev_close
-
-    curr_k = float(k.iloc[-1])
-    curr_d = float(d.iloc[-1])
-    prev_k = float(k.iloc[-2])
-    prev_d = float(d.iloc[-2])
-    curr_adx = float(adx.iloc[-1])
-    plus_di = float(plus_di_s.iloc[-1]) if not pd.isna(plus_di_s.iloc[-1]) else 20.0
-    minus_di = float(minus_di_s.iloc[-1]) if not pd.isna(minus_di_s.iloc[-1]) else 20.0
-    curr_atr = float(atr.iloc[-1])
-    curr_ema20 = float(ema20.iloc[-1]) if not pd.isna(ema20.iloc[-1]) else current_close
-    prev_ema20_5d = float(ema20.iloc[-6]) if len(ema20) >= 6 and not pd.isna(ema20.iloc[-6]) else curr_ema20
-    ema20_slope_5d_pct = ((curr_ema20 - prev_ema20_5d) / prev_ema20_5d * 100.0) if prev_ema20_5d > 0 else 0.0
-    curr_sma50 = float(sma50.iloc[-1]) if not pd.isna(sma50.iloc[-1]) else current_close
-    curr_sma = float(sma200.iloc[-1]) if not pd.isna(sma200.iloc[-1]) else curr_sma50
-    curr_rsi = float(rsi14.iloc[-1]) if not pd.isna(rsi14.iloc[-1]) else 50.0
-
-    curr_vol = float(vol_s.iloc[-1]) if not pd.isna(vol_s.iloc[-1]) else 0.0
-    avg_vol20 = float(vol_sma20.iloc[-1]) if not pd.isna(vol_sma20.iloc[-1]) and float(vol_sma20.iloc[-1]) > 0 else 0.0
-    rvol_20 = (curr_vol / avg_vol20) if avg_vol20 > 0 else 1.0
-
-    close_20d = float(close.iloc[-21]) if len(close) >= 21 else close_5d
-    if len(close) >= 11:
-        net_chg_10 = abs(float(close.iloc[-1]) - float(close.iloc[-11]))
-        sum_chg_10 = float(close.diff(1).abs().iloc[-10:].sum())
-        er_10 = (net_chg_10 / sum_chg_10) if sum_chg_10 > 0 else 0.0
-    else:
-        er_10 = 0.30
-
-    ret_1d_pct = ((current_close - prev_close) / prev_close * 100.0) if prev_close > 0 else 0.0
-    ret_3d_pct = ((current_close - close_3d) / close_3d * 100.0) if close_3d > 0 else 0.0
-    ret_5d_pct = ((current_close - close_5d) / close_5d * 100.0) if close_5d > 0 else 0.0
-    ret_20d_pct = ((current_close - close_20d) / close_20d * 100.0) if close_20d > 0 else 0.0
-
-    if any(pd.isna(v) for v in (current_close, curr_k, curr_d, prev_k, prev_d, curr_adx, curr_atr)):
-        return None, None
-
     params = audit_agent.strategy_params
-    base_atr_mult = float(params.get("atr_stop_loss_multiplier", 1.5))
-    atr_pct = ((curr_atr / current_close) * 100.0) if current_close > 0 else 2.0
+    daily = daily_pre or evaluate_daily_structure(df)
+    if daily is None:
+        return None, None
 
-    # Multiplicador ATR Endógeno Continuo (100% agnóstico a la compañía o sector)
-    if bool(params.get("endogenous_atr_scaling_enabled", True)):
-        atr_sl_mult = min(2.0, max(1.5, base_atr_mult + 0.12 * (atr_pct - 1.8)))
-    else:
-        atr_sl_mult = base_atr_mult
+    if df_15m is None and daily.get("daily_trend_ok"):
+        try:
+            b15 = fetch_intraday_bars_batch([ticker], interval="15m", period="5d")
+            b5 = fetch_intraday_bars_batch([ticker], interval="5m", period="2d")
+            df_15m = b15.get(ticker)
+            df_5m = b5.get(ticker)
+        except Exception as intr_err:
+            logger.debug(f"[{ticker}] Sin barras intradía: {intr_err}")
 
-    tp_rr = float(params.get("take_profit_reward_risk_ratio", 2.0))
+    intraday = extract_intraday_features(df_15m, df_5m) if df_15m is not None else None
+    eval_res = evaluate_three_tricks(daily, intraday, params)
 
-    expert = evaluate_short_term_expert_structure(
-        current_close=current_close,
-        open_price=open_price,
-        high_price=high_price,
-        low_price=low_price,
-        curr_ema20=curr_ema20,
-        ema20_slope_5d_pct=ema20_slope_5d_pct,
-        curr_sma50=curr_sma50,
-        curr_sma200=curr_sma,
-        curr_adx=curr_adx,
-        plus_di=plus_di,
-        minus_di=minus_di,
-        curr_k=curr_k,
-        curr_d=curr_d,
-        prev_k=prev_k,
-        prev_d=prev_d,
-        rsi_14=curr_rsi,
-        curr_atr=curr_atr,
-        rvol_20=rvol_20,
-        ret_1d_pct=ret_1d_pct,
-        ret_3d_pct=ret_3d_pct,
-        ret_5d_pct=ret_5d_pct,
-        params=params,
-        er_10=er_10,
-        ret_20d_pct=ret_20d_pct,
+    signal_triggered = bool(eval_res["signal_triggered"])
+    block_reason = eval_res["block_reason"]
+
+    opening_cooldown_mins = int(params.get("intraday_opening_cooldown_minutes", 15))
+    if signal_triggered and _in_ny_opening_cooldown(opening_cooldown_mins):
+        signal_triggered = False
+        block_reason = (
+            f"Protección de apertura NY (primeros {opening_cooldown_mins} min tras 09:30 ET): "
+            "esperando estabilización del VWAP."
+        )
+
+    entry_px = float((intraday or {}).get("price") or daily["price"])
+    atr_15m = (intraday or {}).get("atr_15m")
+    pullback_low = (intraday or {}).get("pullback_low")
+    swing_high_ref = (intraday or {}).get("intraday_swing_high") or daily.get("daily_swing_high_20")
+
+    brackets = trigger_agent.calculate_bracket_levels(
+        entry_price=entry_px,
+        atr_14=daily["atr_14"],
+        strategy_params=params,
+        recent_swing_high=swing_high_ref,
+        atr_15m=float(atr_15m) if atr_15m is not None else None,
+        pullback_low=float(pullback_low) if pullback_low is not None else None,
     )
-
-    regime = expert["regime"]
-    signal_triggered = expert["signal_triggered"]
-
-    recent_swing_high = float(high.iloc[-21:-1].max()) if len(high) > 21 else float(high.iloc[:-1].max())
-    stop_loss = round(current_close - (atr_sl_mult * curr_atr), 2)
-    risk_distance = current_close - stop_loss
-    take_profit = round(current_close + (tp_rr * risk_distance), 2)
-
-    # Ajuste de Take Profit por Swing High / Resistencia Estructural:
-    # Si existe una resistencia intermedia previa y el TP teórico queda por encima, ajustamos el TP a un 0.5%
-    # por debajo del swing high para asegurar fill, siempre que conserve al menos un R:R atractivo (>= 1.25R).
-    if recent_swing_high > current_close:
-        capped_tp = round(recent_swing_high * 0.995, 2)
-        if capped_tp < take_profit and (capped_tp - current_close) >= (risk_distance * 1.25):
-            take_profit = capped_tp
+    stop_loss = brackets["stop_loss_price"]
+    take_profit = brackets["take_profit_price"]
 
     snapshot = {
         "ticker": ticker,
-        "price": round(current_close, 2),
-        "recent_swing_high": round(recent_swing_high, 2),
-        "ema_20": round(curr_ema20, 2),
-        "ema20_slope_pct": round(ema20_slope_5d_pct, 2),
-        "sma_50": round(curr_sma50, 2),
-        "sma_200": round(curr_sma, 2),
-        "adx": round(curr_adx, 2),
-        "plus_di": round(plus_di, 1),
-        "minus_di": round(minus_di, 1),
-        "di_spread": expert["di_spread"],
-        "rsi_14": round(curr_rsi, 1),
-        "stoch_k": round(curr_k, 2),
-        "stoch_d": round(curr_d, 2),
-        "atr_14": round(curr_atr, 2),
-        "rvol_20": round(rvol_20, 2),
-        "ret_1d_pct": round(ret_1d_pct, 2),
-        "ret_5d_pct": round(ret_5d_pct, 2),
-        "close_location_value": expert["close_location_value"],
-        "candle_body_atr": expert["candle_body_atr"],
-        "falling_knife": expert["falling_knife"],
-        "short_term_bias": expert["short_term_bias"],
-        "quant_score": expert["quant_score"],
-        "expert_summary": expert["expert_summary"],
-        "expert_criteria": expert["expert_criteria"],
-        "market_regime": regime,
+        "price": round(entry_px, 2),
+        "recent_swing_high": round(float(swing_high_ref or entry_px), 2),
+        "intraday_swing_high": (intraday or {}).get("intraday_swing_high"),
+        "ema_20": daily["ema_20"],
+        "ema20_slope_pct": daily["ema20_slope_pct"],
+        "sma_50": daily["sma_50"],
+        "sma_200": daily["sma_200"],
+        "adx": daily["adx"],
+        "plus_di": daily["plus_di"],
+        "minus_di": daily["minus_di"],
+        "di_spread": daily["di_spread"],
+        "rsi_14": daily["rsi_14"],
+        "stoch_k": daily["stoch_k"],
+        "stoch_d": daily["stoch_d"],
+        "atr_14": daily["atr_14"],
+        "rvol_20": daily["rvol_20"],
+        "ret_1d_pct": daily["ret_1d_pct"],
+        "ret_5d_pct": daily["ret_5d_pct"],
+        "close_location_value": daily["close_location_value"],
+        "candle_body_atr": daily["candle_body_atr"],
+        "falling_knife": daily["falling_knife"],
+        "vwap": (intraday or {}).get("vwap"),
+        "ema20_15m": (intraday or {}).get("ema20_15m"),
+        "atr_15m": atr_15m,
+        "rsi_15m": (intraday or {}).get("rsi_15m"),
+        "rvol_intraday": (intraday or {}).get("rvol_intraday"),
+        "pullback_low": pullback_low,
+        "dist_from_ema20_atr": (intraday or {}).get("dist_from_ema20_atr"),
+        "avg_red_pb_vol": (intraday or {}).get("avg_red_pb_vol"),
+        "avg_green_imp_vol": (intraday or {}).get("avg_green_imp_vol"),
+        "short_term_bias": eval_res["short_term_bias"],
+        "quant_score": eval_res["quant_score"],
+        "expert_summary": eval_res["expert_summary"],
+        "expert_criteria": eval_res["expert_criteria"],
+        "market_regime": eval_res["regime"],
+        "setup_archetype": eval_res["setup_archetype"] if signal_triggered else "NONE",
         "signal_triggered": signal_triggered,
         "provisional_stop_loss": stop_loss,
         "provisional_take_profit": take_profit,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
-    if expert["block_reason"]:
-        snapshot["rejection_reason"] = expert["block_reason"]
+    if block_reason:
+        snapshot["rejection_reason"] = block_reason
 
     if not signal_triggered:
         return None, snapshot
 
-    validation = evaluate_risk_math(portfolio_value, current_close, stop_loss, take_profit)
+    validation = evaluate_risk_math(portfolio_value, entry_px, stop_loss, take_profit)
     if not validation["viable"]:
+        snapshot["signal_triggered"] = False
         snapshot["rejection_reason"] = validation.get("reason")
         return None, snapshot
 
     opportunity = {
         "ticker": ticker,
-        "market_regime": regime,
-        "short_term_bias": expert["short_term_bias"],
-        "quant_score": expert["quant_score"],
-        "falling_knife": expert["falling_knife"],
-        "recent_swing_high": round(recent_swing_high, 2),
-        "expert_summary": expert["expert_summary"],
-        "expert_criteria": expert["expert_criteria"],
-        "entry_price": round(current_close, 2),
-        "ema_20": round(curr_ema20, 2),
-        "ema20_slope_pct": round(ema20_slope_5d_pct, 2),
-        "sma_50": round(curr_sma50, 2),
-        "sma_200": round(curr_sma, 2),
-        "atr_14": round(curr_atr, 2),
-        "rsi_14": round(curr_rsi, 1),
-        "rvol_20": round(rvol_20, 2),
-        "ret_1d_pct": round(ret_1d_pct, 2),
-        "ret_5d_pct": round(ret_5d_pct, 2),
-        "close_location_value": expert["close_location_value"],
-        "candle_body_atr": expert["candle_body_atr"],
-        "stoch_k": round(curr_k, 2),
-        "stoch_d": round(curr_d, 2),
-        "adx": round(curr_adx, 2),
-        "plus_di": round(plus_di, 1),
-        "minus_di": round(minus_di, 1),
-        "di_spread": expert["di_spread"],
+        "market_regime": eval_res["regime"],
+        "setup_archetype": eval_res["setup_archetype"],
+        "short_term_bias": eval_res["short_term_bias"],
+        "quant_score": eval_res["quant_score"],
+        "falling_knife": daily["falling_knife"],
+        "recent_swing_high": round(float(swing_high_ref or entry_px), 2),
+        "intraday_swing_high": (intraday or {}).get("intraday_swing_high"),
+        "expert_summary": eval_res["expert_summary"],
+        "expert_criteria": eval_res["expert_criteria"],
+        "entry_price": round(entry_px, 2),
+        "stop_loss_price": stop_loss,
+        "take_profit_price": take_profit,
+        "ema_20": daily["ema_20"],
+        "ema20_slope_pct": daily["ema20_slope_pct"],
+        "sma_50": daily["sma_50"],
+        "sma_200": daily["sma_200"],
+        "atr_14": daily["atr_14"],
+        "rsi_14": daily["rsi_14"],
+        "rvol_20": daily["rvol_20"],
+        "ret_1d_pct": daily["ret_1d_pct"],
+        "ret_5d_pct": daily["ret_5d_pct"],
+        "close_location_value": daily["close_location_value"],
+        "candle_body_atr": daily["candle_body_atr"],
+        "stoch_k": daily["stoch_k"],
+        "stoch_d": daily["stoch_d"],
+        "adx": daily["adx"],
+        "plus_di": daily["plus_di"],
+        "minus_di": daily["minus_di"],
+        "di_spread": daily["di_spread"],
+        "vwap": (intraday or {}).get("vwap"),
+        "ema20_15m": (intraday or {}).get("ema20_15m"),
+        "atr_15m": atr_15m,
+        "rsi_15m": (intraday or {}).get("rsi_15m"),
+        "rvol_intraday": (intraday or {}).get("rvol_intraday"),
+        "pullback_low": pullback_low,
+        "dist_from_ema20_atr": (intraday or {}).get("dist_from_ema20_atr"),
+        "avg_red_pb_vol": (intraday or {}).get("avg_red_pb_vol"),
+        "avg_green_imp_vol": (intraday or {}).get("avg_green_imp_vol"),
         "portfolio_value_used": round(portfolio_value, 2),
         "detected_at": datetime.now(timezone.utc).isoformat(),
         **validation,
@@ -891,14 +487,16 @@ def analyze_single_ticker_df(
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 def _scan_cluster_worker(
     cluster_id: str,
     cluster_tickers: list[str],
     portfolio_value: float,
 ) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]]]:
     """
-    Subagente especializado de clúster: descarga y analiza de forma aislada y concurrente
-    su bloque de 15 activos en < 1 segundo, estampando el 'cluster_id' en cada snapshot.
+    Subagente de clúster en 2 capas:
+    1. Capa 1D cacheada (TTL 5 min) para detectar marea alcista.
+    2. Capa intradía (15m + 5m) solo para los candidatos alcistas del clúster.
     """
     clean = [t.strip().upper() for t in cluster_tickers if t.strip()]
     if not clean:
@@ -907,50 +505,47 @@ def _scan_cluster_worker(
     opps: list[dict[str, Any]] = []
     snaps: list[dict[str, Any]] = []
 
-    try:
-        raw_data = yf.download(
-            clean,
-            period="1y",
-            interval="1d",
-            group_by="ticker",
-            threads=True,
-            progress=False,
-        )
+    daily_dfs = get_cached_daily_batch(clean, ttl_seconds=300.0)
+    daily_evals: dict[str, dict[str, Any]] = {}
+    bullish_candidates: list[str] = []
+    for ticker in clean:
+        df_d = daily_dfs.get(ticker)
+        d_eval = evaluate_daily_structure(df_d) if df_d is not None else None
+        if d_eval is not None:
+            daily_evals[ticker] = d_eval
+            if d_eval.get("daily_trend_ok"):
+                bullish_candidates.append(ticker)
 
-        for ticker in clean:
-            try:
-                if len(clean) == 1:
-                    df = raw_data
-                else:
-                    if ticker not in raw_data.columns.get_level_values(0):
-                        continue
-                    df = raw_data[ticker]
+    bars_15m: dict[str, pd.DataFrame] = {}
+    bars_5m: dict[str, pd.DataFrame] = {}
+    if bullish_candidates:
+        try:
+            bars_15m = fetch_intraday_bars_batch(bullish_candidates, interval="15m", period="5d")
+            bars_5m = fetch_intraday_bars_batch(bullish_candidates, interval="5m", period="2d")
+        except Exception as err:
+            logger.warning(f"[{cluster_id}] Error obteniendo velas 15m/5m: {err}")
 
-                opp, snap = analyze_single_ticker_df(ticker, df, portfolio_value)
-                if snap is not None:
-                    snap["cluster_id"] = cluster_id
-                    snaps.append(snap)
-                if opp is not None:
-                    opp["cluster_id"] = cluster_id
-                    opps.append(opp)
-            except Exception as inner_err:
-                logger.debug(f"[{cluster_id}] Error evaluando {ticker}: {inner_err}")
-                continue
-
-    except Exception as batch_err:
-        logger.warning(f"[{cluster_id}] Fallo batch en subagente ({batch_err}), aplicando fallback secuencial...")
-        for ticker in clean:
-            try:
-                df = yf.download(ticker, period="1y", interval="1d", progress=False)
-                opp, snap = analyze_single_ticker_df(ticker, df, portfolio_value)
-                if snap is not None:
-                    snap["cluster_id"] = cluster_id
-                    snaps.append(snap)
-                if opp is not None:
-                    opp["cluster_id"] = cluster_id
-                    opps.append(opp)
-            except Exception:
-                continue
+    for ticker in clean:
+        d_eval = daily_evals.get(ticker)
+        if d_eval is None:
+            continue
+        try:
+            opp, snap = analyze_single_ticker_df(
+                ticker,
+                daily_dfs[ticker],
+                portfolio_value,
+                df_15m=bars_15m.get(ticker),
+                df_5m=bars_5m.get(ticker),
+                daily_pre=d_eval,
+            )
+            if snap is not None:
+                snap["cluster_id"] = cluster_id
+                snaps.append(snap)
+            if opp is not None:
+                opp["cluster_id"] = cluster_id
+                opps.append(opp)
+        except Exception as inner_err:
+            logger.debug(f"[{cluster_id}] Error evaluando {ticker}: {inner_err}")
 
     return cluster_id, opps, snaps
 
@@ -1259,8 +854,8 @@ def run_market_scan_sync(
     opportunities: list[dict[str, Any]] = []
     snapshots: list[dict[str, Any]] = []
 
-    # Ejecución paralela de los Subagentes de Clúster
-    max_workers = min(len(active_clusters), 8) or 1
+    # Ejecución paralela de los Subagentes de Clúster (hasta 20 simultáneos, incluye Incubadora)
+    max_workers = min(len(active_clusters), 20) or 1
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(_scan_cluster_worker, c_id, c_list, portfolio_value): c_id
@@ -1284,10 +879,33 @@ def run_market_scan_sync(
     vetoed_tickers: list[str] = []
 
     if macro_regime["veto_active"] and not force_test_signal:
-        vetoed_tickers = [o["ticker"] for o in opportunities]
+        tech_clusters = {
+            "TECH_GROWTH_A",
+            "TECH_GROWTH_B",
+            "SEMI_AI_INFRASTRUCTURE",
+            "CYBER_CLOUD_ENTERPRISE",
+            "HIGH_BETA_EXPANSION_A",
+            "HIGH_BETA_EXPANSION_B",
+            "IPO_INCUBATOR",
+        }
+        spy_drop = float(macro_regime.get("spy", {}).get("effective_drop_pct", 0.0))
+        spy_limit = float(audit_agent.strategy_params.get("macro_index_threshold_drop_pct", -0.75))
+        adv_pct = float(macro_regime.get("market_breadth", {}).get("advancing_pct", 50.0))
+        # Si SPY resiste por encima de su umbral de liquidación y la amplitud global >= 42% (rotación fuera de Tech),
+        # permitimos que clústeres defensivos/cíclicos (Salud, Energía, Defensa, Finanzas) pasen con exigencia CAUTION (+8 pts).
+        qqq_only_rotation = (spy_drop > spy_limit) and (adv_pct >= 42.0)
+        base_min_score = int(audit_agent.strategy_params.get("min_quant_score", 55))
+        caution_min_score = base_min_score + 8
+
+        surviving_opps: list[dict[str, Any]] = []
         snap_by_ticker = {s["ticker"]: s for s in snapshots}
         for opp in opportunities:
             tk = opp["ticker"]
+            c_id = str(opp.get("cluster_id", ""))
+            if qqq_only_rotation and c_id not in tech_clusters and int(opp.get("quant_score", 0)) >= caution_min_score:
+                surviving_opps.append(opp)
+                continue
+            vetoed_tickers.append(tk)
             if tk in snap_by_ticker:
                 snap_by_ticker[tk]["signal_triggered"] = False
                 snap_by_ticker[tk]["macro_vetoed"] = True
@@ -1297,7 +915,7 @@ def run_market_scan_sync(
                 f"[MACRO GATEKEEPER] {macro_regime['status']} -> Suprimidas {len(vetoed_tickers)} "
                 f"señales de compra ({', '.join(vetoed_tickers)}) para blindar el capital."
             )
-        opportunities = []
+        opportunities = surviving_opps
     elif macro_regime["status"] == "CAUTION" and not force_test_signal and opportunities:
         base_min_score = int(audit_agent.strategy_params.get("min_quant_score", 55))
         caution_min_score = base_min_score + int(macro_regime.get("score_boost_required", 8))
@@ -1379,35 +997,37 @@ def run_market_scan_sync(
 
 
 def build_ai_thesis(opp: dict[str, Any]) -> dict[str, Any]:
-    """
-    Tesis ejecutiva de 3 líneas generada de forma determinista (0 ms) con telemetría de corto plazo.
-    """
+    """Tesis ejecutiva de 3 líneas generada de forma determinista con telemetría Los 3 Trucos."""
     entry = float(opp.get("entry_price", 0.0) or 0.0)
-    ema20 = float(opp.get("ema_20") or entry)
-    sma50 = float(opp.get("sma_50") or entry)
     sma200 = float(opp.get("sma_200") or 0.0)
     pct_vs_sma = ((entry - sma200) / sma200 * 100.0) if sma200 > 0 else 0.0
     score = opp.get("quant_score", 0)
+    vwap = opp.get("vwap")
+    ema20_15m = opp.get("ema20_15m")
+    rvol_i = opp.get("rvol_intraday")
+    rsi_i = opp.get("rsi_15m")
     plus_di = float(opp.get("plus_di") or 0.0)
     minus_di = float(opp.get("minus_di") or 0.0)
-    k = float(opp.get("stoch_k") or 0.0)
-    d = float(opp.get("stoch_d") or 0.0)
-    rsi = float(opp.get("rsi_14") or 50.0)
-    clv = float(opp.get("close_location_value") or 0.5) * 100.0
     metrics = opp.get("financial_metrics", {}) or {}
 
     line1 = opp.get("expert_summary") or (
-        f"Score Cuantitativo {score}/100 ({pct_vs_sma:+.1f}% vs SMA200, EMA20 ${ema20:.2f}, SMA50 ${sma50:.2f})."
+        f"Score 3 Trucos {score}/100 ({pct_vs_sma:+.1f}% vs SMA200)."
     )
-    line2 = (
-        f"Flujo DMI (+DI {plus_di:.1f} vs -DI {minus_di:.1f}) · Stoch %K {k:.1f} / %D {d:.1f} · "
-        f"RSI {rsi:.1f} · Cierre diario en el {clv:.0f}% del rango."
-    )
+    if vwap and ema20_15m:
+        line2 = (
+            f"Intradía 15m: VWAP ${float(vwap):.2f} · EMA20_15m ${float(ema20_15m):.2f} · "
+            f"RVOL {float(rvol_i or 1.0):.2f}x · RSI15m {float(rsi_i or 50.0):.1f}."
+        )
+    else:
+        line2 = (
+            f"DMI (+DI {plus_di:.1f} vs -DI {minus_di:.1f}) · "
+            f"RSI(14) {float(opp.get('rsi_14') or 50.0):.1f}."
+        )
     line3 = (
         f"Riesgo {metrics.get('portfolio_risk_pct', 0)}% "
-        f"(-${metrics.get('max_loss_with_commissions', 0)}) con salida OCO 1:2 "
-        f"(+${metrics.get('expected_net_profit', 0)} netos, comisiones "
-        f"{metrics.get('commission_to_gross_profit_pct', 0)}% del beneficio)."
+        f"(-${metrics.get('max_loss_with_commissions', 0)}) → "
+        f"Neto esperado +${metrics.get('expected_net_profit', 0)} "
+        f"(Comisión {metrics.get('commission_to_gross_profit_pct', 0)}%)."
     )
     return {"source": "DETERMINISTIC_QUANT", "lines": [line1, line2, line3]}
 
@@ -1605,6 +1225,7 @@ class AutonomousScannerWorker:
         # Control de cooldown de notificaciones webhook para no spamear el móvil cada 15s
         self.last_webhook_notified_at: dict[str, float] = {}
         self.webhook_cooldown_seconds: int = 300
+        self.notified_opportunity_ids: set[str] = set()
         # Historial reciente de aprobaciones/ejecuciones manuales o automáticas
         self.execution_history: list[dict[str, Any]] = []
 
@@ -1671,9 +1292,16 @@ class AutonomousScannerWorker:
                 self.alpaca_baseline_equity = last_eq
             virtual_base = audit_agent.strategy_params.get("virtual_portfolio_base")
             if virtual_base is not None and float(virtual_base) > 0:
-                # El PnL total acumulado de la sesión en Alpaca (incluye las ganancias latentes de posiciones abiertas)
-                session_pnl = float(acct_info.get("daily_pnl", live_eq - self.alpaca_baseline_equity))
-                self.portfolio_value = round(float(virtual_base) + session_pnl, 2)
+                audit_agent.trades_cache = audit_agent._load_trades_ledger()
+                # El valor de cartera neto es la base inicial + PnL realizado acumulado de operaciones cerradas + PnL latente (no realizado)
+                closed_pnl = sum(
+                    float(t.get("lifecycle", {}).get("realized_pnl_usd") or 0.0)
+                    for t in audit_agent.trades_cache
+                    if t.get("lifecycle", {}).get("realized_pnl_usd") is not None
+                )
+                unrealized_pnl = float(acct_info.get("unrealized_pnl", 0.0))
+                total_net_pnl = closed_pnl + unrealized_pnl
+                self.portfolio_value = round(float(virtual_base) + total_net_pnl, 2)
                 self.portfolio_source = "VIRTUAL_POC_1000_ON_ALPACA"
             else:
                 self.portfolio_value = round(live_eq, 2)
@@ -1709,6 +1337,12 @@ class AutonomousScannerWorker:
                 self.portfolio_source = "MANUAL_OVERRIDE"
             self.auto_sync_alpaca_equity = req.auto_sync_alpaca_equity
             self.force_test_signal = req.force_test_signal
+
+            # Auto-adaptación de posiciones activas del Subagente #12
+            if req.auto_adapt_active_positions is not None:
+                audit_agent.set_auto_adapt_positions(req.auto_adapt_active_positions)
+            elif req.execution_mode == "FULL_AUTO":
+                audit_agent.set_auto_adapt_positions(True)
 
         # Sincronizar equity inicial real antes de fijar el suelo del 4%
         if self.auto_sync_alpaca_equity and (req is None or req.portfolio_value is None):
@@ -1808,11 +1442,15 @@ class AutonomousScannerWorker:
                 if open_orders:
                     return True
                 positions = client.get_all_positions()
-                if any(str(p.symbol).upper() == ticker for p in positions):
-                    return True
+                return any(str(p.symbol).upper() == ticker for p in positions)
             except Exception:
-                pass
-        return False
+                pass  # Alpaca no disponible: se usa el libro local como respaldo
+        # Respaldo: operación abierta en el libro de auditoría local
+        return any(
+            str(t.get("ticker", "")).upper() == ticker
+            and t.get("lifecycle", {}).get("state") == "OPEN_OR_PENDING"
+            for t in audit_agent.trades_cache
+        )
 
     async def execute_single_pass(self) -> list[dict[str, Any]]:
         """Ejecuta un barrido completo sin bloquear el event loop de FastAPI."""
@@ -1862,6 +1500,16 @@ class AutonomousScannerWorker:
                 )
                 return list(self.active_opportunities.values())
 
+            # 2B. GUARDIÁN AUTOMÁTICO DE POSICIONES ABIERTAS (MANUAL y FULL_AUTO)
+            try:
+                guardian_actions = await _run_auto_position_guardian_cycle()
+                if guardian_actions:
+                    logger.info(
+                        f"[GUARDIÁN AUTOMÁTICO] Aplicadas {len(guardian_actions)} protecciones/cierres en vivo."
+                    )
+            except Exception as guard_err:
+                logger.warning(f"[GUARDIÁN AUTOMÁTICO] Error en ciclo de protección: {guard_err}")
+
             # 3. Ejecutar escaneo cuantitativo en hilo dedicado
             found_list, snapshots = await asyncio.to_thread(
                 run_market_scan_sync,
@@ -1885,6 +1533,7 @@ class AutonomousScannerWorker:
             # 4. Procesar oportunidades según modo (MANUAL vs FULL_AUTO)
             now_ts = time.time()
             new_for_webhook: list[dict[str, Any]] = []
+            auto_buy_events: list[dict[str, Any]] = []
 
             for opp in found_list:
                 ticker = opp["ticker"]
@@ -1896,9 +1545,25 @@ class AutonomousScannerWorker:
                     existing["first_seen_at"] if existing else opp["detected_at"]
                 )
 
+                # Posición u orden ya activa en este ticker: no se vuelve a proponer NI notificar nada.
+                already_exposed = await asyncio.to_thread(self._has_open_exposure_in_ticker, ticker)
+                if already_exposed:
+                    self.active_opportunities.pop(ticker, None)
+                    zero_loss_signal_bus.mark_executed(ticker)
+                    continue
+
                 # El 9º Subagente Disparador (TriggerExecutionAgent) calcula al céntimo niveles de SL, TP, Breakeven y Sizing
                 params = audit_agent.strategy_params
                 opp = trigger_agent.enrich_opportunity(opp, self.portfolio_value, params)
+                if not opp.get("sizing_viable", False):
+                    logger.info(
+                        f"[TRIGGER VETO] Señal en {ticker} descartada por filtro de asimetría/riesgo: "
+                        f"{opp.get('rejection_reason')}"
+                    )
+                    self.active_opportunities.pop(ticker, None)
+                    zero_loss_signal_bus.dismiss_signal(ticker)
+                    continue
+
                 await zero_loss_signal_bus.emit_signal(opp)
 
                 carried = (existing or {}).get("ai_advice")
@@ -1906,57 +1571,78 @@ class AutonomousScannerWorker:
                     opp["ai_advice"] = carried
 
                 if self.execution_mode == "FULL_AUTO":
-                    already_exposed = await asyncio.to_thread(self._has_open_exposure_in_ticker, ticker)
-                    if not already_exposed:
-                        # Puerta del asesor IA: espera corta; solo un REJECT (o fallo con fail_open=False) veta.
-                        if params.get("ai_gate_full_auto", True):
-                            advice = opp.get("ai_advice") if (opp.get("ai_advice") or {}).get("status") == "DONE" else None
-                            if advice is None:
-                                advice = await self.request_advice(
-                                    opp, timeout_seconds=float(params.get("ai_gate_timeout_seconds", 6.0))
-                                )
-                            opp["ai_advice"] = advice
-                            fail_open = bool(params.get("ai_gate_fail_open", True))
-                            vetoed = (advice.get("status") == "DONE" and advice.get("verdict") == "REJECT") or (
-                                advice.get("status") != "DONE" and not fail_open
+                    # Puerta del asesor IA: bloquea tanto REJECT como CAUTION (cuando ai_veto_on_caution=True)
+                    if params.get("ai_gate_full_auto", True):
+                        advice = opp.get("ai_advice") if (opp.get("ai_advice") or {}).get("status") == "DONE" else None
+                        if advice is None:
+                            advice = await self.request_advice(
+                                opp, timeout_seconds=float(params.get("ai_gate_timeout_seconds", 6.0))
                             )
-                            if vetoed:
-                                opp["status"] = "VETOED_BY_AI"
-                                self.active_opportunities[ticker] = opp
-                                logger.info(
-                                    f"[ASESOR IA] Entrada en {ticker} vetada: "
-                                    f"{advice.get('headline') or advice.get('reason')}"
-                                )
-                                continue
-                        auto_req = ExecuteOrderRequest(
-                            ticker=ticker,
-                            shares=int(opp["order_sizing"]["shares_to_buy"]),
-                            entry_limit_price=float(opp["entry_price"]),
-                            stop_loss_price=float(opp["stop_loss_price"]),
-                            take_profit_price=float(opp["take_profit_price"]),
-                            order_type="marketable_limit",
-                            time_in_force="gtc",
+                        opp["ai_advice"] = advice
+                        fail_open = bool(params.get("ai_gate_fail_open", True))
+                        veto_caution = bool(params.get("ai_veto_on_caution", True))
+                        blocked_verdicts = ("REJECT", "CAUTION") if veto_caution else ("REJECT",)
+                        vetoed = (advice.get("status") == "DONE" and advice.get("verdict") in blocked_verdicts) or (
+                            advice.get("status") != "DONE" and not fail_open
                         )
-                        exec_res = await asyncio.to_thread(submit_bracket_order_sync, auto_req)
-                        if exec_res.get("status") in ("LIVE_PAPER_BRACKET_SENT", "SIMULATED_BRACKET_SENT"):
-                            self.auto_executed_tickers_cooldown[ticker] = now_ts
-                            opp["status"] = "AUTO_EXECUTED_BRACKET_OCO"
-                            opp["execution"] = exec_res
-                            trigger_agent.total_dispatched += 1
-                            trigger_agent.last_dispatched_at = datetime.now(timezone.utc).isoformat()
-                            trigger_agent.last_dispatched_ticker = ticker
-                            self.execution_history.insert(0, exec_res)
-                            await asyncio.to_thread(
-                                audit_agent.record_trade_execution,
-                                opp,
-                                exec_res,
-                                "FULL_AUTO",
-                                "marketable_limit",
-                                self.portfolio_value,
+                        if vetoed:
+                            opp["status"] = "VETOED_BY_AI"
+                            self.active_opportunities[ticker] = opp
+                            logger.info(
+                                f"[ASESOR IA] Entrada automática en {ticker} bloqueada ({advice.get('verdict')}): "
+                                f"{advice.get('headline') or advice.get('reason')}"
                             )
-                            new_for_webhook.append(opp)
                             continue
+                    sizing = opp.get("order_sizing") or {}
+                    sl_val = float(opp.get("stop_loss_price") or sizing.get("stop_loss_price") or opp.get("provisional_stop_loss", 0.0))
+                    tp_val = float(opp.get("take_profit_price") or sizing.get("take_profit_price") or opp.get("provisional_take_profit", 0.0))
+                    shares_val = int(sizing.get("shares_to_buy") or opp.get("shares") or 1)
+                    auto_req = ExecuteOrderRequest(
+                        ticker=ticker,
+                        shares=shares_val,
+                        entry_limit_price=float(opp["entry_price"]),
+                        stop_loss_price=sl_val,
+                        take_profit_price=tp_val,
+                        order_type="marketable_limit",
+                        time_in_force="gtc",
+                    )
+                    exec_res = await asyncio.to_thread(submit_bracket_order_sync, auto_req)
+                    if exec_res.get("status") in ("LIVE_PAPER_BRACKET_SENT", "SIMULATED_BRACKET_SENT"):
+                        self.auto_executed_tickers_cooldown[ticker] = now_ts
+                        opp["status"] = "AUTO_EXECUTED_BRACKET_OCO"
+                        opp["execution"] = exec_res
+                        trigger_agent.total_dispatched += 1
+                        trigger_agent.last_dispatched_at = datetime.now(timezone.utc).isoformat()
+                        trigger_agent.last_dispatched_ticker = ticker
+                        self.execution_history.insert(0, exec_res)
+                        await asyncio.to_thread(
+                            audit_agent.record_trade_execution,
+                            opp,
+                            exec_res,
+                            "FULL_AUTO",
+                            "marketable_limit",
+                            self.portfolio_value,
+                        )
+                        # La compra ya está hecha: fuera de la bandeja y del bus (nunca más se notifica como propuesta)
+                        self.active_opportunities.pop(ticker, None)
+                        zero_loss_signal_bus.mark_executed(ticker)
+                        entry_px = float(opp["entry_price"])
+                        auto_buy_events.append(
+                            {
+                                "ticker": ticker,
+                                "shares": shares_val,
+                                "entry_price": round(entry_px, 2),
+                                "total_amount": round(shares_val * entry_px, 2),
+                                "stop_loss_price": round(sl_val, 2),
+                                "take_profit_price": round(tp_val, 2),
+                            }
+                        )
+                    else:
+                        logger.warning(f"[FULL_AUTO] No se pudo ejecutar la compra de {ticker}: {exec_res}")
+                    # En FULL_AUTO jamás se pide aprobación manual
+                    continue
 
+                # ---- MODO MANUAL ----
                 opp["status"] = "READY_FOR_MANUAL_APPROVAL"
                 if not opp.get("ai_advice"):
                     cached = self._cached_advice(ticker)
@@ -1965,18 +1651,23 @@ class AutonomousScannerWorker:
                 if (opp["ai_advice"] or {}).get("status") == "PENDING":
                     self.schedule_background_advice(ticker)
 
-            # Retener en active_opportunities las señales del bus con TTL activo para que no desaparezcan
-            for active_sig in zero_loss_signal_bus.get_active_signals():
-                sig_tk = active_sig["ticker"]
-                if sig_tk not in self.active_opportunities:
-                    self.active_opportunities[sig_tk] = active_sig
-                    self.schedule_background_advice(ticker)
-
-                last_notified = self.last_webhook_notified_at.get(ticker, 0.0)
-                if (now_ts - last_notified) >= self.webhook_cooldown_seconds:
+                # Una sola notificación de aprobación por oportunidad
+                if opp["opportunity_id"] not in self.notified_opportunity_ids:
+                    self.notified_opportunity_ids.add(opp["opportunity_id"])
                     new_for_webhook.append(opp)
-                    self.last_webhook_notified_at[ticker] = now_ts
 
+            # Retener en active_opportunities (solo MANUAL) las señales vivas del bus con TTL activo.
+            # Nunca se reenvían al webhook y se descartan si el ticker ya tiene posición abierta.
+            if self.execution_mode != "FULL_AUTO":
+                for active_sig in zero_loss_signal_bus.get_active_signals():
+                    sig_tk = active_sig["ticker"]
+                    if sig_tk in self.active_opportunities:
+                        continue
+                    if await asyncio.to_thread(self._has_open_exposure_in_ticker, sig_tk):
+                        zero_loss_signal_bus.mark_executed(sig_tk)
+                        continue
+                    self.active_opportunities[sig_tk] = active_sig
+                    self.schedule_background_advice(sig_tk)
 
             self.scan_count += 1
             self.last_scan_completed_at = datetime.now(timezone.utc).isoformat()
@@ -1985,7 +1676,9 @@ class AutonomousScannerWorker:
 
             # 5. Si hay webhook configurado (ej. n8n -> Telegram móvil), empujar sin bloquear
             if new_for_webhook:
-                asyncio.create_task(self._notify_webhook(new_for_webhook))
+                asyncio.create_task(self._notify_webhook(new_for_webhook, "MANUAL_OPPORTUNITY"))
+            for buy_ev in auto_buy_events:
+                asyncio.create_task(self._notify_webhook([buy_ev], "AUTO_BUY_EXECUTED"))
 
             return list(self.active_opportunities.values())
 
@@ -1996,7 +1689,7 @@ class AutonomousScannerWorker:
         finally:
             self.is_scanning_now = False
 
-    async def _notify_webhook(self, opportunities: list[dict[str, Any]]) -> None:
+    async def _notify_webhook(self, opportunities: list[dict[str, Any]], event: str = "MANUAL_OPPORTUNITY") -> None:
         cfg = reload_env_config()
         webhook_url = cfg["n8n_webhook_url"]
         if not webhook_url:
@@ -2006,7 +1699,7 @@ class AutonomousScannerWorker:
                 await client.post(
                     webhook_url,
                     json={
-                        "event": "NEW_TRADING_OPPORTUNITIES",
+                        "event": event,
                         "execution_mode": self.execution_mode,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "opportunities_found": len(opportunities),
@@ -2174,6 +1867,11 @@ app.add_middleware(
 # ENDPOINTS CORE (COMPATIBLES CON N8N Y DOCUMENTACIÓN SPEC.MD)
 # =====================================================================
 
+@app.get("/")
+def root_redirect():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="http://localhost:3000")
+
 @app.get("/health")
 def health_check():
     acct = fetch_alpaca_account_sync()
@@ -2235,6 +1933,7 @@ async def execute_bracket_order(order: ExecuteOrderRequest):
     result = await asyncio.to_thread(submit_bracket_order_sync, order)
     if result.get("status") in ("LIVE_PAPER_BRACKET_SENT", "SIMULATED_BRACKET_SENT"):
         scanner_worker.execution_history.insert(0, result)
+        zero_loss_signal_bus.mark_executed(order.ticker.upper())
         opp = scanner_worker.active_opportunities.pop(order.ticker.upper(), None) or {
             "ticker": order.ticker.upper(),
             "entry_price": order.entry_limit_price,
@@ -2316,6 +2015,151 @@ def list_active_opportunities():
     }
 
 
+# =====================================================================
+# ENDPOINTS DE LA INCUBADORA DE IPOs (CLÚSTER #17 — MÁXIMO 15 PLAZAS)
+# =====================================================================
+
+RECENT_HOT_IPO_SUGGESTIONS = [
+    {"ticker": "RDDT", "name": "Reddit Inc", "debut": "2024", "sector": "Redes Sociales & Contenido IA"},
+    {"ticker": "ARM", "name": "Arm Holdings plc", "debut": "2023", "sector": "Arquitectura & Semis IA"},
+    {"ticker": "ALAB", "name": "Astera Labs Inc", "debut": "2024", "sector": "Conectividad & Nube IA"},
+    {"ticker": "TEM", "name": "Tempus AI Inc", "debut": "2024", "sector": "Diagnóstico & Salud IA"},
+    {"ticker": "CART", "name": "Maplebear Inc (Instacart)", "debut": "2023", "sector": "Consumo & Entrega Online"},
+    {"ticker": "KVUE", "name": "Kenvue Inc", "debut": "2023", "sector": "Salud del Consumidor"},
+    {"ticker": "BIRK", "name": "Birkenstock Holding plc", "debut": "2023", "sector": "Consumo & Calzado Global"},
+    {"ticker": "ANRO", "name": "Alto Neuroscience", "debut": "2024", "sector": "Biotecnología & Neurociencia"},
+]
+
+
+@app.get("/scanner/incubator")
+def get_incubator_status():
+    clusters = audit_agent.strategy_params.get("clusters", {})
+    tickers = list(clusters.get("IPO_INCUBATOR", []))
+    return {
+        "cluster_id": "IPO_INCUBATOR",
+        "cluster_name": "Incubadora IPOs & Debuts",
+        "total_slots": 15,
+        "used_slots": len(tickers),
+        "available_slots": max(0, 15 - len(tickers)),
+        "tickers": tickers,
+        "recent_hot_suggestions": [s for s in RECENT_HOT_IPO_SUGGESTIONS if s["ticker"] not in tickers],
+        "available_clusters": [
+            {"id": c_id, "name": meta.get("sector_name", c_id), "count": len(clusters.get(c_id, []))}
+            for c_id, meta in CLUSTER_SECTOR_BENCHMARKS.items()
+            if c_id != "IPO_INCUBATOR"
+        ],
+    }
+
+
+@app.post("/scanner/incubator/add")
+async def add_ticker_to_incubator_endpoint(req: IncubatorAddRequest):
+    sym = req.ticker.strip().upper()
+    try:
+        data = await asyncio.to_thread(fetch_latest_price_and_atr_sync, sym)
+        if not data or data.get("price", 0) <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se pudieron obtener cotizaciones para el ticker {sym}. Verifica que cotice en NASDAQ o NYSE.",
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Error validando ticker {sym}: {exc}")
+
+    result = audit_agent.add_ticker_to_incubator(sym, req.replace_ticker)
+    if not result.get("success"):
+        if result.get("requires_replacement"):
+            return JSONResponse(status_code=409, content=result)
+        raise HTTPException(status_code=400, detail=result.get("message", "Error al añadir a incubadora."))
+
+    # Disparar barrido asíncrono para incorporar métricas en market_watch
+    asyncio.create_task(scanner_worker.execute_single_pass())
+    return result
+
+
+@app.delete("/scanner/incubator/{ticker}")
+async def remove_ticker_from_incubator_endpoint(ticker: str):
+    sym = ticker.strip().upper()
+    result = audit_agent.remove_ticker_from_incubator(sym)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Error al quitar de incubadora."))
+
+    asyncio.create_task(scanner_worker.execute_single_pass())
+    return result
+
+
+@app.post("/scanner/incubator/graduate")
+async def graduate_ticker_endpoint(req: IncubatorGraduateRequest):
+    sym = req.ticker.strip().upper()
+    target = req.target_cluster.strip()
+    replace = req.replace_ticker.strip().upper()
+    result = audit_agent.graduate_ticker_from_incubator(sym, target, replace)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Error en graduación."))
+
+    asyncio.create_task(scanner_worker.execute_single_pass())
+    return result
+
+
+@app.get("/scanner/lookup/{ticker}")
+async def lookup_ticker_in_market(ticker: str):
+    """
+    Busca cualquier ticker en los mercados estadounidenses vía Yahoo Finance
+    para verificar si existe, su nombre comercial, precio actual y si ya está monitorizado.
+    """
+    sym = ticker.strip().upper()
+    clusters = audit_agent.strategy_params.get("clusters", {})
+
+    found_cluster = None
+    for c_id, t_list in clusters.items():
+        if sym in t_list:
+            found_cluster = c_id
+            break
+
+    try:
+        def _get_info():
+            t = yf.Ticker(sym)
+            fi = t.fast_info
+            price = getattr(fi, "last_price", None) or getattr(fi, "previous_close", None) or 0.0
+            name = sym
+            sector = "Renta Variable EE.UU."
+            try:
+                info = t.info or {}
+                name = info.get("shortName") or info.get("longName") or sym
+                sector = info.get("sector") or info.get("industry") or "Renta Variable EE.UU."
+            except Exception:
+                pass
+            return {"price": float(price or 0.0), "name": str(name), "sector": str(sector)}
+
+        info_res = await asyncio.to_thread(_get_info)
+        if info_res["price"] <= 0:
+            return {
+                "valid": False,
+                "ticker": sym,
+                "message": f"Ticker {sym} no tiene precio ni cotizaciones activas en EE.UU.",
+            }
+
+        incubator_list = clusters.get("IPO_INCUBATOR", [])
+        return {
+            "valid": True,
+            "ticker": sym,
+            "name": info_res["name"],
+            "price": info_res["price"],
+            "sector": info_res["sector"],
+            "already_monitored": found_cluster is not None,
+            "cluster_id": found_cluster,
+            "incubator_full": len(incubator_list) >= 15,
+            "incubator_slots_used": len(incubator_list),
+            "incubator_tickers": incubator_list,
+        }
+    except Exception as exc:
+        return {
+            "valid": False,
+            "ticker": sym,
+            "message": f"Ticker {sym} no encontrado en mercados de EE.UU.: {exc}",
+        }
+
+
 @app.post("/scanner/approve/{ticker}")
 async def approve_opportunity_one_click(
     ticker: str,
@@ -2344,13 +2188,18 @@ async def approve_opportunity_one_click(
 
     if opts.refresh_live_price and "SIMULACIÓN" not in opp.get("market_regime", ""):
         live_snap = await asyncio.to_thread(fetch_latest_price_and_atr_sync, symbol)
-        if live_snap and live_snap["price"] > 0 and live_snap["atr"] > 0:
-            atr_mult = float(audit_agent.strategy_params.get("atr_stop_loss_multiplier", 1.5))
-            tp_rr = float(audit_agent.strategy_params.get("take_profit_reward_risk_ratio", 2.0))
+        if live_snap and live_snap["price"] > 0:
             entry_price = live_snap["price"]
-            stop_loss_price = round(entry_price - (atr_mult * live_snap["atr"]), 2)
-            risk_dist = entry_price - stop_loss_price
-            take_profit_price = round(entry_price + (tp_rr * risk_dist), 2)
+            brackets = trigger_agent.calculate_bracket_levels(
+                entry_price=entry_price,
+                atr_14=float(opp.get("atr_14") or live_snap["atr"] or (entry_price * 0.01)),
+                strategy_params=audit_agent.strategy_params,
+                recent_swing_high=opp.get("intraday_swing_high") or opp.get("recent_swing_high"),
+                atr_15m=opp.get("atr_15m"),
+                pullback_low=opp.get("pullback_low"),
+            )
+            stop_loss_price = brackets["stop_loss_price"]
+            take_profit_price = brackets["take_profit_price"]
 
             revalidation = evaluate_risk_math(
                 portfolio_value, entry_price, stop_loss_price, take_profit_price
@@ -2358,7 +2207,7 @@ async def approve_opportunity_one_click(
             if not revalidation["viable"]:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"La cotización se movió a ${entry_price} y ya no supera el filtro del 1%: {revalidation['reason']}",
+                    detail=f"La cotización se movió a ${entry_price} y ya no es viable: {revalidation['reason']}",
                 )
             shares = int(revalidation["order_sizing"]["shares_to_buy"])
             opp["entry_price"] = entry_price
@@ -2383,6 +2232,7 @@ async def approve_opportunity_one_click(
     trade_audit_record = None
     if execution_result.get("status") in ("LIVE_PAPER_BRACKET_SENT", "SIMULATED_BRACKET_SENT"):
         scanner_worker.active_opportunities.pop(symbol, None)
+        zero_loss_signal_bus.mark_executed(symbol)
         scanner_worker.execution_history.insert(0, execution_result)
         trade_audit_record = await asyncio.to_thread(
             audit_agent.record_trade_execution,
@@ -2414,6 +2264,99 @@ def dismiss_opportunity(ticker: str):
 # ENDPOINTS DEL AGENTE AUDITOR INDEPENDIENTE Y AUTO-CORRECCIÓN
 # =====================================================================
 
+def extract_position_levels_from_orders(orders: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Extrae niveles SL, TP y estado de división 40/60 a partir de legs de brackets y órdenes OCO."""
+    levels: dict[str, dict[str, Any]] = {}
+    for o in orders:
+        sym = str(o.get("symbol") or "")
+        if not sym:
+            continue
+        lv = levels.setdefault(
+            sym,
+            {
+                "stop_loss_price": None,
+                "take_profit_price": None,
+                "tp1_price": None,
+                "tp1_qty": None,
+                "tp2_price": None,
+                "tp2_qty": None,
+                "is_split_scale_out": False,
+                "_tps": [],
+            },
+        )
+        # 1. Legs de brackets OCO
+        for leg in o.get("legs", []) or []:
+            leg_status = str(leg.get("status", "")).lower()
+            if leg_status not in ("new", "held", "accepted", "pending_new", "partially_filled", "open"):
+                continue
+            if leg.get("stop_price") is not None and lv["stop_loss_price"] is None:
+                lv["stop_loss_price"] = float(leg["stop_price"])
+            if leg.get("limit_price") is not None:
+                lim = float(leg["limit_price"])
+                qty_val = float(leg.get("qty") or 0)
+                lv["_tps"].append({"price": lim, "qty": qty_val})
+        # 2. Órdenes independientes / reemplazadas de venta
+        side_val = str(o.get("side", "")).lower()
+        status_val = str(o.get("status", "")).lower()
+        if "sell" in side_val and status_val in ("new", "held", "accepted", "pending_new", "partially_filled", "open"):
+            if o.get("stop_price") is not None and lv["stop_loss_price"] is None:
+                lv["stop_loss_price"] = float(o["stop_price"])
+            if o.get("limit_price") is not None:
+                lim = float(o["limit_price"])
+                qty_val = float(o.get("qty") or 0)
+                if not any(abs(t["price"] - lim) < 0.01 and abs(t["qty"] - qty_val) < 0.01 for t in lv["_tps"]):
+                    lv["_tps"].append({"price": lim, "qty": qty_val})
+
+    for sym, lv in levels.items():
+        tps = lv.pop("_tps", [])
+        if tps:
+            sorted_tps = sorted(tps, key=lambda x: x["price"])
+            if len(sorted_tps) == 1:
+                lv["take_profit_price"] = sorted_tps[0]["price"]
+                lv["is_split_scale_out"] = False
+            else:
+                lv["tp1_price"] = sorted_tps[0]["price"]
+                lv["tp1_qty"] = sorted_tps[0]["qty"]
+                lv["tp2_price"] = sorted_tps[-1]["price"]
+                lv["tp2_qty"] = sorted_tps[-1]["qty"]
+                lv["take_profit_price"] = sorted_tps[-1]["price"]
+                lv["is_split_scale_out"] = True
+    return levels
+
+
+async def _get_enriched_active_positions_for_audit() -> list[dict[str, Any]]:
+    """Obtiene las posiciones abiertas en Alpaca enriquecidas con sus niveles SL/TP activos."""
+    try:
+        positions_snap = await get_alpaca_positions()
+        orders_snap = await get_alpaca_orders(status="all")
+        if orders_snap.get("orders"):
+            await asyncio.to_thread(
+                audit_agent.reconcile_with_alpaca_orders, orders_snap["orders"]
+            )
+
+        levels = extract_position_levels_from_orders(orders_snap.get("orders", []))
+
+        enriched = []
+        for p in positions_snap.get("positions", []):
+            lv = levels.get(p["symbol"], {})
+            sl = lv.get("stop_loss_price")
+            tp = lv.get("take_profit_price")
+            enriched.append({
+                **p,
+                "stop_loss_price": sl,
+                "take_profit_price": tp,
+                "tp1_price": lv.get("tp1_price"),
+                "tp1_qty": lv.get("tp1_qty"),
+                "tp2_price": lv.get("tp2_price"),
+                "tp2_qty": lv.get("tp2_qty"),
+                "is_split_scale_out": bool(lv.get("is_split_scale_out", False)),
+            })
+        return enriched
+    except Exception as exc:
+        logger.warning(f"Error enriqueciendo posiciones para auditoría: {exc}")
+        return []
+
+
 @app.get("/audit/status")
 def get_audit_agent_status():
     """Estado en vivo del Agente Auditor Independiente, sesión activa, drawdown hacia el 4% y parámetros."""
@@ -2424,6 +2367,249 @@ def get_audit_agent_status():
         "total_audit_reports": len(audit_agent.audit_reports),
         "latest_audit_report": audit_agent.audit_reports[0] if audit_agent.audit_reports else None,
         "active_strategy_params": audit_agent.strategy_params,
+        "auto_adapt_positions": audit_agent.auto_adapt_positions,
+        "subagent_11_cluster_auditor": audit_agent.last_cluster_audit,
+        "subagent_12_position_guardian": audit_agent.last_active_positions_audit,
+    }
+
+
+_LAST_ADJUSTMENT_NOTIFIED_AT: dict[str, float] = {}
+
+async def _notify_adjustment_webhook(diag: dict[str, Any]) -> None:
+    cfg = reload_env_config()
+    # Alertas intermedias desactivadas: durante la vida de la posición no se envía nada al móvil
+    # (solo compra efectuada / propuesta manual y venta final).
+    return
+    webhook_url = cfg.get("n8n_webhook_url")
+    if not webhook_url:
+        return
+    sym = diag["symbol"]
+    now_ts = time.time()
+    last_ts = _LAST_ADJUSTMENT_NOTIFIED_AT.get(sym, 0.0)
+    if (now_ts - last_ts) < 300.0:  # Cooldown de 5 minutos por ticker para no spamear
+        return
+    _LAST_ADJUSTMENT_NOTIFIED_AT[sym] = now_ts
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(
+                webhook_url,
+                json={
+                    "event": "DYNAMIC_POSITION_ADJUSTMENT_ALERT",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "symbol": sym,
+                    "headline": diag["headline"],
+                    "current_levels": diag["current_levels"],
+                    "recommended_levels": diag["recommended_levels"],
+                    "proposal_explanation": diag["proposal_explanation"],
+                    "realtime_variables": diag["realtime_variables"],
+                },
+            )
+    except Exception as exc:
+        logger.warning(f"No se pudo enviar alerta de ajuste de {sym} a webhook {webhook_url}: {exc}")
+
+
+async def _apply_guardian_actions(
+    positions_audit: dict[str, Any],
+    trigger_source: str = "AUTO_SUBAGENT_12",
+) -> list[dict[str, Any]]:
+    """Aplica en Alpaca Paper las acciones del Guardián Vivo (ADJUST_SL o CLOSE_IMMEDIATELY)."""
+    applied_records: list[dict[str, Any]] = []
+    for diag in positions_audit.get("positions_diagnostics", []):
+        if not diag.get("action_required"):
+            continue
+        sym = diag["symbol"]
+        action_type = diag.get("action_type") or "ADJUST_SL"
+        rec_sl = diag["recommended_levels"]["stop_loss_price"]
+        rec_tp = diag["recommended_levels"]["take_profit_price"]
+        scale_out_plan = diag["recommended_levels"].get("scale_out_plan")
+        prev_sl = diag["current_levels"]["stop_loss_price"]
+        prev_tp = diag["current_levels"]["take_profit_price"]
+        try:
+            if action_type == "CLOSE_IMMEDIATELY":
+                for tr in audit_agent.trades_cache:
+                    if str(tr.get("ticker", "")).upper() == sym and tr.get("lifecycle", {}).get("state") == "OPEN_OR_PENDING":
+                        tr.setdefault("lifecycle", {})["pending_exit_reason"] = diag["regime_code"]
+                alp_res = await close_alpaca_position_immediately(sym)
+            else:
+                alp_res = await adjust_position_levels(
+                    sym,
+                    AdjustPositionLevelsPayload(
+                        take_profit_price=rec_tp,
+                        stop_loss_price=rec_sl,
+                        scale_out_plan=scale_out_plan,
+                    ),
+                )
+            log_entry = await asyncio.to_thread(
+                audit_agent.record_dynamic_adjustment,
+                sym,
+                trigger_source,
+                diag["regime_code"],
+                prev_sl,
+                rec_sl,
+                prev_tp,
+                rec_tp,
+                diag["headline"],
+                diag["proposal_explanation"]["why_proposed"],
+                diag["proposal_explanation"]["quantitative_evidence"],
+                alp_res,
+            )
+            diag["auto_applied_now"] = True
+            diag["action_required"] = False
+            applied_records.append(log_entry)
+        except Exception as exc:
+            logger.error(f"[Guardián Auto {action_type}] Error actuando sobre {sym}: {exc}")
+    return applied_records
+
+
+async def _run_auto_position_guardian_cycle() -> list[dict[str, Any]]:
+    """Evalúa y protege automáticamente todas las posiciones abiertas en cada ciclo del motor."""
+    if not audit_agent.auto_adapt_positions:
+        return []
+    enriched_positions = await _get_enriched_active_positions_for_audit()
+    if not enriched_positions:
+        return []
+    positions_audit = await asyncio.to_thread(
+        audit_agent.evaluate_active_positions_and_regime,
+        enriched_positions,
+        scanner_worker.market_watch,
+    )
+    return await _apply_guardian_actions(positions_audit, trigger_source="AUTO_GUARDIAN_CYCLE")
+
+
+@app.get("/audit/live-intelligence")
+async def get_live_audit_intelligence():
+    """
+    Ejecuta en tiempo real los dos subagentes especializados de auditoría:
+    - Subagente #11 (ClusterQuantitativeAuditor): Audita los clústeres y detecta Near-Triggers.
+    - Subagente #12 (Guardián Vivo): Evalúa BE+, Trailing MFE, Early Abort y EOD/Swing.
+    """
+    enriched_positions = await _get_enriched_active_positions_for_audit()
+    active_opps = list(scanner_worker.active_opportunities.values())
+
+    cluster_audit = await asyncio.to_thread(
+        audit_agent.audit_clusters_and_signals,
+        scanner_worker.market_watch,
+        active_opps,
+        enriched_positions,
+        scanner_worker.portfolio_value,
+    )
+
+    positions_audit = await asyncio.to_thread(
+        audit_agent.evaluate_active_positions_and_regime,
+        enriched_positions,
+        scanner_worker.market_watch,
+    )
+
+    auto_executed_records = []
+    if audit_agent.auto_adapt_positions:
+        auto_executed_records = await _apply_guardian_actions(positions_audit, trigger_source="AUTO_SUBAGENT_12")
+    else:
+        for diag in positions_audit.get("positions_diagnostics", []):
+            if diag.get("action_required"):
+                asyncio.create_task(_notify_adjustment_webhook(diag))
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "auto_adapt_positions": audit_agent.auto_adapt_positions,
+        "subagent_11_cluster_audit": cluster_audit,
+        "subagent_12_position_guardian": positions_audit,
+        "auto_executed_adjustments": auto_executed_records,
+    }
+
+
+class ApplyDynamicAdjustmentPayload(BaseModel):
+    stop_loss_price: Optional[float] = None
+    take_profit_price: Optional[float] = None
+    trigger_mode: str = "MANUAL_1CLICK_CONFIRMED"
+
+
+@app.post("/audit/positions/{ticker}/apply-dynamic-adjustment")
+async def apply_dynamic_position_adjustment(
+    ticker: str,
+    payload: Optional[ApplyDynamicAdjustmentPayload] = None,
+):
+    """
+    Aplica en 1 Clic (o en automático) el ajuste dinámico de SL y TP propuesto por el Subagente #12
+    sobre las órdenes OCO vivas en Alpaca y guarda en disco el registro completo de auditoría con su motivo.
+    """
+    symbol = ticker.strip().upper()
+    enriched_positions = await _get_enriched_active_positions_for_audit()
+    positions_audit = await asyncio.to_thread(
+        audit_agent.evaluate_active_positions_and_regime,
+        enriched_positions,
+        scanner_worker.market_watch,
+    )
+
+    target_diag = None
+    for d in positions_audit.get("positions_diagnostics", []):
+        if d["symbol"] == symbol:
+            target_diag = d
+            break
+
+    if not target_diag:
+        raise HTTPException(status_code=404, detail=f"No se encontró posición activa en {symbol} para auditar/ajustar.")
+
+    prev_sl = target_diag["current_levels"]["stop_loss_price"]
+    prev_tp = target_diag["current_levels"]["take_profit_price"]
+    new_sl = (
+        payload.stop_loss_price
+        if (payload and payload.stop_loss_price is not None)
+        else target_diag["recommended_levels"]["stop_loss_price"]
+    )
+    new_tp = (
+        payload.take_profit_price
+        if (payload and payload.take_profit_price is not None)
+        else target_diag["recommended_levels"]["take_profit_price"]
+    )
+    scale_out_plan = target_diag["recommended_levels"].get("scale_out_plan")
+    mode_str = payload.trigger_mode if payload else "MANUAL_1CLICK_CONFIRMED"
+
+    alpaca_res = await adjust_position_levels(
+        symbol,
+        AdjustPositionLevelsPayload(
+            take_profit_price=new_tp,
+            stop_loss_price=new_sl,
+            scale_out_plan=scale_out_plan,
+        ),
+    )
+
+    audit_entry = await asyncio.to_thread(
+        audit_agent.record_dynamic_adjustment,
+        symbol,
+        mode_str,
+        target_diag["regime_code"],
+        prev_sl,
+        new_sl,
+        prev_tp,
+        new_tp,
+        target_diag["headline"],
+        target_diag["proposal_explanation"]["why_proposed"],
+        target_diag["proposal_explanation"]["quantitative_evidence"],
+        alpaca_res,
+    )
+
+    return {
+        "status": "DYNAMIC_ADJUSTMENT_APPLIED",
+        "symbol": symbol,
+        "alpaca_result": alpaca_res,
+        "audit_record": audit_entry,
+    }
+
+
+class ToggleAutoAdaptPayload(BaseModel):
+    enabled: bool
+
+
+@app.post("/audit/auto-adapt")
+async def toggle_auto_adapt_positions(payload: ToggleAutoAdaptPayload):
+    """Activa o desactiva la adaptación automática en tiempo real del Subagente #11 sobre órdenes activas."""
+    res = audit_agent.set_auto_adapt_positions(payload.enabled)
+    if payload.enabled:
+        await get_live_audit_intelligence()
+    return {
+        "status": "UPDATED",
+        "auto_adapt_positions": res["auto_adapt_positions"],
+        "recent_adjustments_audit_log": audit_agent.dynamic_adjustments_log[:20],
     }
 
 
@@ -2461,15 +2647,8 @@ async def run_critical_audit_now(
         description="Si es True, aplica inmediatamente las correcciones de parámetros recomendadas por la auditoría.",
     )
 ):
-    """Ejecuta bajo demanda una auditoría crítica sobre las operaciones registradas."""
-    try:
-        orders_snap = await get_alpaca_orders(status="all")
-        if orders_snap.get("orders"):
-            await asyncio.to_thread(
-                audit_agent.reconcile_with_alpaca_orders, orders_snap["orders"]
-            )
-    except Exception:
-        pass
+    """Ejecuta bajo demanda una auditoría crítica completa (Subagentes #10 y #11 + Ledger)."""
+    await get_live_audit_intelligence()
 
     report = await asyncio.to_thread(
         audit_agent.generate_critical_audit_report,
@@ -2671,6 +2850,16 @@ async def get_alpaca_orders(status: Literal["open", "closed", "all"] = Query(def
                             "stop_price": (
                                 float(leg.stop_price) if leg.stop_price is not None else None
                             ),
+                            "filled_avg_price": (
+                                float(leg.filled_avg_price)
+                                if hasattr(leg, "filled_avg_price") and leg.filled_avg_price is not None
+                                else None
+                            ),
+                            "filled_qty": (
+                                float(leg.filled_qty)
+                                if hasattr(leg, "filled_qty") and leg.filled_qty is not None
+                                else 0.0
+                            ),
                         }
                         for leg in legs
                     ],
@@ -2772,11 +2961,12 @@ async def replace_alpaca_order(order_id: str, payload: ReplaceOrderPayload):
 class AdjustPositionLevelsPayload(BaseModel):
     take_profit_price: Optional[float] = None
     stop_loss_price: Optional[float] = None
+    scale_out_plan: Optional[dict[str, Any]] = None
 
 
 @app.post("/alpaca/positions/{ticker}/adjust-levels")
 async def adjust_position_levels(ticker: str, payload: AdjustPositionLevelsPayload):
-    """Ajusta las órdenes OCO activas (Take Profit y/o Stop Loss) de una posición viva en Alpaca."""
+    """Ajusta las órdenes OCO activas (Take Profit y/o Stop Loss) o divide en 40% Defensivo / 60% Techo Realista."""
     symbol = ticker.strip().upper()
 
     def _adjust():
@@ -2784,47 +2974,142 @@ async def adjust_position_levels(ticker: str, payload: AdjustPositionLevelsPaylo
         if not is_configured or client is None:
             raise HTTPException(status_code=400, detail="Alpaca client no está configurado.")
         try:
-            from alpaca.trading.requests import GetOrdersRequest, ReplaceOrderRequest
-            from alpaca.trading.enums import QueryOrderStatus
+            from alpaca.trading.requests import (
+                GetOrdersRequest,
+                LimitOrderRequest,
+                ReplaceOrderRequest,
+                StopLossRequest,
+                TakeProfitRequest,
+            )
+            from alpaca.trading.enums import OrderClass, OrderSide, QueryOrderStatus, TimeInForce
 
-            req = GetOrdersRequest(status=QueryOrderStatus.ALL, symbols=[symbol], limit=20)
-            orders = client.get_orders(req)
-            results = {}
+            # Si el Subagente #12 solicita dividir en 40% Profit Defensivo + 60% Techo Realista ante corrección/resistencia
+            plan = payload.scale_out_plan
+            if plan and plan.get("enabled") and int(plan.get("defensive_qty", 0)) >= 1 and int(plan.get("runner_qty", 0)) >= 1:
+                open_orders = client.get_orders(
+                    filter=GetOrdersRequest(status=QueryOrderStatus.OPEN, symbols=[symbol])
+                )
+                cancelled_ids = []
+                for o in open_orders:
+                    if "sell" in str(o.side).lower():
+                        try:
+                            client.cancel_order_by_id(o.id)
+                            cancelled_ids.append(str(o.id))
+                        except Exception:
+                            pass
+
+                qty_def = int(plan["defensive_qty"])
+                qty_run = int(plan["runner_qty"])
+                tp_def = round(float(plan["defensive_tp_price"]), 2)
+                tp_run = round(float(plan["runner_tp_price"]), 2)
+                sl_px = round(float(plan.get("stop_loss_price") or payload.stop_loss_price), 2)
+
+                oco_def = LimitOrderRequest(
+                    symbol=symbol,
+                    qty=qty_def,
+                    side=OrderSide.SELL,
+                    time_in_force=TimeInForce.GTC,
+                    limit_price=tp_def,
+                    order_class=OrderClass.OCO,
+                    take_profit=TakeProfitRequest(limit_price=tp_def),
+                    stop_loss=StopLossRequest(stop_price=sl_px),
+                )
+                res_def = client.submit_order(order_data=oco_def)
+
+                oco_run = LimitOrderRequest(
+                    symbol=symbol,
+                    qty=qty_run,
+                    side=OrderSide.SELL,
+                    time_in_force=TimeInForce.GTC,
+                    limit_price=tp_run,
+                    order_class=OrderClass.OCO,
+                    take_profit=TakeProfitRequest(limit_price=tp_run),
+                    stop_loss=StopLossRequest(stop_price=sl_px),
+                )
+                res_run = client.submit_order(order_data=oco_run)
+
+                return {
+                    "symbol": symbol,
+                    "status": "SCALE_OUT_40_60_APPLIED",
+                    "cancelled_previous_ids": cancelled_ids,
+                    "adjusted": {
+                        "tranche_40pct_defensive": {
+                            "order_id": str(res_def.id),
+                            "qty": qty_def,
+                            "take_profit_price": tp_def,
+                            "stop_loss_price": sl_px,
+                        },
+                        "tranche_60pct_realistic": {
+                            "order_id": str(res_run.id),
+                            "qty": qty_run,
+                            "take_profit_price": tp_run,
+                            "stop_loss_price": sl_px,
+                        },
+                    },
+                }
+
+            req = GetOrdersRequest(status=QueryOrderStatus.ALL, symbols=[symbol], limit=25, nested=False)
+            orders = client.get_orders(filter=req)
+            results: dict[str, Any] = {}
 
             for o in orders:
-                side_str = str(o.side).lower()
-                order_type_str = str(o.order_type).lower()
-                status_str = str(o.status).lower()
+                side_val = str(o.side.value if hasattr(o.side, "value") else o.side).lower()
+                type_val = str(o.type.value if hasattr(o.type, "value") else o.type).lower()
+                status_val = str(o.status.value if hasattr(o.status, "value") else o.status).lower()
 
-                if "sell" in side_str:
+                if "sell" in side_val:
                     # Ajustar Take Profit (tipo Limit)
-                    if payload.take_profit_price is not None and "limit" in order_type_str:
-                        if status_str in ["new", "open", "accepted"]:
-                            res = client.replace_order_by_id(
-                                o.id, ReplaceOrderRequest(limit_price=payload.take_profit_price)
-                            )
-                            results["take_profit"] = {
-                                "old_id": str(o.id),
-                                "new_id": str(res.id),
-                                "new_limit": payload.take_profit_price,
-                            }
+                    if payload.take_profit_price is not None and "limit" in type_val and "take_profit" not in results:
+                        if status_val in ["new", "open", "accepted", "partially_filled"]:
+                            curr_lim = float(o.limit_price) if o.limit_price is not None else None
+                            if curr_lim is not None and abs(curr_lim - payload.take_profit_price) < 0.01:
+                                results["take_profit"] = {
+                                    "old_id": str(o.id),
+                                    "new_id": str(o.id),
+                                    "new_limit": payload.take_profit_price,
+                                    "note": "UNCHANGED_ALREADY_AT_PRICE",
+                                }
+                            else:
+                                res = client.replace_order_by_id(
+                                    o.id, ReplaceOrderRequest(limit_price=round(payload.take_profit_price, 2))
+                                )
+                                results["take_profit"] = {
+                                    "old_id": str(o.id),
+                                    "new_id": str(res.id),
+                                    "new_limit": round(payload.take_profit_price, 2),
+                                }
                     # Ajustar Stop Loss (tipo Stop)
-                    if payload.stop_loss_price is not None and "stop" in order_type_str:
-                        if status_str in ["held", "new", "open", "accepted"]:
-                            res = client.replace_order_by_id(
-                                o.id, ReplaceOrderRequest(stop_price=payload.stop_loss_price)
-                            )
-                            results["stop_loss"] = {
-                                "old_id": str(o.id),
-                                "new_id": str(res.id),
-                                "new_stop": payload.stop_loss_price,
-                            }
+                    if payload.stop_loss_price is not None and "stop" in type_val and "stop_loss" not in results:
+                        if status_val in ["held", "new", "open", "accepted", "pending_new"]:
+                            curr_stp = float(o.stop_price) if o.stop_price is not None else None
+                            if curr_stp is not None and abs(curr_stp - payload.stop_loss_price) < 0.01:
+                                results["stop_loss"] = {
+                                    "old_id": str(o.id),
+                                    "new_id": str(o.id),
+                                    "new_stop": payload.stop_loss_price,
+                                    "note": "UNCHANGED_ALREADY_AT_PRICE",
+                                }
+                            else:
+                                try:
+                                    res = client.replace_order_by_id(
+                                        o.id, ReplaceOrderRequest(stop_price=round(payload.stop_loss_price, 2))
+                                    )
+                                    results["stop_loss"] = {
+                                        "old_id": str(o.id),
+                                        "new_id": str(res.id),
+                                        "new_stop": round(payload.stop_loss_price, 2),
+                                    }
+                                except Exception as sl_exc:
+                                    results["stop_loss_warning"] = (
+                                        f"Orden Stop ({status_val}) retenida en OCO de Alpaca: {sl_exc}"
+                                    )
 
             return {"symbol": symbol, "status": "LEVELS_ADJUSTED", "adjusted": results}
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc))
 
     return await asyncio.to_thread(_adjust)
+
 
 # =====================================================================
 # ENDPOINTS PARA LA GUI (FASE 2): VELAS, RESUMEN DE CARTERA, WEBSOCKET
@@ -2882,22 +3167,42 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
     ]
 
     last = float(close.iloc[-1])
-    last_atr = float(atr.iloc[-1])
+    last_atr = float(atr.iloc[-1]) if not pd.isna(atr.iloc[-1]) else (last * 0.01)
     last_sma = float(sma200.iloc[-1]) if not pd.isna(sma200.iloc[-1]) else None
     params = audit_agent.strategy_params
-    atr_mult = float(params.get("atr_stop_loss_multiplier", 1.5))
-    tp_rr = float(params.get("take_profit_reward_risk_ratio", 2.0))
 
     opp = scanner_worker.active_opportunities.get(ticker)
     if opp:
-        entry = float(opp["entry_price"])
-        sl = float(opp["order_sizing"]["stop_loss_price"])
-        tp = float(opp["order_sizing"]["take_profit_price"])
+        entry = float(opp.get("entry_price") or last)
+        sizing = opp.get("order_sizing") or {}
+        sl = float(sizing.get("stop_loss_price") or opp.get("stop_loss_price") or opp.get("provisional_stop_loss") or entry)
+        tp = float(sizing.get("take_profit_price") or opp.get("take_profit_price") or opp.get("provisional_take_profit") or entry)
+        if sl >= entry or tp <= entry:
+            b = trigger_agent.calculate_bracket_levels(
+                entry,
+                last_atr,
+                params,
+                recent_swing_high=opp.get("intraday_swing_high") or opp.get("recent_swing_high"),
+                atr_15m=opp.get("atr_15m"),
+                pullback_low=opp.get("pullback_low"),
+            )
+            sl, tp = b["stop_loss_price"], b["take_profit_price"]
         source = "ACTIVE_OPPORTUNITY"
     else:
         entry = round(last, 2)
-        sl = round(entry - atr_mult * last_atr, 2)
-        tp = round(entry + tp_rr * (entry - sl), 2)
+        if snap and snap.get("provisional_stop_loss") and snap.get("provisional_take_profit"):
+            sl = float(snap["provisional_stop_loss"])
+            tp = float(snap["provisional_take_profit"])
+        else:
+            b = trigger_agent.calculate_bracket_levels(
+                entry,
+                last_atr,
+                params,
+                recent_swing_high=(snap or {}).get("intraday_swing_high") or (snap or {}).get("recent_swing_high"),
+                atr_15m=(snap or {}).get("atr_15m"),
+                pullback_low=(snap or {}).get("pullback_low"),
+            )
+            sl, tp = b["stop_loss_price"], b["take_profit_price"]
         source = "PROVISIONAL_FROM_LAST_CLOSE"
     risk = evaluate_risk_math(scanner_worker.portfolio_value, entry, sl, tp)
 
@@ -2968,6 +3273,7 @@ async def get_market_candles(ticker: str, bars: int = Query(default=120, ge=30, 
 
 def compute_performance_metrics() -> dict[str, Any]:
     """Win rate, profit factor, R:R medio y curva de equidad a partir de operaciones cerradas reales."""
+    audit_agent.trades_cache = audit_agent._load_trades_ledger()
     closed = [
         t for t in audit_agent.trades_cache
         if t.get("lifecycle", {}).get("realized_pnl_usd") is not None
@@ -3000,6 +3306,7 @@ def compute_performance_metrics() -> dict[str, Any]:
 
 def closed_trades_view() -> list[dict[str, Any]]:
     """Historial de operaciones cerradas listo para la tabla de la GUI."""
+    audit_agent.trades_cache = audit_agent._load_trades_ledger()
     rows = []
     for t in audit_agent.trades_cache:
         lc = t.get("lifecycle", {})
@@ -3034,37 +3341,91 @@ def closed_trades_view() -> list[dict[str, Any]]:
 
 async def build_live_summary() -> dict[str, Any]:
     acct = await asyncio.to_thread(fetch_alpaca_account_sync)
+    positions_snap = await get_alpaca_positions()
+    orders_snap = await get_alpaca_orders(status="all")
+
+    if orders_snap.get("orders"):
+        try:
+            await asyncio.to_thread(audit_agent.reconcile_with_alpaca_orders, orders_snap["orders"])
+        except Exception as exc_rec:
+            logger.warning(f"Error conciliando órdenes con audit_agent: {exc_rec}")
+
+    if positions_snap.get("positions") is not None:
+        acct["unrealized_pnl"] = round(
+            sum(float(p.get("unrealized_pl", 0.0)) for p in positions_snap.get("positions", [])), 2
+        )
+
     if scanner_worker.auto_sync_alpaca_equity and scanner_worker.portfolio_source != "MANUAL_OVERRIDE":
         scanner_worker._sync_effective_portfolio(acct, reset_baseline=False)
     effective = scanner_worker.portfolio_value
 
-    positions_snap = await get_alpaca_positions()
-    orders_snap = await get_alpaca_orders(status="all")
+    virtual_base = audit_agent.strategy_params.get("virtual_portfolio_base")
+    is_virtual = virtual_base is not None and float(virtual_base) > 0
+    open_positions_mkt_val = sum(float(p.get("market_value", 0.0)) for p in positions_snap.get("positions", []))
+    effective_cash = max(0.0, round(effective - open_positions_mkt_val, 2)) if is_virtual else acct.get("cash")
+    effective_buying_power = round(effective_cash * 2.0, 2) if is_virtual else acct.get("buying_power")
 
-    # Niveles SL/TP vigentes de cada posición, extraídos de las patas hijas del Bracket OCO
-    levels: dict[str, dict[str, Optional[float]]] = {}
-    for o in orders_snap.get("orders", []):
-        for leg in o.get("legs", []) or []:
-            if str(leg.get("status", "")).lower() not in ("new", "held", "accepted", "pending_new", "partially_filled"):
-                continue
-            lv = levels.setdefault(str(o["symbol"]), {"stop_loss_price": None, "take_profit_price": None})
-            if leg.get("stop_price") is not None:
-                lv["stop_loss_price"] = leg["stop_price"]
-            if leg.get("limit_price") is not None:
-                lv["take_profit_price"] = leg["limit_price"]
+    levels = extract_position_levels_from_orders(orders_snap.get("orders", []))
 
     active_positions = []
     open_risk_usd = 0.0
     for p in positions_snap.get("positions", []):
-        lv = levels.get(p["symbol"], {})
-        sl, tp = lv.get("stop_loss_price"), lv.get("take_profit_price")
+        sym_up = str(p["symbol"]).upper()
+        lv = levels.get(sym_up, {})
+        sl = lv.get("stop_loss_price")
+        tp = lv.get("take_profit_price")
         progress = None
         if sl is not None and tp is not None and tp > sl:
             progress = round(min(100.0, max(0.0, (p["current_price"] - sl) / (tp - sl) * 100.0)), 1)
+
+        # Detectar si ya se realizó un tramo defensivo con beneficio en este activo (Escudo Pérdida Cero)
+        banked_pnl = 0.0
+        banked_shares = 0
+        banked_exit = None
+        for tr in audit_agent.trades_cache:
+            if str(tr.get("ticker", "")).upper() == sym_up:
+                lc = tr.get("lifecycle", {})
+                if lc.get("state") == "CLOSED" and float(lc.get("realized_pnl_usd") or 0.0) > 0:
+                    banked_pnl += float(lc.get("realized_pnl_usd") or 0.0)
+                    banked_shares += int(tr.get("risk_and_sizing", {}).get("shares") or 0)
+                    if banked_exit is None and lc.get("exit_price") is not None:
+                        banked_exit = float(lc["exit_price"])
+        banked_pnl = round(banked_pnl, 2)
+
+        net_zero_shield = None
+        if banked_pnl > 0 and p["qty"] > 0:
+            zero_loss_sl = round(p["avg_entry_price"] - (banked_pnl / p["qty"]), 2)
+            runner_loss_at_sl = round((p["avg_entry_price"] - (sl or zero_loss_sl)) * p["qty"], 2)
+            worst_net = round(banked_pnl - runner_loss_at_sl, 2)
+            target_net = round(banked_pnl + (((tp or p["current_price"]) - p["avg_entry_price"]) * p["qty"]), 2)
+            net_zero_shield = {
+                "active": True,
+                "banked_realized_pnl_usd": banked_pnl,
+                "banked_shares": banked_shares,
+                "banked_exit_price": banked_exit,
+                "zero_loss_sl_price": zero_loss_sl,
+                "realistic_ceiling_tp_price": tp,
+                "worst_case_net_total_usd": worst_net,
+                "target_net_total_usd": target_net,
+            }
+
         if sl is not None:
-            open_risk_usd += max(0.0, (p["avg_entry_price"] - sl) * p["qty"])
+            raw_risk = max(0.0, (p["avg_entry_price"] - sl) * p["qty"])
+            open_risk_usd += max(0.0, raw_risk - banked_pnl)
+
         active_positions.append(
-            {**p, "stop_loss_price": sl, "take_profit_price": tp, "sl_to_tp_progress_pct": progress}
+            {
+                **p,
+                "stop_loss_price": sl,
+                "take_profit_price": tp,
+                "tp1_price": lv.get("tp1_price"),
+                "tp1_qty": lv.get("tp1_qty"),
+                "tp2_price": lv.get("tp2_price"),
+                "tp2_qty": lv.get("tp2_qty"),
+                "is_split_scale_out": bool(lv.get("is_split_scale_out", False)),
+                "net_zero_shield": net_zero_shield,
+                "sl_to_tp_progress_pct": progress,
+            }
         )
 
     sess = audit_agent.current_session or {}
@@ -3075,8 +3436,8 @@ async def build_live_summary() -> dict[str, Any]:
         "alpaca_connected": acct.get("connected"),
         "alpaca_mode": acct.get("mode"),
         "alpaca_raw_equity": acct.get("equity"),
-        "buying_power": acct.get("buying_power"),
-        "cash": acct.get("cash"),
+        "buying_power": effective_buying_power,
+        "cash": effective_cash,
         "daily_pnl_usd": acct.get("daily_pnl"),
         "daily_pnl_pct": (
             round(acct["daily_pnl"] / (float(audit_agent.strategy_params.get("virtual_portfolio_base") or acct["last_equity"])) * 100.0, 2)
@@ -3199,3 +3560,74 @@ async def refresh_ai_advice(ticker: str):
     if live is not None:
         live["ai_advice"] = advice
     return advice
+
+
+# =====================================================================
+# COPILOT TÁCTICO AGÉNTICO
+# =====================================================================
+
+class CopilotChatMessage(BaseModel):
+    role: str = Field(..., description="'user' o 'assistant'")
+    content: str
+
+
+class CopilotQueryRequest(BaseModel):
+    query: str
+    history: Optional[list[CopilotChatMessage]] = None
+    quick_action: Optional[str] = None
+
+
+@app.post("/copilot/query")
+async def copilot_query(payload: CopilotQueryRequest):
+    """
+    Endpoint interactivo para el Copilot de Trading.
+    Inyecta en tiempo real la telemetría del mercado, activos en seguimiento y cartera.
+    """
+    if _MACRO_REGIME_STATE["last_fetched_at"] == 0.0:
+        try:
+            evaluate_macro_regime_sync()
+        except Exception:
+            pass
+
+    live_summary = await build_live_summary()
+    system_context = {
+        "engine_running": scanner_worker.running,
+        "execution_mode": scanner_worker.execution_mode,
+        "macro_regime": _MACRO_REGIME_STATE["last_regime"],
+        "portfolio_summary": live_summary,
+        "opportunities": list(scanner_worker.active_opportunities.values()),
+        "market_watch": scanner_worker.market_watch,
+        "strategy_clusters": audit_agent.strategy_params.get("clusters") or DEFAULT_CLUSTERS,
+    }
+
+    query_text = payload.query.strip()
+    is_prepare_action = (
+        payload.quick_action == "prepare_tomorrow"
+        or any(k in query_text.lower() for k in ["prepar", "mañana", "apertura", "alistar"])
+    )
+    if is_prepare_action:
+        # Puesta a punto real del sistema para la apertura
+        scanner_worker.active_opportunities.clear()
+        _MACRO_REGIME_STATE["last_lockdown_triggered_at"] = 0.0
+        _MACRO_REGIME_STATE["last_regime"]["vetoed_opportunities_count"] = 0
+        _MACRO_REGIME_STATE["last_regime"]["vetoed_tickers"] = []
+        if payload.quick_action == "prepare_tomorrow":
+            query_text = "Prepara la aplicación para el mercado de mañana: revisa parámetros, limpia sesiones previas y deja todo listo para la apertura."
+    elif payload.quick_action == "overview":
+        query_text = "Dame un resumen ejecutivo completo de la sesión de hoy: estado del mercado, cartera, oportunidades y si hay riesgo."
+    elif payload.quick_action == "market":
+        query_text = "¿Cómo está el mercado hoy? Índices SPY y QQQ, régimen macro, amplitud y si hay veto activo."
+    elif payload.quick_action == "watchlist":
+        query_text = "¿Qué activos están en seguimiento prioritario dentro de los clústeres y cuáles tienen mejores condiciones técnicas?"
+    elif payload.quick_action == "readiness":
+        query_text = "¿Hay previsión de operar hoy? ¿Qué probabilidades hay de disparar órdenes según las condiciones actuales?"
+
+    history_list = [m.model_dump() for m in payload.history] if payload.history else []
+    return await copilot_agent.ask_copilot(query_text, system_context, history_list)
+
+
+@app.get("/copilot/briefing")
+async def copilot_briefing():
+    """Genera directamente un briefing rápido del día sin necesidad de enviar mensaje."""
+    req = CopilotQueryRequest(query="Resumen del día", quick_action="overview")
+    return await copilot_query(req)

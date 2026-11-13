@@ -1,45 +1,65 @@
 """
-Motor de Backtest Cuantitativo y Econométrico Riguroso en Modo Full Auto (Versión 6).
-100% Agnóstico a la Compañía o Sector (Cero reglas arbitrarias por ticker o clúster).
-Incorpora:
-1. Eficiencia Fractal de Kaufman (ER_10 >= 0.14) para filtrar ruido browniano.
-2. Volatilidad Relativa Endógena (ATR% >= 1.80%) y Escalado Continuo del Multiplicador ATR.
-3. Banda de No-Agotamiento ADX (19.0 <= ADX <= 35.0) para evitar compras en clímax parabólicos.
-4. Filtro de Deriva Mensual (Ret_20d >= -2.0%) y Liquidez Relativa (RVOL_20 >= 0.60).
-5. Ranking por Esperanza Matemática Compuesta (ER_10 + Sharpe_20 + RVOL_20 + Banda ADX).
-6. Bloqueo Progresivo de Beneficios en 2 Etapas (Breakeven en +0.85R -> +0.08R; Profit Ratchet en +1.45R -> +0.55R).
+Motor de Backtest Cuantitativo "Los 3 Trucos" (V50) — Sencillo, Robusto y Agnóstico al Activo.
+1. Truco 1 (Marea): Close > SMA200, EMA20 >= SMA50*0.995, +DI >= -DI y pendiente EMA20 >= 0.
+2. Truco 2 (Pullback sin sobreprecio): Precio tocando zona de valor EMA20 sin 3 velas verdes verticales (>1.2xATR).
+3. Truco 3 (Gatillo de ignición con volumen): Vela verde rompiendo High[1], CLV >= 0.65, mecha superior <= 0.25, RVOL >= 1.25.
+4. Gestión viva: Breakeven+ a +0.60R, Trailing Ratchet 60%/75% MFE a +1.0R/+1.4R, riesgo 0.28% y comisión $1.00/orden.
 """
 import json
 import logging
-import math
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from ta.momentum import RSIIndicator, StochasticOscillator
-from ta.trend import ADXIndicator, EMAIndicator, SMAIndicator
-from ta.volatility import AverageTrueRange
 
-# Configuración del entorno de importación
 sys.path.insert(0, str(Path(__file__).parent))
-from audit_agent import DEFAULT_CLUSTERS, audit_agent, get_adaptive_allocation_pct
+from audit_agent import DEFAULT_CLUSTERS, audit_agent
+from trigger_agent import trigger_agent
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger("backtester")
 
 
+def _ema(series: pd.Series, span: int) -> pd.Series:
+    return series.ewm(span=span, adjust=False).mean()
+
+
+def _atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
+    tr = pd.concat(
+        [(high - low), (high - close.shift(1)).abs(), (low - close.shift(1)).abs()],
+        axis=1,
+    ).max(axis=1)
+    return tr.ewm(alpha=1.0 / window, adjust=False).mean()
+
+
+def _rsi(close: pd.Series, window: int = 14) -> pd.Series:
+    delta = close.diff()
+    gain = delta.clip(lower=0.0).ewm(alpha=1.0 / window, adjust=False).mean()
+    loss = (-delta.clip(upper=0.0)).ewm(alpha=1.0 / window, adjust=False).mean()
+    rs = gain / loss.replace(0.0, np.nan)
+    return (100.0 - (100.0 / (1.0 + rs))).fillna(50.0)
+
+
+def _dmi(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> tuple[pd.Series, pd.Series]:
+    up_move = high.diff()
+    down_move = -low.diff()
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+    atr_s = _atr(high, low, close, window).replace(0.0, np.nan)
+    pdi = 100.0 * pd.Series(plus_dm, index=high.index).ewm(alpha=1.0 / window, adjust=False).mean() / atr_s
+    mdi = 100.0 * pd.Series(minus_dm, index=high.index).ewm(alpha=1.0 / window, adjust=False).mean() / atr_s
+    return pdi.fillna(20.0), mdi.fillna(20.0)
+
+
 def evaluate_bar_signals(
     df: pd.DataFrame,
     params: dict[str, Any],
+    spy_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    """
-    Precalcula todos los indicadores técnicos, econométricos y estadísticos vectorizados
-    sobre el DataFrame histórico de forma 100% agnóstica al activo.
-    """
+    """Evaluación vectorizada de Los 3 Trucos + Comité #1 (Momento) y #2 (Volumen)."""
     df = df.copy()
     close = df["Close"]
     high = df["High"]
@@ -47,106 +67,78 @@ def evaluate_bar_signals(
     open_s = df["Open"] if "Open" in df.columns else close
     vol_s = df["Volume"] if "Volume" in df.columns else pd.Series(0.0, index=df.index)
 
-    # 1. Indicadores de tendencia, estructura y volatilidad relativa endógena
-    df["ema_20"] = EMAIndicator(close=close, window=20).ema_indicator()
-    df["sma_50"] = SMAIndicator(close=close, window=50).sma_indicator()
-    df["sma_200"] = SMAIndicator(close=close, window=200).sma_indicator()
-    df["atr_14"] = AverageTrueRange(high=high, low=low, close=close, window=14).average_true_range()
-    df["atr_pct"] = (df["atr_14"] / close) * 100.0
-    df["ema20_slope_5d"] = df["ema_20"].pct_change(5) * 100.0
-    df["sma50_slope_5d"] = df["sma_50"].pct_change(5) * 100.0
-
-    # 2. DMI / ADX
-    adx_ind = ADXIndicator(high=high, low=low, close=close, window=14)
-    df["adx"] = adx_ind.adx()
-    df["adx_slope_3d"] = df["adx"].diff(3)
-    df["plus_di"] = adx_ind.adx_pos()
-    df["minus_di"] = adx_ind.adx_neg()
+    df["ema_20"] = _ema(close, 20)
+    df["sma_50"] = close.rolling(50).mean()
+    df["sma_200"] = close.rolling(200).mean()
+    df["atr_14"] = _atr(high, low, close, 14)
+    df["atr_pct"] = (df["atr_14"] / close.replace(0.0, np.nan)) * 100.0
+    df["ema20_slope_5d"] = ((df["ema_20"] - df["ema_20"].shift(5)) / df["ema_20"].shift(5).replace(0.0, np.nan)) * 100.0
+    df["plus_di"], df["minus_di"] = _dmi(high, low, close, 14)
     df["di_spread"] = df["plus_di"] - df["minus_di"]
+    df["rsi_14"] = _rsi(close, 14)
 
-    # 3. Osciladores
-    stoch = StochasticOscillator(high=high, low=low, close=close, window=14, smooth_window=4)
-    df["stoch_k"] = stoch.stoch()
-    df["stoch_d"] = stoch.stoch_signal()
-    df["rsi_14"] = RSIIndicator(close=close, window=14).rsi()
-
-    # 4. Volumen relativo, retornos multi-horizonte y Price Action
-    vol_sma20 = vol_s.rolling(20).mean()
-    df["rvol_20"] = np.where(vol_sma20 > 0, vol_s / vol_sma20, 1.0)
+    vol_sma20 = vol_s.rolling(20).mean().replace(0.0, np.nan)
+    df["rvol_20"] = (vol_s / vol_sma20).fillna(1.0)
     df["ret_1d_pct"] = close.pct_change(1) * 100.0
     df["ret_3d_pct"] = close.pct_change(3) * 100.0
-    df["ret_20d_pct"] = close.pct_change(20) * 100.0
 
-    candle_range = (high - low).replace(0, 0.001)
+    candle_range = (high - low).replace(0.0, 0.0001)
     df["clv"] = (close - low) / candle_range
     df["candle_body"] = close - open_s
     df["candle_body_atr"] = np.where(df["atr_14"] > 0, df["candle_body"] / df["atr_14"], 0.0)
+    df["upper_wick_ratio"] = (high - np.maximum(open_s, close)) / candle_range
+    df["recent_swing_high"] = high.shift(1).rolling(20, min_periods=5).max()
+    df["pullback_low"] = low.rolling(4, min_periods=1).min()
 
-    # 5. Variables Predictivas Econométricas (Kaufman Efficiency Ratio & Rolling Sharpe 20d)
-    net_chg_10 = close.diff(10).abs()
-    sum_chg_10 = close.diff(1).abs().rolling(10).sum()
-    df["er_10"] = (net_chg_10 / sum_chg_10.replace(0, np.nan)).fillna(0.0)
-
-    ret1 = close.pct_change(1)
-    df["sharpe_20"] = ((ret1.rolling(20).mean() / ret1.rolling(20).std().replace(0, np.nan)) * np.sqrt(252)).fillna(0.0)
-
-    # 6. Escudo Anti-Cuchillo Cayendo
-    severe_bearish = (df["candle_body_atr"] <= -0.80) | ((df["ret_1d_pct"] <= -2.8) & (df["clv"] < 0.25))
+    # Anti-Cuchillo Cayendo
+    severe_bear = (df["candle_body_atr"] <= -0.80) | ((df["ret_1d_pct"] <= -2.8) & (df["clv"] < 0.25))
     waterfall = (df["ret_3d_pct"] <= -4.2) & (close < df["ema_20"]) & (df["minus_di"] > df["plus_di"]) & (df["candle_body"] < 0)
-    distribution = (df["candle_body_atr"] < -0.55) & (df["rvol_20"] >= 1.25) & (df["clv"] < 0.35)
-    df["falling_knife"] = severe_bearish | waterfall | distribution
+    df["falling_knife"] = severe_bear | waterfall
 
-    # 7. Parámetros Estadísticos Agnósticos
-    adx_min = float(params.get("adx_bullish_min", 19.0))
-    adx_max = float(params.get("adx_exhaustion_max", 35.0))
-    stoch_os = float(params.get("stoch_bullish_oversold", 36.0))
-    min_atr_pct = float(params.get("min_atr_volatility_pct", 1.80))
-    min_er10 = float(params.get("min_kaufman_efficiency_ratio", 0.14))
-    min_rvol = float(params.get("min_relative_volume_rvol", 0.60))
-    min_ret20 = float(params.get("min_momentum_20d_pct", -2.0))
-
-    above_200 = close > df["sma_200"]
-    above_50 = close >= df["sma_50"] * 0.995
-    above_20 = close >= df["ema_20"] * 0.997
-    buyers_ctrl = df["plus_di"] >= df["minus_di"]
-
-    prev_k = df["stoch_k"].shift(1)
-    prev_d = df["stoch_d"].shift(1)
-    stoch_cross_up = (prev_k <= prev_d) & (df["stoch_k"] > df["stoch_d"])
-    stoch_rising = (df["stoch_k"] > df["stoch_d"]) & (df["stoch_k"] > prev_k) & (df["stoch_k"] <= 44.0)
-
-    bullish_regime = above_200 & (above_20 | above_50) & buyers_ctrl & (~df["falling_knife"])
-    tactical_trigger = (stoch_cross_up & (df["stoch_k"] <= stoch_os)) | (
-        stoch_rising & (df["rsi_14"] >= 30.0) & (df["rsi_14"] <= 58.0) & (df["clv"] >= 0.45)
+    # Truco 1: Marea Alcista
+    trick1_tide = (
+        (close > df["sma_200"])
+        & (df["ema_20"] >= df["sma_50"] * 0.995)
+        & (df["ema20_slope_5d"] >= -0.05)
+        & (df["di_spread"] >= 0.0)
+        & (~df["falling_knife"])
     )
 
-    econometric_filter = (
-        (df["adx"] >= adx_min)
-        & (df["adx"] <= adx_max)
-        & (df["atr_pct"] >= min_atr_pct)
-        & (df["er_10"] >= min_er10)
+    # Truco 2: Zona de valor (pullback a EMA20 sin sobreprecio ni 3 velas verticales seguidas)
+    dist_ema_atr = (close - df["ema_20"]) / df["atr_14"].replace(0.0, np.nan)
+    three_green = (close > open_s) & (close.shift(1) > open_s.shift(1)) & (close.shift(2) > open_s.shift(2))
+    touched_ema = (low <= df["ema_20"] * 1.008) | (low.shift(1) <= df["ema_20"].shift(1) * 1.008)
+    trick2_pullback = touched_ema & (dist_ema_atr <= float(params.get("max_dist_from_ema20_atr", 1.20))) & (~three_green)
+
+    # Truco 3: Ignición con volumen
+    min_rvol = float(params.get("min_rvol_intraday", 1.25))
+    min_clv = float(params.get("min_clv_ignition", 0.65))
+    max_wick = float(params.get("max_upper_wick_ratio", 0.25))
+    trick3_ignition = (
+        (close > open_s)
+        & (close > high.shift(1))
+        & (df["clv"] >= min_clv)
+        & (df["upper_wick_ratio"] <= max_wick)
         & (df["rvol_20"] >= min_rvol)
-        & (df["ret_20d_pct"] >= min_ret20)
     )
 
-    df["signal_buy"] = bullish_regime & tactical_trigger & econometric_filter
+    # Comité #1 (Momento sin agotamiento) y Comité #2 (Absorción compradora > vendedora)
+    red_vol = pd.Series(np.where(close < open_s, vol_s, np.nan), index=df.index).shift(1).rolling(5, min_periods=1).mean().fillna(0.0)
+    green_vol = pd.Series(np.where(close > open_s, vol_s, np.nan), index=df.index).rolling(3, min_periods=1).mean().fillna(vol_s)
+    committee_ok = (df["rsi_14"] <= float(params.get("max_rsi_15m_entry", 70.0))) & ((red_vol == 0.0) | (green_vol >= red_vol))
 
-    # Esperanza Matemática Compuesta para priorizar candidatos simultáneos sin sesgo por empresa
-    df["pred_edge"] = (
-        (df["er_10"] * 35.0)
-        + (df["sharpe_20"].clip(-1.0, 3.0) * 8.0)
-        + ((32.0 - df["adx"]).clip(0.0, 12.0) * 1.5)
-        + (df["rvol_20"].clip(0.5, 2.0) * 10.0)
-    )
+    df["signal_buy"] = trick1_tide & trick2_pullback & trick3_ignition & committee_ok
+    df["setup_archetype"] = np.where(df["signal_buy"], "THREE_TRICKS_IGNITION", "NONE")
+    df["pred_edge"] = (df["rvol_20"].clip(0.5, 3.0) * 15.0) + (df["clv"] * 25.0) + (df["di_spread"].clip(0.0, 25.0))
     return df
 
 
 def run_full_auto_backtest(
     initial_capital: float = 5000.0,
-    max_risk_pct: float = 0.01,
-    atr_sl_mult: float = 1.5,
-    tp_rr: float = 2.0,
-    commission_per_order: float = 0.35,
+    max_risk_pct: float = 0.0028,
+    atr_sl_mult: float = 1.25,
+    tp_rr: float = 1.9,
+    commission_per_order: float = 1.0,
     max_concurrent_positions: int = 4,
 ) -> dict[str, Any]:
     """Ejecuta la simulación cronológica día por día (3 años) con reglas 100% agnósticas al activo."""
@@ -182,15 +174,16 @@ def run_full_auto_backtest(
 
     ticker_dfs = {}
     common_dates = None
+    spy_bench_df = benchmark_dfs.get("SPY")
     for t in all_tickers:
         try:
             tk = "XYZ" if t == "SQ" else t
             if tk not in raw.columns.get_level_values(0):
                 continue
             df_t = raw[tk].dropna(subset=["Open", "High", "Low", "Close"])
-            if len(df_t) < 60:
+            if len(df_t) < 220:
                 continue
-            df_t = evaluate_bar_signals(df_t, params)
+            df_t = evaluate_bar_signals(df_t, params, spy_bench_df)
             ticker_dfs[t] = df_t
             if common_dates is None:
                 common_dates = df_t.index
@@ -210,11 +203,12 @@ def run_full_auto_backtest(
     equity_curve: list[dict[str, Any]] = []
     circuit_breaker_triggered = False
 
-    be_trigger_r = float(params.get("breakeven_trigger_r", 0.85))
-    be_lock_r = float(params.get("breakeven_lock_r", 0.08))
-    t1_trigger_r = float(params.get("trailing_ratchet_trigger_r", 1.45))
-    t1_lock_r = float(params.get("trailing_ratchet_lock_r", 0.55))
-    endogenous_scaling = bool(params.get("endogenous_atr_scaling_enabled", True))
+    be_trigger_r = float(params.get("breakeven_trigger_r", 0.60))
+    be_cushion_usd = float(params.get("breakeven_net_cushion_usd", 2.0))
+    t1_trigger_r = float(params.get("trailing_stage1_trigger_r", 1.00))
+    t1_lock_mfe_pct = float(params.get("trailing_stage1_lock_mfe_pct", 0.60))
+    t2_trigger_r = float(params.get("trailing_stage2_trigger_r", 1.40))
+    t2_lock_mfe_pct = float(params.get("trailing_stage2_lock_mfe_pct", 0.75))
     macro_gatekeeper_enabled = bool(params.get("macro_regime_gatekeeper_enabled", True))
     spy_thresh = float(params.get("macro_index_threshold_drop_pct", -0.75))
     qqq_thresh = float(params.get("macro_qqq_threshold_drop_pct", -1.00))
@@ -224,7 +218,7 @@ def run_full_auto_backtest(
     macro_vetoed_days = 0
     macro_vetoed_signals = 0
 
-    warmup_days = 60
+    warmup_days = 200
     sim_dates = common_dates[warmup_days:]
 
     for current_date in sim_dates:
@@ -243,11 +237,12 @@ def run_full_auto_backtest(
             shares = pos["shares"]
             risk_dist = pos["risk_per_share"]
             entry_p = pos["entry_price"]
+            pos["peak_price"] = max(pos.get("peak_price", entry_p), high_p)
+            mfe_ps = max(0.0, pos["peak_price"] - entry_p)
 
             exit_price = close_p
             exit_reason = ""
 
-            # Orden conservador intrabarra: evaluar stop vigente antes de subir el ratchet con el High de hoy
             if low_p <= sl:
                 exit_price = sl
                 if pos["stage"] == 0:
@@ -260,17 +255,21 @@ def run_full_auto_backtest(
                 exit_price = tp
                 exit_reason = "TAKE_PROFIT_HIT"
             else:
-                # Actualizar tramos de protección progresiva para sesiones siguientes
-                if high_p >= entry_p + (t1_trigger_r * risk_dist):
+                peak_r = mfe_ps / risk_dist if risk_dist > 0 else 0.0
+                if peak_r >= t2_trigger_r:
+                    pos["stage"] = max(pos["stage"], 3)
+                    pos["stop_loss"] = max(pos["stop_loss"], round(entry_p + (mfe_ps * t2_lock_mfe_pct), 2))
+                elif peak_r >= t1_trigger_r:
                     pos["stage"] = max(pos["stage"], 2)
-                    pos["stop_loss"] = max(pos["stop_loss"], round(entry_p + (t1_lock_r * risk_dist), 2))
-                elif high_p >= entry_p + (be_trigger_r * risk_dist):
+                    pos["stop_loss"] = max(pos["stop_loss"], round(entry_p + (mfe_ps * t1_lock_mfe_pct), 2))
+                elif peak_r >= be_trigger_r:
                     pos["stage"] = max(pos["stage"], 1)
-                    pos["stop_loss"] = max(pos["stop_loss"], round(entry_p + (be_lock_r * risk_dist), 2))
+                    be_plus = round(entry_p + (((commission_per_order * 2.0) + be_cushion_usd) / max(1, shares)), 2)
+                    pos["stop_loss"] = max(pos["stop_loss"], be_plus)
 
-                if pos["bars_held"] >= 15:
+                if pos["bars_held"] >= 10:
                     exit_price = close_p
-                    exit_reason = "TIME_EXPIRY_15D"
+                    exit_reason = "TIME_EXPIRY_10D"
                 else:
                     pos["bars_held"] += 1
                     pos["current_price"] = close_p
@@ -286,6 +285,7 @@ def run_full_auto_backtest(
             closed_trade = {
                 "ticker": ticker,
                 "cluster_id": pos["cluster_id"],
+                "setup_archetype": pos.get("setup_archetype", "THREE_TRICKS_IGNITION"),
                 "entry_date": pos["entry_date"].strftime("%Y-%m-%d"),
                 "exit_date": current_date.strftime("%Y-%m-%d"),
                 "bars_held": pos["bars_held"],
@@ -333,7 +333,6 @@ def run_full_auto_backtest(
                 qqq_intraday = float(q_row.get("intraday_chg_pct", 0.0))
                 qqq_above_vwap = bool(q_row.get("above_vwap", True))
 
-            # Amplitud diaria del universo
             adv_count = 0
             tot_count = 0
             for df_t in ticker_dfs.values():
@@ -365,13 +364,19 @@ def run_full_auto_backtest(
         # 3. Si hay cupo para nuevas posiciones y no saltó el cortafuegos, escanear candidatos
         if not circuit_breaker_triggered and len(open_positions) < max_concurrent_positions:
             if macro_veto_today:
-                # Contabilizar cuántas señales técnicas fueron blindadas por el Macro Gatekeeper hoy
                 for ticker, df_t in ticker_dfs.items():
                     if ticker not in open_positions and current_date in df_t.index:
                         if bool(df_t.loc[current_date].get("signal_buy", False)):
                             macro_vetoed_signals += 1
             else:
                 candidates = []
+                bt_params = {
+                    **params,
+                    "max_portfolio_risk_per_trade_pct": max_risk_pct,
+                    "atr_stop_loss_multiplier": atr_sl_mult,
+                    "take_profit_reward_risk_ratio": tp_rr,
+                    "commission_per_order": commission_per_order,
+                }
                 for ticker, df_t in ticker_dfs.items():
                     if ticker in open_positions or current_date not in df_t.index:
                         continue
@@ -379,43 +384,37 @@ def run_full_auto_backtest(
                     if bool(row.get("signal_buy", False)):
                         close_p = float(row["Close"])
                         atr_v = float(row["atr_14"])
-                        atr_p = float(row["atr_pct"])
                         if atr_v <= 0:
                             continue
-
-                        # Multiplicador ATR 100% Endógeno (basado únicamente en el ATR% de la serie, sin reglas por empresa)
-                        if endogenous_scaling:
-                            ticker_atr_mult = min(2.0, max(1.5, atr_sl_mult + 0.12 * (atr_p - 1.8)))
-                        else:
-                            ticker_atr_mult = atr_sl_mult
-
-                        sl_p = round(close_p - (ticker_atr_mult * atr_v), 2)
-                        risk_dist = close_p - sl_p
-                        if risk_dist <= 0:
-                            continue
-                        tp_p = round(close_p + (tp_rr * risk_dist), 2)
-
-                        # Dimensionamiento
-                        max_alloc_pct, _ = get_adaptive_allocation_pct(portfolio_value, params)
-                        max_loss = portfolio_value * max_risk_pct
-                        risk_budget = max_loss - (commission_per_order * 2.0)
-                        if risk_budget <= 0:
-                            continue
-                        shares_by_risk = math.floor(risk_budget / risk_dist)
-                        max_capital = portfolio_value * max_alloc_pct
-                        shares_by_cap = math.floor((max_capital - commission_per_order) / close_p)
-                        shares = min(shares_by_risk, shares_by_cap)
-
-                        if shares >= 1:
+                        pb_low = float(row.get("pullback_low") or 0.0)
+                        swing_h = float(row.get("recent_swing_high") or 0.0)
+                        brackets = trigger_agent.calculate_bracket_levels(
+                            entry_price=close_p,
+                            atr_14=atr_v,
+                            strategy_params=bt_params,
+                            recent_swing_high=swing_h if swing_h > close_p else None,
+                            pullback_low=pb_low if pb_low > 0 else None,
+                        )
+                        sizing = trigger_agent.calculate_position_sizing(
+                            portfolio_value=portfolio_value,
+                            entry_price=close_p,
+                            stop_loss_price=brackets["stop_loss_price"],
+                            take_profit_price=brackets["take_profit_price"],
+                            strategy_params=bt_params,
+                            commission_per_order=commission_per_order,
+                        )
+                        if sizing["viable"]:
+                            shares = sizing["shares_to_buy"]
                             capital_needed = (shares * close_p) + commission_per_order
                             if cash >= capital_needed:
                                 candidates.append({
                                     "ticker": ticker,
                                     "cluster_id": ticker_to_cluster.get(ticker, "UNKNOWN"),
+                                    "setup_archetype": str(row.get("setup_archetype", "THREE_TRICKS_IGNITION")),
                                     "close": close_p,
-                                    "sl": sl_p,
-                                    "tp": tp_p,
-                                    "risk_dist": risk_dist,
+                                    "sl": brackets["stop_loss_price"],
+                                    "tp": brackets["take_profit_price"],
+                                    "risk_dist": brackets["risk_per_share"],
                                     "shares": shares,
                                     "capital_needed": capital_needed,
                                     "pred_edge": float(row.get("pred_edge", 25.0)),
@@ -441,6 +440,7 @@ def run_full_auto_backtest(
                             "bars_held": 0,
                             "current_price": cand["close"],
                             "cluster_id": cand["cluster_id"],
+                            "setup_archetype": cand["setup_archetype"],
                             "stage": 0,
                         }
 
@@ -466,6 +466,7 @@ def run_full_auto_backtest(
         closed_trades.append({
             "ticker": ticker,
             "cluster_id": pos["cluster_id"],
+            "setup_archetype": pos.get("setup_archetype", "HAMMER_ABSORPTION_MA"),
             "entry_date": pos["entry_date"].strftime("%Y-%m-%d"),
             "exit_date": last_date.strftime("%Y-%m-%d"),
             "bars_held": pos["bars_held"],
@@ -480,12 +481,17 @@ def run_full_auto_backtest(
             "r_multiple": round(net_pnl / (pos["risk_per_share"] * shares), 2) if pos["risk_per_share"] > 0 else 0.0,
         })
 
-    # Estadísticas Globales
+    # Estadísticas Globales (Separando Ganancias Reales de Cierres en Breakeven)
     pnls = [t["net_pnl_usd"] for t in closed_trades]
     wins = [p for p in pnls if p > 0]
     losses = [p for p in pnls if p <= 0]
+    breakeven_trades = [t for t in closed_trades if t["exit_reason"] == "BREAKEVEN_STOP_HIT"]
+    strict_wins = [t for t in closed_trades if t["net_pnl_usd"] > 0 and t["exit_reason"] != "BREAKEVEN_STOP_HIT"]
     total_trades = len(closed_trades)
     win_rate = (len(wins) / total_trades * 100.0) if total_trades > 0 else 0.0
+    strict_win_rate = (len(strict_wins) / total_trades * 100.0) if total_trades > 0 else 0.0
+    non_scratch_denom = len(strict_wins) + len(losses)
+    core_win_rate_ex_be = (len(strict_wins) / non_scratch_denom * 100.0) if non_scratch_denom > 0 else 0.0
     gross_win = sum(wins)
     gross_loss = abs(sum(losses))
     profit_factor = (gross_win / gross_loss) if gross_loss > 0 else (999.0 if gross_win > 0 else 0.0)
@@ -508,23 +514,73 @@ def run_full_auto_backtest(
         if dd_p > max_dd_pct:
             max_dd_pct = dd_p
 
+    # Desglose por Arquetipo de Vela y Volumen VSA
+    by_archetype = {}
+    for t in closed_trades:
+        arch = t.get("setup_archetype", "UNKNOWN")
+        a_stats = by_archetype.setdefault(arch, {"trades": 0, "wins": 0, "strict_wins": 0, "breakevens": 0, "losses": 0, "pnl": 0.0})
+        a_stats["trades"] += 1
+        if t["net_pnl_usd"] > 0:
+            a_stats["wins"] += 1
+            if t["exit_reason"] == "BREAKEVEN_STOP_HIT":
+                a_stats["breakevens"] += 1
+            else:
+                a_stats["strict_wins"] += 1
+        else:
+            a_stats["losses"] += 1
+        a_stats["pnl"] = round(a_stats["pnl"] + t["net_pnl_usd"], 2)
+
+    for arch, s_arch in by_archetype.items():
+        s_arch["win_rate_pct"] = round((s_arch["wins"] / s_arch["trades"]) * 100.0, 1) if s_arch["trades"] > 0 else 0.0
+        denom_a = s_arch["strict_wins"] + s_arch["losses"]
+        s_arch["core_win_rate_ex_be_pct"] = round((s_arch["strict_wins"] / denom_a) * 100.0, 1) if denom_a > 0 else 0.0
+
     # Desglose por Clúster (meramente informativo/observacional; el motor no usa el clúster para decidir)
     by_cluster = {}
     for t in closed_trades:
         cid = t["cluster_id"]
-        c_stats = by_cluster.setdefault(cid, {"trades": 0, "wins": 0, "pnl": 0.0})
+        c_stats = by_cluster.setdefault(cid, {"trades": 0, "wins": 0, "strict_wins": 0, "breakevens": 0, "pnl": 0.0})
         c_stats["trades"] += 1
         if t["net_pnl_usd"] > 0:
             c_stats["wins"] += 1
+            if t["exit_reason"] == "BREAKEVEN_STOP_HIT":
+                c_stats["breakevens"] += 1
+            else:
+                c_stats["strict_wins"] += 1
         c_stats["pnl"] = round(c_stats["pnl"] + t["net_pnl_usd"], 2)
 
     for cid, s in by_cluster.items():
         s["win_rate_pct"] = round((s["wins"] / s["trades"]) * 100.0, 1) if s["trades"] > 0 else 0.0
+        s["strict_win_rate_pct"] = round((s["strict_wins"] / s["trades"]) * 100.0, 1) if s["trades"] > 0 else 0.0
 
     exit_counts = {}
     for t in closed_trades:
         r = t["exit_reason"]
         exit_counts[r] = exit_counts.get(r, 0) + 1
+
+    # Resumen específico del último 1 año (últimas 252 sesiones)
+    cutoff_1y_str = sim_dates[-min(252, len(sim_dates))].strftime("%Y-%m-%d")
+    trades_1y = [t for t in closed_trades if t["entry_date"] >= cutoff_1y_str]
+    wins_1y = [t for t in trades_1y if t["net_pnl_usd"] > 0]
+    strict_1y = [t for t in trades_1y if t["net_pnl_usd"] > 0 and t["exit_reason"] != "BREAKEVEN_STOP_HIT"]
+    be_1y = [t for t in trades_1y if t["exit_reason"] == "BREAKEVEN_STOP_HIT"]
+    loss_1y = [t for t in trades_1y if t["net_pnl_usd"] <= 0]
+    gw_1y = sum(t["net_pnl_usd"] for t in wins_1y)
+    gl_1y = abs(sum(t["net_pnl_usd"] for t in loss_1y))
+    pf_1y = (gw_1y / gl_1y) if gl_1y > 0 else (99.0 if gw_1y > 0 else 0.0)
+    denom_1y = len(strict_1y) + len(loss_1y)
+    last_1y_summary = {
+        "start_date": cutoff_1y_str,
+        "end_date": sim_dates[-1].strftime("%Y-%m-%d"),
+        "total_closed_trades": len(trades_1y),
+        "strict_winning_trades": len(strict_1y),
+        "breakeven_scratches": len(be_1y),
+        "losing_trades": len(loss_1y),
+        "win_rate_pct": round((len(wins_1y) / len(trades_1y) * 100.0), 1) if trades_1y else 0.0,
+        "core_win_rate_ex_breakeven_pct": round((len(strict_1y) / denom_1y * 100.0), 1) if denom_1y > 0 else 0.0,
+        "profit_factor": round(pf_1y, 2),
+        "net_profit_usd": round(sum(t["net_pnl_usd"] for t in trades_1y), 2),
+    }
 
     report = {
         "summary": {
@@ -534,8 +590,12 @@ def run_full_auto_backtest(
             "total_return_pct": round(total_return_pct, 2),
             "total_closed_trades": total_trades,
             "winning_trades": len(wins),
+            "strict_winning_trades": len(strict_wins),
+            "breakeven_scratches": len(breakeven_trades),
             "losing_trades": len(losses),
             "win_rate_pct": round(win_rate, 1),
+            "strict_win_rate_pct": round(strict_win_rate, 1),
+            "core_win_rate_ex_breakeven_pct": round(core_win_rate_ex_be, 1),
             "profit_factor": round(profit_factor, 2),
             "max_drawdown_usd": round(max_dd_usd, 2),
             "max_drawdown_pct": round(max_dd_pct, 2),
@@ -546,6 +606,8 @@ def run_full_auto_backtest(
             "macro_vetoed_days": macro_vetoed_days,
             "macro_vetoed_signals": macro_vetoed_signals,
         },
+        "last_1y_summary": last_1y_summary,
+        "archetype_breakdown": by_archetype,
         "exit_reasons": exit_counts,
         "cluster_breakdown": by_cluster,
         "sample_trades": closed_trades[:15],
@@ -564,23 +626,45 @@ def run_full_auto_backtest(
 if __name__ == "__main__":
     rep = run_full_auto_backtest()
     s = rep["summary"]
-    print("\n" + "=" * 65)
-    print("RESULTADOS BACKTEST ECONOMÉTRICO V7 (CON MACRO REGIME GATEKEEPER)")
-    print("=" * 65)
+    s1y = rep["last_1y_summary"]
+    print("\n" + "=" * 72)
+    print("RESULTADOS BACKTEST INSTITUCIONAL V34 (TRULLÀS / WYCKOFF VSA / WEINSTEIN)")
+    print("=" * 72)
     print(f"Capital Inicial:     ${s['initial_capital_usd']:,.2f}")
-    print(f"Capital Final:       ${s['final_equity_usd']:,.2f} ({s['total_return_pct']:+.2f}%)")
-    print(f"Beneficio Neto:      ${s['net_profit_usd']:+,.2f}")
+    print(f"Capital Final (3Y):  ${s['final_equity_usd']:,.2f} ({s['total_return_pct']:+.2f}%)")
+    print(f"Beneficio Neto (3Y): ${s['net_profit_usd']:+,.2f}")
     print(f"Total Operaciones:   {s['total_closed_trades']}")
-    print(f"Ratio de Acierto:    {s['win_rate_pct']:.1f}% ({s['winning_trades']}W / {s['losing_trades']}L)")
-    print(f"Profit Factor:       {s['profit_factor']:.2f}")
+    print(
+        f"Acierto Core (ex-BE): {s['core_win_rate_ex_breakeven_pct']:.1f}% ({s['strict_winning_trades']}W Reales | "
+        f"{s['breakeven_scratches']} Breakeven | {s['losing_trades']}L)"
+    )
+    print(f"Acierto Nominal:     {s['win_rate_pct']:.1f}% (incluyendo Breakevens como >$0)")
+    print(f"Profit Factor (3Y):  {s['profit_factor']:.2f}")
     print(f"Esperanza Media:     {s['avg_r_multiple']:+.2f} R (${s['avg_trade_pnl_usd']:+.2f}/trade)")
-    print(f"Max Drawdown:        {s['max_drawdown_pct']:.2f}% (-${s['max_drawdown_usd']:,.2f})")
+    print(f"Max Drawdown (3Y):   {s['max_drawdown_pct']:.2f}% (-${s['max_drawdown_usd']:,.2f})")
     print(f"Cortafuegos -4%:     {'ACTIVADO' if s['circuit_breaker_triggered'] else 'NO ACTIVADO (Protegido)'}")
     print(f"Macro Gatekeeper:    {s['macro_vetoed_days']} sesiones en Veto | {s['macro_vetoed_signals']} señales tóxicas bloqueadas")
-    print("=" * 65)
+    print("-" * 72)
+    print(
+        f"VENTANA ÚLTIMO AÑO ({s1y['start_date']} -> {s1y['end_date']}): "
+        f"{s1y['total_closed_trades']} trades | {s1y['strict_winning_trades']}W / {s1y['breakeven_scratches']}BE / {s1y['losing_trades']}L | "
+        f"Core WR: {s1y['core_win_rate_ex_breakeven_pct']:.1f}% (Nominal: {s1y['win_rate_pct']:.1f}%) | "
+        f"PF: {s1y['profit_factor']:.2f} | PnL: ${s1y['net_profit_usd']:+,.2f}"
+    )
+    print("=" * 72)
+    print("\nDesglose por Arquetipo de Vela y Volumen VSA (3 Años):")
+    for arch, st in rep["archetype_breakdown"].items():
+        print(
+            f"• {arch:24s}: {st['trades']:2d} trades ({st['strict_wins']}W / {st['breakevens']}BE / {st['losses']}L) | "
+            f"Core WR: {st['core_win_rate_ex_be_pct']:5.1f}% | Nominal WR: {st['win_rate_pct']:5.1f}% | PnL: ${st['pnl']:+8.2f}"
+        )
     print("\nDesglose por Motivo de Salida:")
     for er, cnt in rep["exit_reasons"].items():
-        print(f"• {er:22s}: {cnt:2d} trades ({cnt/s['total_closed_trades']*100:4.1f}%)")
+        pct = (cnt / s["total_closed_trades"] * 100.0) if s["total_closed_trades"] > 0 else 0.0
+        print(f"• {er:22s}: {cnt:2d} trades ({pct:4.1f}%)")
     print("\nDesglose Observacional por Clúster (Sin reglas por clúster):")
     for cid, st in rep["cluster_breakdown"].items():
-        print(f"• {cid:22s}: {st['trades']:2d} trades | Win Rate: {st['win_rate_pct']:5.1f}% | PnL: ${st['pnl']:+8.2f}")
+        print(
+            f"• {cid:22s}: {st['trades']:2d} trades | Win Real: {st['strict_win_rate_pct']:5.1f}% "
+            f"(BE: {st['breakevens']}) | PnL: ${st['pnl']:+8.2f}"
+        )
