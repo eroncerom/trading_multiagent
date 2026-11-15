@@ -328,6 +328,8 @@ def evaluate_daily_structure(df_daily: pd.DataFrame) -> Optional[dict[str, Any]]
     sma200_raw = compute_sma(close, 200)
     atr14 = compute_atr(high, low, close, 14)
     rsi14 = compute_rsi(close, 14)
+    rsi2 = compute_rsi(close, 2)
+    rsi5 = compute_rsi(close, 5)
     stoch_k, stoch_d = compute_stochastic(high, low, close, 14, 4)
     adx, plus_di, minus_di = compute_dmi(high, low, close, 14)
 
@@ -346,6 +348,8 @@ def evaluate_daily_structure(df_daily: pd.DataFrame) -> Optional[dict[str, Any]]
     c_sma200 = float(sma200_raw.iloc[-1]) if not pd.isna(sma200_raw.iloc[-1]) else c_sma50
     c_atr = float(atr14.iloc[-1]) if not pd.isna(atr14.iloc[-1]) else (c * 0.02)
     c_rsi = float(rsi14.iloc[-1])
+    c_rsi2 = float(rsi2.iloc[-1])
+    c_rsi5 = float(rsi5.iloc[-1])
     c_k = float(stoch_k.iloc[-1])
     c_d = float(stoch_d.iloc[-1])
     c_adx = float(adx.iloc[-1])
@@ -361,26 +365,24 @@ def evaluate_daily_structure(df_daily: pd.DataFrame) -> Optional[dict[str, Any]]
     ret_1d_pct = ((c - prev_c) / prev_c * 100.0) if prev_c > 0 else 0.0
     ret_5d_pct = ((c - close_5d) / close_5d * 100.0) if close_5d > 0 else 0.0
 
-    falling_knife = bool(
-        body_atr <= -0.80
-        or (ret_1d_pct <= -2.8 and clv_1d < 0.35)
-        or (c < c_ema20 and c_mdi > c_pdi and body_atr < -0.50)
-    )
+    falling_knife = bool(ret_1d_pct <= -3.0)
 
     daily_swing_high_20 = float(high.iloc[-20:-1].max()) if len(high) >= 20 else float(high.max())
+    # Regla 1 H4: Tendencia alcista estructural limpia (Close > SMA200, EMA20 > SMA50, sin desplome > 3%)
     daily_trend_ok = bool(
-        c > c_ema20 * 0.995
-        and c_ema20 >= c_sma50 * 0.995
-        and c_sma50 >= c_sma200 * 0.995
-        and c > c_sma200
-        and c_pdi >= c_mdi
-        and not falling_knife
+        c > c_sma200
+        and c_ema20 > c_sma50
+        and ret_1d_pct > -3.0
     )
+    # Regla 2 H4: Pullback profundo PB10 (RSI(2)_1D <= 10 o RSI(5)_1D <= 25)
+    pullback_pb10_ok = bool(c_rsi2 <= 10.0 or c_rsi5 <= 25.0)
 
-    if falling_knife or (c < c_ema20 and c_mdi > c_pdi):
+    if falling_knife or c < c_sma200:
         regime = "BEARISH_BREAKDOWN" if c > c_sma200 else "BEARISH_TREND"
+    elif daily_trend_ok and pullback_pb10_ok:
+        regime = "BULLISH_PULLBACK"
     elif daily_trend_ok:
-        regime = "BULLISH_TREND" if c_adx >= 18.0 else "BULLISH_PULLBACK"
+        regime = "BULLISH_TREND"
     else:
         regime = "LATERAL_RANGE" if c_adx < 18.0 else "NEUTRAL"
 
@@ -392,6 +394,8 @@ def evaluate_daily_structure(df_daily: pd.DataFrame) -> Optional[dict[str, Any]]
         "sma_200": round(c_sma200, 2),
         "atr_14": round(c_atr, 2),
         "rsi_14": round(c_rsi, 1),
+        "rsi_2": round(c_rsi2, 1),
+        "rsi_5": round(c_rsi5, 1),
         "stoch_k": round(c_k, 2),
         "stoch_d": round(c_d, 2),
         "adx": round(c_adx, 2),
@@ -406,8 +410,20 @@ def evaluate_daily_structure(df_daily: pd.DataFrame) -> Optional[dict[str, Any]]
         "falling_knife": falling_knife,
         "daily_swing_high_20": round(daily_swing_high_20, 2),
         "daily_trend_ok": daily_trend_ok,
+        "pullback_pb10_ok": pullback_pb10_ok,
         "regime": regime,
     }
+
+
+def compute_live_daily_rsi2(df_daily: pd.DataFrame, live_price: Optional[float] = None) -> Optional[float]:
+    """Calcula el RSI(2) diario actualizado con el precio vivo intradía para el Guardián H4."""
+    df = _normalize_ohlcv(df_daily)
+    if df.empty or len(df) < 5:
+        return None
+    close = df["Close"].copy()
+    if live_price is not None and live_price > 0:
+        close = pd.concat([close, pd.Series([float(live_price)], index=[pd.Timestamp.utcnow()])])
+    return round(float(compute_rsi(close, 2).iloc[-1]), 2)
 
 
 # =====================================================================
@@ -530,165 +546,115 @@ def evaluate_three_tricks(
     params: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    Evalúa los 3 Trucos Simples y Deterministas + Comité Cuantitativo Pre-Entrada (Subagentes 1 y 2).
+    Evalúa el Motor Swing Pullback H4 (3 Reglas Ortogonales):
+    1. Regla 1 (Tendencia 1D): Close > SMA200_1D, EMA20_1D > SMA50_1D y retorno 1D > -3.0%.
+    2. Regla 2 (Pullback Profundo PB10): RSI(2)_1D <= 10.0 o RSI(5)_1D <= 25.0.
+    3. Regla 3 (Giro Intradía 15m): Vela 15m verde (Close > Open), Close >= VWAP y Close > High_15m previo.
     """
-    max_ext_atr = float(params.get("max_ema_extension_atr", 1.20))
-    min_clv = float(params.get("min_intraday_clv", 0.65))
-    max_upper_wick = float(params.get("max_upper_wick_ratio", 0.25))
-    min_rvol_intra = float(params.get("min_intraday_rvol", 1.25))
-    max_rsi_15m = float(params.get("max_intraday_rsi_entry", 70.0))
+    rsi2_max = float(params.get("rsi2_pullback_max", 10.0))
+    rsi5_max = float(params.get("rsi5_pullback_max", 25.0))
 
-    # --- TRUCO 1: FILTRO DE MAREA (DIARIO + VWAP INTRADÍA) ---
-    above_vwap = bool(intraday and intraday["price"] >= intraday["vwap"] * 0.999)
-    ema15_rising = bool(intraday and intraday["ema20_15m_slope_pct"] >= -0.02)
-    trick1_tide = bool(daily["daily_trend_ok"] and above_vwap and ema15_rising)
+    # --- REGLA 1: TENDENCIA ALCISTA DIARIA ---
+    trick1_tide = bool(daily.get("daily_trend_ok", False))
 
-    # --- TRUCO 2: ANTI-SOBREPRECIO + PULLBACK A ZONA DE VALOR ---
-    not_overextended = bool(
-        intraday
-        and intraday["dist_from_ema20_atr"] <= max_ext_atr
-        and not intraday["recent_3_green_vertical"]
-    )
-    in_pullback_value = bool(intraday and intraday["touched_value_zone"])
-    trick2_value = bool(not_overextended and in_pullback_value)
+    # --- REGLA 2: PULLBACK PROFUNDO (PB10) ---
+    rsi2_val = float(daily.get("rsi_2", 50.0))
+    rsi5_val = float(daily.get("rsi_5", 50.0))
+    trick2_value = bool(rsi2_val <= rsi2_max or rsi5_val <= rsi5_max)
 
-    # --- TRUCO 3: GATILLO DE IGNICIÓN CON VOLUMEN ---
-    trick3_ignition = bool(
-        intraday
-        and intraday["candle_green"]
-        and intraday["breaks_prev_high"]
-        and intraday["clv"] >= min_clv
-        and intraday["upper_wick_ratio"] <= max_upper_wick
-        and intraday["rvol_intraday"] >= min_rvol_intra
-    )
+    # --- REGLA 3: GIRO INTRADÍA 15m SOBRE VWAP ---
+    above_vwap = bool(intraday and intraday["price"] >= intraday["vwap"])
+    candle_green = bool(intraday and intraday["candle_green"])
+    breaks_prev_high = bool(intraday and intraday["breaks_prev_high"])
+    trick3_ignition = bool(above_vwap and candle_green and breaks_prev_high)
 
-    # --- COMITÉ CUANTITATIVO PRE-ENTRADA (SUBAGENTES 1 Y 2) ---
-    # Subagente 1: Momento del Trade (sin sobrecompra ni clímax)
-    subagent_momento_ok = bool(intraday and intraday["rsi_15m"] <= max_rsi_15m and not_overextended)
+    signal_triggered = bool(trick1_tide and trick2_value and trick3_ignition)
 
-    # Subagente 2: Volumen y Divergencia (volumen comprador supera al volumen vendedor del retroceso)
-    if intraday:
-        vol_vs_pullback = (
-            intraday["curr_vol"] >= (intraday["avg_red_pb_vol"] * 1.05)
-            if intraday["avg_red_pb_vol"] > 0
-            else True
-        )
-        imp_vs_pullback = (
-            intraday["avg_green_imp_vol"] >= (intraday["avg_red_pb_vol"] * 0.95)
-            if intraday["avg_red_pb_vol"] > 0
-            else True
-        )
-        subagent_volumen_ok = bool(vol_vs_pullback and imp_vs_pullback)
+    # Puntuación transparente 0-100: cuando dispara, prioriza el RSI(2) más bajo (mayor sobreventa)
+    if signal_triggered:
+        score = int(max(75, min(99, round(100.0 - rsi2_val))))
     else:
-        subagent_volumen_ok = False
-
-    # Puntuación transparente 0-100 (sin cajas negras)
-    score = 0
-    if daily["daily_trend_ok"]:
-        score += 30
-    if above_vwap and ema15_rising:
-        score += 15
-    if not_overextended:
-        score += 10
-    if in_pullback_value:
-        score += 15
-    if trick3_ignition:
-        score += 20
-    if subagent_momento_ok and subagent_volumen_ok:
-        score += 10
-    if daily["falling_knife"]:
-        score = max(0, score - 40)
-
-    signal_triggered = bool(
-        trick1_tide
-        and trick2_value
-        and trick3_ignition
-        and subagent_momento_ok
-        and subagent_volumen_ok
-    )
+        score = 0
+        if trick1_tide:
+            score += 35
+        if trick2_value:
+            score += 30
+        if above_vwap:
+            score += 10
+        if candle_green and breaks_prev_high:
+            score += 15
+        if daily.get("falling_knife"):
+            score = max(0, score - 40)
 
     block_reason: Optional[str] = None
-    if daily["falling_knife"]:
-        block_reason = f"Escudo Anti-Cuchillo Cayendo: caída diaria {daily['ret_1d_pct']:+.2f}%."
-    elif not daily["daily_trend_ok"]:
-        block_reason = "Truco 1 (Diario): sin estructura alcista limpia (EMA20 > SMA50 > SMA200 y +DI > -DI)."
-    elif not intraday:
-        block_reason = "Sin velas intradía (15m/5m) disponibles para validar el gatillo."
-    elif not above_vwap:
-        block_reason = f"Truco 1 (Intradía): precio ${intraday['price']:.2f} bajo VWAP ${intraday['vwap']:.2f}."
-    elif not not_overextended:
+    if daily.get("falling_knife"):
+        block_reason = f"Escudo Anti-Desplome: caída diaria {daily['ret_1d_pct']:+.2f}% (<= -3.0%)."
+    elif not trick1_tide:
+        block_reason = "Regla 1 (Tendencia 1D): requiere Close > SMA200 y EMA20 > SMA50."
+    elif not trick2_value:
         block_reason = (
-            f"Truco 2 (Anti-Sobreprecio): extendido +{intraday['dist_from_ema20_atr']:.2f}x ATR_15m sobre EMA20_15m."
+            f"Regla 2 (Pullback PB10): RSI(2)_1D={rsi2_val:.1f} (> {rsi2_max:.0f}) "
+            f"y RSI(5)_1D={rsi5_val:.1f} (> {rsi5_max:.0f})."
         )
-    elif not in_pullback_value:
-        block_reason = "Truco 2 (Pullback): esperando descanso a zona de valor (VWAP / EMA20_15m)."
+    elif not intraday:
+        block_reason = "Sin velas intradía (15m) disponibles para validar el giro."
+    elif not above_vwap:
+        block_reason = f"Regla 3 (Giro 15m): precio ${intraday['price']:.2f} bajo VWAP ${intraday['vwap']:.2f}."
     elif not trick3_ignition:
         block_reason = (
-            f"Truco 3 (Gatillo): falta ignición alcista con volumen "
-            f"(Verde={intraday['candle_green']}, RVOL={intraday['rvol_intraday']:.2f}x, CLV={intraday['clv']:.2f})."
+            f"Regla 3 (Giro 15m): esperando vela verde rompiendo High previo "
+            f"(Verde={candle_green}, RompeHigh={breaks_prev_high})."
         )
-    elif not subagent_momento_ok:
-        block_reason = f"Comité [Momento]: RSI_15m ({intraday['rsi_15m']:.1f}) en sobrecompra (> {max_rsi_15m:.0f})."
-    elif not subagent_volumen_ok:
-        block_reason = "Comité [Volumen]: divergencia detectada (volumen del retroceso supera al impulso comprador)."
 
     criteria = [
         {
-            "label": "Truco 1 · Marea Alcista (1D + Sobre VWAP)",
+            "label": "Regla 1 · Tendencia Alcista 1D (SMA200 + EMA20>SMA50)",
             "passed": trick1_tide,
             "detail": (
-                f"1D {'OK' if daily['daily_trend_ok'] else 'NO'} (+DI {daily['plus_di']:.1f}/-DI {daily['minus_di']:.1f}) · "
-                + (
-                    f"Precio ${intraday['price']:.2f} vs VWAP ${intraday['vwap']:.2f}"
-                    if intraday
-                    else "Sin intradía"
-                )
+                f"Precio ${daily['price']:.2f} | EMA20 ${daily['ema_20']:.2f} vs SMA50 ${daily['sma_50']:.2f} "
+                f"| SMA200 ${daily['sma_200']:.2f} | Ret1D {daily['ret_1d_pct']:+.2f}%"
             ),
         },
         {
-            "label": "Truco 2 · Valor sin Sobreprecio (Pullback a VWAP/EMA20)",
+            "label": f"Regla 2 · Pullback Profundo (RSI2 <= {rsi2_max:.0f} o RSI5 <= {rsi5_max:.0f})",
             "passed": trick2_value,
-            "detail": (
-                f"Distancia EMA20_15m: {intraday['dist_from_ema20_atr']:+.2f}x ATR | Pullback: {'Sí' if in_pullback_value else 'No'}"
-                if intraday
-                else "Esperando datos intradía"
-            ),
+            "detail": f"RSI(2)_1D: {rsi2_val:.1f} · RSI(5)_1D: {rsi5_val:.1f}",
         },
         {
-            "label": "Truco 3 · Gatillo de Ignición + Comité (Momento y Volumen)",
-            "passed": bool(trick3_ignition and subagent_momento_ok and subagent_volumen_ok),
+            "label": "Regla 3 · Giro Intradía 15m (Verde + >= VWAP + Rompe High[t-1])",
+            "passed": trick3_ignition,
             "detail": (
-                f"TF {intraday['trigger_timeframe']} · RVOL {intraday['rvol_intraday']:.2f}x · CLV {intraday['clv']*100:.0f}% · "
-                f"Comité: Momento={'OK' if subagent_momento_ok else 'VETO'} / Vol={'OK' if subagent_volumen_ok else 'VETO'}"
+                f"TF {intraday['trigger_timeframe']} · Precio ${intraday['price']:.2f} vs VWAP ${intraday['vwap']:.2f} "
+                f"· Verde={'Sí' if candle_green else 'No'} · RompeHigh={'Sí' if breaks_prev_high else 'No'}"
                 if intraday
-                else "Sin gatillo intradía"
+                else "Esperando velas 15m"
             ),
         },
     ]
 
     if signal_triggered:
         expert_summary = (
-            f"3 Trucos + Comité APROBADO ({intraday['trigger_timeframe']}): sobre VWAP ${intraday['vwap']:.2f}, "
-            f"pullback limpio y vela de ignición con RVOL {intraday['rvol_intraday']:.2f}x."
+            f"Setup Swing H4 APROBADO ({intraday['trigger_timeframe']}): Tendencia 1D alcista, "
+            f"pullback RSI(2)={rsi2_val:.1f} y giro sobre VWAP ${intraday['vwap']:.2f}."
         )
     else:
-        expert_summary = block_reason or "En vigilancia de estructura y pullback."
+        expert_summary = block_reason or "En vigilancia de pullback PB10."
 
     return {
         "signal_triggered": signal_triggered,
-        "setup_archetype": "THREE_TRICKS_INTRADAY_PULLBACK" if signal_triggered else "NONE",
+        "setup_archetype": "SWING_PULLBACK_H4" if signal_triggered else "NONE",
         "quant_score": score,
         "short_term_bias": (
             "LONG_CONVICTION"
             if signal_triggered
-            else ("SHORT_PRESSURE" if daily["falling_knife"] or "BEARISH" in daily["regime"] else "PULLBACK_WATCH")
+            else ("SHORT_PRESSURE" if daily.get("falling_knife") or "BEARISH" in daily.get("regime", "") else "PULLBACK_WATCH")
         ),
         "block_reason": block_reason,
         "expert_summary": expert_summary,
         "expert_criteria": criteria,
         "committee_pre_trade": {
-            "momento_subagent": "APPROVE" if subagent_momento_ok else "REJECT",
-            "volumen_subagent": "APPROVE" if subagent_volumen_ok else "REJECT",
+            "momento_subagent": "APPROVE" if trick2_value else "REJECT",
+            "volumen_subagent": "APPROVE" if trick3_ignition else "REJECT",
             "empresa_subagent": "PENDING_AI",
         },
     }

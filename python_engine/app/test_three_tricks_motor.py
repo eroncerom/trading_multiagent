@@ -130,22 +130,16 @@ class TestThreeTricksMotor(unittest.TestCase):
         self.trigger = TriggerExecutionAgent(ZeroLossSignalBus())
         self.params = dict(DEFAULT_STRATEGY_PARAMS)
 
-    def test_1_bracket_levels_and_028pct_risk_never_40_usd_loss(self):
+    def test_1_bracket_levels_and_065pct_risk_h4(self):
         brackets = self.trigger.calculate_bracket_levels(
             entry_price=150.00,
-            atr_14=3.80,  # ATR diario grande (legacy hubiera dado SL -$8)
+            atr_14=3.00,  # 1.8 * 3.00 = 5.40
             strategy_params=self.params,
-            recent_swing_high=153.50,
-            atr_15m=0.85,  # ATR intradía realista
-            pullback_low=149.10,
         )
-        # SL anclado cerca del pullback_low (149.10 - 0.25*0.85 = 148.89), riesgo por acción ~1.11
-        self.assertGreater(brackets["stop_loss_price"], 147.00)
-        self.assertLess(brackets["stop_loss_price"], 149.50)
-        self.assertLessEqual(brackets["risk_per_share"], 1.30)
-        # TP realista (1.9R o techo 153.50*0.996 = 152.89), nunca +10%
-        self.assertGreater(brackets["take_profit_price"], 151.50)
-        self.assertLess(brackets["take_profit_price"], 154.00)
+        self.assertEqual(brackets["risk_per_share"], 5.40)
+        self.assertEqual(brackets["stop_loss_price"], 144.60)
+        self.assertEqual(brackets["take_profit_price"], 160.80)  # +2.0R
+        self.assertEqual(brackets["breakeven_trigger_price"], 156.48)  # +1.20R
 
         sizing = self.trigger.calculate_position_sizing(
             portfolio_value=5000.0,
@@ -155,28 +149,29 @@ class TestThreeTricksMotor(unittest.TestCase):
             strategy_params=self.params,
         )
         self.assertTrue(sizing["viable"], msg=sizing.get("rejection_reason"))
-        # Riesgo total máximo ~$14 (0.28% de 5000), jamás -$40 o -$50
-        self.assertLessEqual(sizing["max_risk_eur"], 15.0)
-        self.assertGreaterEqual(sizing["expected_profit_eur"], 8.0)
+        # Riesgo 0.65% de 5000 = $32.50 máx (5 acciones * 5.40 + $2 comm = $29.00)
+        self.assertLessEqual(sizing["max_risk_eur"], 32.50)
+        self.assertLessEqual(sizing["invested_capital"], 1000.0)  # tope 20% = $1,000
+        self.assertGreaterEqual(sizing["expected_profit_eur"], 4.0)
 
     def test_2_commission_and_min_net_profit_gate(self):
-        # Si el potencial neto es < $8.00 (1 acción * $8.50 bruto - $2 comm = $6.50 netos), debe rechazar
+        # Si el potencial neto es < $4.00, debe rechazar
         bad_sizing = self.trigger.calculate_position_sizing(
             portfolio_value=5000.0,
             entry_price=200.00,
-            stop_loss_price=195.00,
-            take_profit_price=208.50,  # 1.70R >= 1.60R, pero con riesgo 0.20% ($10 -> $8/5 = 1 acc) solo deja $6.50 neto
-            strategy_params={**self.params, "max_portfolio_risk_per_trade_pct": 0.0020},
+            stop_loss_price=197.50,
+            take_profit_price=205.00,  # 2.0R; con 1 acción -> $5 bruto - $2 comm = $3.00 neto < $4.00
+            strategy_params={**self.params, "max_portfolio_risk_per_trade_pct": 0.0010},
         )
         self.assertFalse(bad_sizing["viable"])
         self.assertIn("neto", bad_sizing["rejection_reason"].lower())
 
-        # Techo estructural demasiado cercano (< 1.60R) debe rechazarse
+        # Ratio R:R < 1.80R debe rechazarse
         low_rr = self.trigger.calculate_position_sizing(
             portfolio_value=5000.0,
             entry_price=100.00,
-            stop_loss_price=98.50,
-            take_profit_price=101.80,  # 1.20R < 1.60R
+            stop_loss_price=97.00,
+            take_profit_price=104.00,  # 1.33R < 1.80R
             strategy_params=self.params,
         )
         self.assertFalse(low_rr["viable"])
@@ -194,38 +189,39 @@ class TestThreeTricksMotor(unittest.TestCase):
         self.assertTrue(d_knife["falling_knife"])
         self.assertFalse(d_knife["daily_trend_ok"])
 
-    def test_4_three_tricks_intraday_vetoes_and_ignition(self):
+    def test_4_h4_three_rules_pullback_and_15m_turn(self):
         df_d = _make_daily_df(bullish=True)
-        daily = evaluate_daily_structure(df_d)
-        self.assertTrue(daily["daily_trend_ok"])
+        # Caso A: tendencia alcista pero SIN pullback (RSI2 alto) -> NO dispara
+        daily_no_pb = evaluate_daily_structure(df_d)
+        self.assertTrue(daily_no_pb["daily_trend_ok"])
+        self.assertFalse(daily_no_pb["pullback_pb10_ok"])
 
-        # Caso A: Setup limpio Los 3 Trucos -> DISPARA
         df_15m_ok = _make_intraday_15m_pullback_ignition()
         intra_ok = extract_intraday_features(df_15m_ok)
         self.assertIsNotNone(intra_ok)
-        res_ok = evaluate_three_tricks(daily, intra_ok, self.params)
+        res_no_pb = evaluate_three_tricks(daily_no_pb, intra_ok, self.params)
+        self.assertFalse(res_no_pb["signal_triggered"])
+        self.assertIn("Regla 2", res_no_pb["block_reason"])
+
+        # Caso B: tendencia alcista + pullback profundo PB10 (RSI2 <= 10) + giro 15m >= VWAP -> DISPARA
+        df_pb = df_d.copy()
+        df_pb.iloc[-2, df_pb.columns.get_loc("Close")] = df_pb["Close"].iloc[-3] * 0.985
+        df_pb.iloc[-1, df_pb.columns.get_loc("Close")] = df_pb["Close"].iloc[-2] * 0.982
+        daily_pb = evaluate_daily_structure(df_pb)
+        self.assertTrue(daily_pb["daily_trend_ok"])
+        self.assertTrue(daily_pb["pullback_pb10_ok"])
+
+        intra_above = {**intra_ok, "price": round(intra_ok["vwap"] + 0.10, 2)}
+        res_ok = evaluate_three_tricks(daily_pb, intra_above, self.params)
         self.assertTrue(res_ok["signal_triggered"], msg=res_ok.get("block_reason"))
-        self.assertEqual(res_ok["setup_archetype"], "THREE_TRICKS_INTRADAY_PULLBACK")
-        self.assertGreaterEqual(res_ok["quant_score"], 70)
+        self.assertEqual(res_ok["setup_archetype"], "SWING_PULLBACK_H4")
+        self.assertGreaterEqual(res_ok["quant_score"], 75)
 
-        # Caso B: Sobreextendido / 3 velas verdes verticales -> BLOQUEA
-        df_15m_ext = _make_intraday_15m_pullback_ignition(overextended=True)
-        intra_ext = extract_intraday_features(df_15m_ext)
-        res_ext = evaluate_three_tricks(daily, intra_ext, self.params)
-        self.assertFalse(res_ext["signal_triggered"])
-
-        # Caso C: Comité #2 divergencia volumen (pullback rojo > impulso verde) -> BLOQUEA
-        df_15m_div = _make_intraday_15m_pullback_ignition(red_volume_heavy=True)
-        intra_div = extract_intraday_features(df_15m_div)
-        res_div = evaluate_three_tricks(daily, intra_div, self.params)
-        self.assertFalse(res_div["signal_triggered"])
-        self.assertIn("Comité [Volumen]", res_div["block_reason"])
-
-        # Caso D: Comité #1 RSI > 70 -> BLOQUEA
-        df_15m_rsi = _make_intraday_15m_pullback_ignition(high_rsi=True)
-        intra_rsi = extract_intraday_features(df_15m_rsi)
-        res_rsi = evaluate_three_tricks(daily, intra_rsi, self.params)
-        self.assertFalse(res_rsi["signal_triggered"])
+        # Caso C: precio bajo VWAP en 15m -> BLOQUEA
+        intra_below_vwap = {**intra_ok, "price": intra_ok["vwap"] - 0.50}
+        res_vwap = evaluate_three_tricks(daily_pb, intra_below_vwap, self.params)
+        self.assertFalse(res_vwap["signal_triggered"])
+        self.assertIn("VWAP", res_vwap["block_reason"])
 
     def test_5_ai_advisor_committee_3_prompt_contract(self):
         self.assertIn("48", ai_advisor.SYSTEM_PROMPT)
@@ -251,132 +247,110 @@ class TestThreeTricksMotor(unittest.TestCase):
         self.assertEqual(parsed["vwap_sesion"], 139.2)
         self.assertEqual(parsed["rvol_intradia"], 1.6)
 
-    def test_6_position_guardian_protections_and_eod_swing(self):
+    def test_6_position_guardian_h4_be_plus_rsi2_and_time_exit(self):
         midday_utc = datetime(2026, 4, 9, 17, 0, tzinfo=timezone.utc)  # 13:00 ET
         eod_utc = datetime(2026, 4, 9, 19, 50, tzinfo=timezone.utc)    # 15:50 ET (ventana EOD 15m)
 
-        # A) Revisor de Entradas (Early Abort): cae bajo VWAP con vela roja y RVOL >= 1.30x
-        abort_res = evaluate_position_guardian(
+        # A) Sin aborto prematuro bajo VWAP: el SL estructural 1.8x ATR_1D trabaja libremente
+        hold_res = evaluate_position_guardian(
             symbol="MSFT",
-            qty=10,
+            qty=5,
             entry_price=150.0,
-            current_price=149.40,
-            current_sl=148.80,
-            current_tp=152.30,
+            current_price=149.20,
+            current_sl=144.60,
+            current_tp=160.80,
             peak_price=150.10,
-            initial_risk_per_share=1.20,
-            unrealized_pl=-6.0,
+            initial_risk_per_share=5.40,
+            unrealized_pl=-4.0,
             clv_daily=0.35,
-            intraday_sig={
-                "has_intraday": True,
-                "vwap": 149.90,
-                "below_vwap": True,
-                "rvol_intraday": 1.45,
-                "last_open": 149.85,
-                "last_close": 149.40,
-            },
+            intraday_sig={"has_intraday": True, "vwap": 149.90, "below_vwap": True, "rvol_intraday": 1.45},
+            params=self.params,
+            now_utc=midday_utc,
+            rsi2_daily=35.0,
+            days_held=1.0,
+        )
+        self.assertEqual(hold_res["action_type"], "NONE")
+        self.assertEqual(hold_res["regime_code"], "HOLD_STEADY")
+
+        # B) En +0.60R aún NO activa BE+ (espera a +1.20R)
+        no_early_be = evaluate_position_guardian(
+            symbol="NVDA",
+            qty=5,
+            entry_price=150.0,
+            current_price=153.24,  # +0.60R
+            current_sl=144.60,
+            current_tp=160.80,
+            peak_price=153.24,
+            initial_risk_per_share=5.40,
+            unrealized_pl=16.20,
+            clv_daily=0.75,
+            intraday_sig={},
             params=self.params,
             now_utc=midday_utc,
         )
-        self.assertEqual(abort_res["action_type"], "CLOSE_IMMEDIATELY")
-        self.assertEqual(abort_res["regime_code"], "EARLY_ABORT_BY_REVIEWER")
+        self.assertEqual(no_early_be["action_type"], "NONE")
 
-        # B) Breakeven+ a +$8.00: asegura comisiones ($2) + colchón ($2) = +$4/10 = $150.40
+        # C) En +1.20R activa Candado Breakeven+: Entrada + ($2 comm + $3 neto)/5 = $151.00
         be_res = evaluate_position_guardian(
             symbol="NVDA",
-            qty=10,
+            qty=5,
             entry_price=150.0,
-            current_price=150.85,
-            current_sl=148.80,
-            current_tp=152.30,
-            peak_price=150.90,
-            initial_risk_per_share=1.20,
-            unrealized_pl=8.50,
-            clv_daily=0.75,
-            intraday_sig={"vwap": 150.10, "below_vwap": False, "below_ema9": False, "selling_rvol": 0.9},
+            current_price=156.48,  # +1.20R
+            current_sl=144.60,
+            current_tp=160.80,
+            peak_price=156.48,
+            initial_risk_per_share=5.40,
+            unrealized_pl=32.40,
+            clv_daily=0.80,
+            intraday_sig={},
             params=self.params,
             now_utc=midday_utc,
         )
         self.assertEqual(be_res["action_type"], "ADJUST_SL")
         self.assertEqual(be_res["regime_code"], "BREAKEVEN_LOCK")
-        self.assertGreaterEqual(be_res["recommended_sl"], 150.40)
+        self.assertEqual(be_res["recommended_sl"], 151.00)
 
-        # C) Trailing Ratchet Etapa 1 (pico +$15 >= +$12) bloquea 60% de MFE ($150.0 + 0.60*1.5 = $150.90)
-        tr1_res = evaluate_position_guardian(
-            symbol="NVDA",
-            qty=10,
-            entry_price=150.0,
-            current_price=151.30,
-            current_sl=150.40,
-            current_tp=152.40,
-            peak_price=151.50,
-            initial_risk_per_share=1.20,
-            unrealized_pl=13.00,
-            clv_daily=0.80,
-            intraday_sig={"vwap": 150.20, "below_vwap": False, "below_ema9": False, "selling_rvol": 0.8},
-            params=self.params,
-            now_utc=midday_utc,
-        )
-        self.assertEqual(tr1_res["action_type"], "ADJUST_SL")
-        self.assertEqual(tr1_res["regime_code"], "TRAILING_RATCHET_60")
-        self.assertEqual(tr1_res["recommended_sl"], 150.90)
-
-        # D) Si retrocede tras pico +$15 por debajo del suelo garantizado ($150.90), CIERRA INMEDIATAMENTE
-        lock_close = evaluate_position_guardian(
-            symbol="NVDA",
-            qty=10,
-            entry_price=150.0,
-            current_price=150.85,
-            current_sl=150.40,
-            current_tp=152.40,
-            peak_price=151.50,
-            initial_risk_per_share=1.20,
-            unrealized_pl=8.50,
-            clv_daily=0.50,
-            intraday_sig={"vwap": 150.90, "below_vwap": True, "below_ema9": True, "selling_rvol": 1.0},
-            params=self.params,
-            now_utc=midday_utc,
-        )
-        self.assertEqual(lock_close["action_type"], "CLOSE_IMMEDIATELY")
-        self.assertEqual(lock_close["regime_code"], "PROFIT_LOCK_MARKET_CLOSE")
-
-        # E) Ventana EOD NY (15:50 ET): sin colchón >= 1.5R -> cierra EOD
-        eod_close = evaluate_position_guardian(
+        # D) Ventana EOD NY (15:50 ET): RSI(2)_1D >= 75 y PnL neto > $4 -> RSI2_OVERBOUGHT_EXIT
+        rsi_exit = evaluate_position_guardian(
             symbol="AAPL",
-            qty=10,
+            qty=5,
             entry_price=150.0,
-            current_price=150.40,
-            current_sl=148.80,
-            current_tp=152.30,
-            peak_price=150.50,
-            initial_risk_per_share=1.20,
-            unrealized_pl=4.0,
-            clv_daily=0.55,
-            intraday_sig={"vwap": 150.10, "below_vwap": False, "below_ema9": False, "selling_rvol": 0.9},
+            current_price=154.00,
+            current_sl=144.60,
+            current_tp=160.80,
+            peak_price=154.20,
+            initial_risk_per_share=5.40,
+            unrealized_pl=20.0,
+            clv_daily=0.85,
+            intraday_sig={},
             params=self.params,
             now_utc=eod_utc,
+            rsi2_daily=78.5,
+            days_held=4.0,
         )
-        self.assertEqual(eod_close["action_type"], "CLOSE_IMMEDIATELY")
-        self.assertEqual(eod_close["regime_code"], "EOD_CLOSE_POSITION")
+        self.assertEqual(rsi_exit["action_type"], "CLOSE_IMMEDIATELY")
+        self.assertEqual(rsi_exit["regime_code"], "RSI2_OVERBOUGHT_EXIT")
 
-        # F) Ventana EOD NY (15:50 ET): >= +1.5R, CLV_1D >= 0.70, SL ya en BE+/Ratchet -> prórroga Swing aprobada (no cierra EOD)
-        eod_swing = evaluate_position_guardian(
+        # E) Ventana EOD NY (15:50 ET): 12 días abierta -> TIME_EXIT_12D
+        time_exit = evaluate_position_guardian(
             symbol="AAPL",
-            qty=10,
+            qty=5,
             entry_price=150.0,
-            current_price=151.90,
-            current_sl=151.50,
-            current_tp=152.40,
+            current_price=150.50,
+            current_sl=144.60,
+            current_tp=160.80,
             peak_price=152.00,
-            initial_risk_per_share=1.20,
-            unrealized_pl=19.0,
-            clv_daily=0.82,
-            intraday_sig={"vwap": 150.50, "below_vwap": False, "below_ema9": False, "rvol_intraday": 0.8},
+            initial_risk_per_share=5.40,
+            unrealized_pl=2.50,
+            clv_daily=0.55,
+            intraday_sig={},
             params=self.params,
             now_utc=eod_utc,
+            rsi2_daily=45.0,
+            days_held=12.0,
         )
-        self.assertEqual(eod_swing["action_type"], "NONE")
-        self.assertNotEqual(eod_swing["regime_code"], "EOD_CLOSE_POSITION")
+        self.assertEqual(time_exit["action_type"], "CLOSE_IMMEDIATELY")
+        self.assertEqual(time_exit["regime_code"], "TIME_EXIT_12D")
 
     def test_7_extract_intraday_guardian_signals_handles_df(self):
         idx5 = pd.date_range("2026-04-09 14:00", periods=15, freq="5min", tz="UTC")
@@ -398,10 +372,12 @@ class TestThreeTricksMotor(unittest.TestCase):
     def test_8_strategy_params_json_valid_and_clusters_intact(self):
         params_path = Path(__file__).parent / "audit_data" / "strategy_params.json"
         data = json.loads(params_path.read_text(encoding="utf-8"))
-        self.assertEqual(data["version"], 50)
+        self.assertEqual(data["version"], 51)
+        self.assertEqual(data["engine_mode"], "SWING_PULLBACK_H4")
+        self.assertEqual(data["max_portfolio_risk_per_trade_pct"], 0.0065)
+        self.assertEqual(data["max_concurrent_positions"], 6)
         self.assertEqual(data["commission_per_order"], 1.0)
-        self.assertEqual(data["max_comm_ratio"], 0.25)
-        self.assertEqual(data["min_net_profit_usd"], 8.0)
+        self.assertEqual(data["min_net_profit_usd"], 4.0)
         self.assertTrue(data["auto_adapt_positions"])
         self.assertEqual(len(data["clusters"]), 17)
 

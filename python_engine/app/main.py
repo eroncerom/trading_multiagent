@@ -66,8 +66,8 @@ def reload_env_config() -> dict[str, Any]:
         default_tickers = all_cluster_tickers
 
     return {
-        "max_risk_pct": float(os.getenv("MAX_PORTFOLIO_RISK_PCT", 0.0028)),
-        "max_position_allocation_pct": float(os.getenv("MAX_POSITION_ALLOCATION_PCT", 0.30)),
+        "max_risk_pct": float(os.getenv("MAX_PORTFOLIO_RISK_PCT", 0.0065)),
+        "max_position_allocation_pct": float(os.getenv("MAX_POSITION_ALLOCATION_PCT", 0.20)),
         "commission_per_order": float(os.getenv("BROKER_COMMISSION_PER_ORDER", 1.0)),
         "max_comm_ratio": float(os.getenv("MAX_COMMISSION_TO_PROFIT_RATIO", 0.25)),
         "default_portfolio_value": float(os.getenv("DEFAULT_PORTFOLIO_VALUE", 1000.0)),
@@ -344,12 +344,10 @@ def analyze_single_ticker_df(
     if daily is None:
         return None, None
 
-    if df_15m is None and daily.get("daily_trend_ok"):
+    if df_15m is None and daily.get("daily_trend_ok") and daily.get("pullback_pb10_ok", True):
         try:
             b15 = fetch_intraday_bars_batch([ticker], interval="15m", period="5d")
-            b5 = fetch_intraday_bars_batch([ticker], interval="5m", period="2d")
             df_15m = b15.get(ticker)
-            df_5m = b5.get(ticker)
         except Exception as intr_err:
             logger.debug(f"[{ticker}] Sin barras intradía: {intr_err}")
 
@@ -397,6 +395,8 @@ def analyze_single_ticker_df(
         "minus_di": daily["minus_di"],
         "di_spread": daily["di_spread"],
         "rsi_14": daily["rsi_14"],
+        "rsi_2": daily.get("rsi_2"),
+        "rsi_5": daily.get("rsi_5"),
         "stoch_k": daily["stoch_k"],
         "stoch_d": daily["stoch_d"],
         "atr_14": daily["atr_14"],
@@ -513,7 +513,7 @@ def _scan_cluster_worker(
         d_eval = evaluate_daily_structure(df_d) if df_d is not None else None
         if d_eval is not None:
             daily_evals[ticker] = d_eval
-            if d_eval.get("daily_trend_ok"):
+            if d_eval.get("daily_trend_ok") and d_eval.get("pullback_pb10_ok"):
                 bullish_candidates.append(ticker)
 
     bars_15m: dict[str, pd.DataFrame] = {}
@@ -521,9 +521,8 @@ def _scan_cluster_worker(
     if bullish_candidates:
         try:
             bars_15m = fetch_intraday_bars_batch(bullish_candidates, interval="15m", period="5d")
-            bars_5m = fetch_intraday_bars_batch(bullish_candidates, interval="5m", period="2d")
         except Exception as err:
-            logger.warning(f"[{cluster_id}] Error obteniendo velas 15m/5m: {err}")
+            logger.warning(f"[{cluster_id}] Error obteniendo velas 15m: {err}")
 
     for ticker in clean:
         d_eval = daily_evals.get(ticker)
@@ -717,25 +716,43 @@ def evaluate_macro_regime_sync(
         "falling_knives_count": falling_knives,
     }
 
-    # Evaluación de disparadores de liquidación institucional (evita falsos positivos en días de gap alcista o martillos de acumulación)
-    spy_liquidation = (
-        (spy["daily_change_pct"] <= spy_thresh and spy["intraday_from_open_pct"] <= -0.30 and not spy["above_vwap"])
-        or (spy["intraday_from_open_pct"] <= (spy_thresh * 1.5) and spy["daily_change_pct"] < 0.0 and not spy["above_vwap"])
-    )
-    qqq_liquidation = (
-        (qqq["daily_change_pct"] <= qqq_thresh and qqq["intraday_from_open_pct"] <= -0.40 and not qqq["above_vwap"])
-        or (qqq["intraday_from_open_pct"] <= (qqq_thresh * 1.5) and qqq["daily_change_pct"] < 0.0 and not qqq["above_vwap"])
-    )
-    vwap_breadth_breach = (
-        vwap_filter
-        and (not spy["above_vwap"])
-        and (not qqq["above_vwap"])
-        and (spy["daily_change_pct"] <= -0.50)
-        and (advancing_ratio < min_breadth_ratio)
-    )
+    # Evaluación de régimen macro H4: SPY > SMA200_1D + cortafuegos de pánico intradía (-2.20%)
+    spy_sma200_mode = bool(params.get("macro_spy_sma200_only", True))
+    spy_above_sma200 = True
+    if spy_sma200_mode:
+        try:
+            spy_daily_map = get_cached_daily_batch(["SPY"], ttl_seconds=300.0)
+            spy_df = spy_daily_map.get("SPY")
+            if spy_df is not None and len(spy_df) >= 200:
+                spy_sma200 = float(spy_df["Close"].rolling(200).mean().iloc[-1])
+                spy_last_close = float(spy_df["Close"].iloc[-1])
+                spy_above_sma200 = bool(spy_last_close > spy_sma200)
+        except Exception:
+            spy_above_sma200 = True
 
-    spy_breach = spy_liquidation
-    qqq_breach = qqq_liquidation
+    if spy_sma200_mode:
+        spy_panic = spy["daily_change_pct"] <= spy_thresh or spy["intraday_from_open_pct"] <= spy_thresh
+        spy_breach = (not spy_above_sma200) or spy_panic
+        qqq_breach = False
+        vwap_breadth_breach = False
+    else:
+        spy_liquidation = (
+            (spy["daily_change_pct"] <= spy_thresh and spy["intraday_from_open_pct"] <= -0.30 and not spy["above_vwap"])
+            or (spy["intraday_from_open_pct"] <= (spy_thresh * 1.5) and spy["daily_change_pct"] < 0.0 and not spy["above_vwap"])
+        )
+        qqq_liquidation = (
+            (qqq["daily_change_pct"] <= qqq_thresh and qqq["intraday_from_open_pct"] <= -0.40 and not qqq["above_vwap"])
+            or (qqq["intraday_from_open_pct"] <= (qqq_thresh * 1.5) and qqq["daily_change_pct"] < 0.0 and not qqq["above_vwap"])
+        )
+        vwap_breadth_breach = (
+            vwap_filter
+            and (not spy["above_vwap"])
+            and (not qqq["above_vwap"])
+            and (spy["daily_change_pct"] <= -0.50)
+            and (advancing_ratio < min_breadth_ratio)
+        )
+        spy_breach = spy_liquidation
+        qqq_breach = qqq_liquidation
 
     cooldown_rem_mins = 0
     if enabled and (spy_breach or qqq_breach or vwap_breadth_breach):
@@ -1571,6 +1588,18 @@ class AutonomousScannerWorker:
                     opp["ai_advice"] = carried
 
                 if self.execution_mode == "FULL_AUTO":
+                    # Límite de posiciones concurrentes (H4: máx 6 posiciones simultáneas)
+                    max_conc = int(params.get("max_concurrent_positions", 6))
+                    open_pos_snap = await get_alpaca_positions()
+                    current_open_cnt = len(open_pos_snap.get("positions") or [])
+                    if current_open_cnt >= max_conc:
+                        opp["status"] = "SLOT_CAP_REACHED"
+                        self.active_opportunities[ticker] = opp
+                        logger.info(
+                            f"[CUPO CARTERA] {ticker} en espera: {current_open_cnt}/{max_conc} posiciones abiertas."
+                        )
+                        continue
+
                     # Puerta del asesor IA: bloquea tanto REJECT como CAUTION (cuando ai_veto_on_caution=True)
                     if params.get("ai_gate_full_auto", True):
                         advice = opp.get("ai_advice") if (opp.get("ai_advice") or {}).get("status") == "DONE" else None

@@ -157,46 +157,53 @@ class TriggerExecutionAgent:
         atr_15m: Optional[float] = None,
         pullback_low: Optional[float] = None,
     ) -> dict[str, float]:
-        """Calcula los niveles OCO anclados al pullback intradía (15m) con asimetría realista."""
-        atr_ref = float(atr_15m) if (atr_15m is not None and atr_15m > 0) else float(atr_14)
-        if atr_ref <= 0:
-            atr_ref = entry_price * 0.006
-
-        sl_mult = float(strategy_params.get("atr_stop_loss_multiplier", 1.25))
-        sl_buffer = float(strategy_params.get("intraday_sl_buffer_atr", 0.25)) * atr_ref
-        min_atr_risk = float(strategy_params.get("intraday_sl_min_atr", 0.80)) * atr_ref
-        max_atr_risk = float(strategy_params.get("intraday_sl_max_atr", 1.50)) * atr_ref
-
-        if pullback_low is not None and 0 < float(pullback_low) < entry_price:
-            raw_risk = entry_price - (float(pullback_low) - sl_buffer)
-        else:
+        """Calcula los niveles OCO estructurales H4 (SL = 1.8x ATR_1D, TP = 2.0R, BE+ = +1.20R)."""
+        use_daily_atr = bool(strategy_params.get("use_daily_atr_for_sl", True))
+        if use_daily_atr:
+            atr_ref = float(atr_14) if (atr_14 is not None and atr_14 > 0) else (entry_price * 0.02)
+            sl_mult = float(strategy_params.get("atr_stop_loss_multiplier", 1.80))
             raw_risk = sl_mult * atr_ref
+            min_pct_risk = entry_price * float(strategy_params.get("min_sl_price_pct", 0.008))
+            max_pct_risk = entry_price * float(strategy_params.get("max_sl_price_pct", 0.08))
+            risk_per_share = round(max(min_pct_risk, min(max_pct_risk, raw_risk)), 2)
+        else:
+            atr_ref = float(atr_15m) if (atr_15m is not None and atr_15m > 0) else float(atr_14)
+            if atr_ref <= 0:
+                atr_ref = entry_price * 0.006
+            sl_mult = float(strategy_params.get("atr_stop_loss_multiplier", 1.25))
+            sl_buffer = float(strategy_params.get("intraday_sl_buffer_atr", 0.25)) * atr_ref
+            min_atr_risk = float(strategy_params.get("intraday_sl_min_atr", 0.80)) * atr_ref
+            max_atr_risk = float(strategy_params.get("intraday_sl_max_atr", 1.50)) * atr_ref
+            if pullback_low is not None and 0 < float(pullback_low) < entry_price:
+                raw_risk = entry_price - (float(pullback_low) - sl_buffer)
+            else:
+                raw_risk = sl_mult * atr_ref
+            atr_clamped_risk = max(min_atr_risk, min(max_atr_risk, raw_risk))
+            min_pct_risk = entry_price * float(strategy_params.get("intraday_sl_min_price_pct", 0.003))
+            max_pct_risk = entry_price * float(strategy_params.get("intraday_sl_max_price_pct", 0.018))
+            risk_per_share = round(max(min_pct_risk, min(max_pct_risk, atr_clamped_risk)), 2)
 
-        atr_clamped_risk = max(min_atr_risk, min(max_atr_risk, raw_risk))
-        min_pct_risk = entry_price * float(strategy_params.get("intraday_sl_min_price_pct", 0.003))
-        max_pct_risk = entry_price * float(strategy_params.get("intraday_sl_max_price_pct", 0.018))
-        risk_per_share = round(max(min_pct_risk, min(max_pct_risk, atr_clamped_risk)), 2)
         if risk_per_share <= 0:
-            risk_per_share = round(max(0.05, entry_price * 0.005), 2)
+            risk_per_share = round(max(0.05, entry_price * 0.008), 2)
 
         stop_loss_price = round(entry_price - risk_per_share, 2)
 
-        rr_ratio = float(strategy_params.get("take_profit_reward_risk_ratio", 1.90))
-        max_gain_pct = float(strategy_params.get("max_single_swing_gain_pct", 0.04))
+        rr_ratio = float(strategy_params.get("take_profit_reward_risk_ratio", 2.0))
+        max_gain_pct = float(strategy_params.get("max_single_swing_gain_pct", 0.25))
         max_allowed_tp = round(entry_price * (1.0 + max_gain_pct), 2)
         base_tp = round(entry_price + (risk_per_share * rr_ratio), 2)
         take_profit_price = min(base_tp, max_allowed_tp)
 
-        if bool(strategy_params.get("cap_tp_at_swing_high_in_uptrend", True)):
+        if bool(strategy_params.get("cap_tp_at_swing_high_in_uptrend", False)):
             if recent_swing_high and recent_swing_high > entry_price:
                 structural_ceiling = round(float(recent_swing_high) * 0.996, 2)
                 if structural_ceiling > entry_price:
                     take_profit_price = min(take_profit_price, structural_ceiling)
 
-        be_trigger_r = float(strategy_params.get("breakeven_trigger_r", 0.60))
+        be_trigger_r = float(strategy_params.get("breakeven_trigger_r", 1.20))
         be_lock_r = float(strategy_params.get("breakeven_lock_r", 0.15))
         trail_trigger_r = float(
-            strategy_params.get("trailing_stage1_trigger_r", strategy_params.get("trailing_ratchet_trigger_r", 1.00))
+            strategy_params.get("trailing_stage1_trigger_r", strategy_params.get("trailing_ratchet_trigger_r", 1.50))
         )
         trail_lock_r = float(
             strategy_params.get("trailing_stage1_lock_mfe_pct", strategy_params.get("trailing_ratchet_lock_r", 0.60))
@@ -230,18 +237,18 @@ class TriggerExecutionAgent:
         commission_per_order: Optional[float] = None,
         max_comm_ratio: Optional[float] = None,
     ) -> dict[str, Any]:
-        """Dimensiona acciones por riesgo de cartera (0.28%), comisiones ($1/orden) y beneficio neto mínimo."""
-        risk_pct = float(strategy_params.get("max_portfolio_risk_per_trade_pct", 0.0028))
+        """Dimensiona acciones por riesgo de cartera H4 (0.65%), tope 20%, comisiones ($1/orden) y beneficio neto mínimo."""
+        risk_pct = float(strategy_params.get("max_portfolio_risk_per_trade_pct", 0.0065))
         eff_comm = float(
             commission_per_order if commission_per_order is not None else strategy_params.get("commission_per_order", 1.0)
         )
         eff_max_comm_ratio = float(
             max_comm_ratio if max_comm_ratio is not None else strategy_params.get("max_comm_ratio", 0.25)
         )
-        min_net_profit_usd = float(strategy_params.get("min_net_profit_usd", 8.0))
+        min_net_profit_usd = float(strategy_params.get("min_net_profit_usd", 4.0))
 
-        if not strategy_params.get("use_adaptive_allocation_cap", True):
-            max_alloc_pct = float(strategy_params.get("max_position_allocation_pct", 0.30))
+        if not strategy_params.get("use_adaptive_allocation_cap", False):
+            max_alloc_pct = float(strategy_params.get("max_position_allocation_pct", 0.20))
             tier_label = f"FIXED_CAP ({round(max_alloc_pct * 100, 1)}%)"
         elif portfolio_value <= 2000.0:
             max_alloc_pct, tier_label = 0.40, "ADAPTIVE_STARTER_1K_2K (40%)"
@@ -265,7 +272,7 @@ class TriggerExecutionAgent:
 
         reward_per_share = take_profit_price - entry_price
         achieved_rr = (reward_per_share / risk_per_share) if risk_per_share > 0 else 0.0
-        min_rr_threshold = float(strategy_params.get("min_reward_risk_ratio", 1.60))
+        min_rr_threshold = float(strategy_params.get("min_reward_risk_ratio", 1.80))
 
         gross_profit = reward_per_share * final_shares
         net_profit = gross_profit - round_trip_comm

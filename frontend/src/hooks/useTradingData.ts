@@ -27,12 +27,14 @@ export function useOpportunities() {
   });
 }
 
-export function useCandles(ticker: string | null) {
+export function useCandles(ticker: string | null, activeChart = false) {
   return useQuery({
     queryKey: ["candles", ticker],
     queryFn: () => (ticker ? api.getCandles(ticker, 100) : null),
-    enabled: !!ticker,
+    enabled: !!ticker && activeChart,
     staleTime: 10000,
+    refetchInterval: activeChart ? 10000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 

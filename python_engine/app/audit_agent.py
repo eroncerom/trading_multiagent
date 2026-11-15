@@ -131,8 +131,8 @@ DEFAULT_CLUSTERS: dict[str, list[str]] = {
 }
 
 DEFAULT_STRATEGY_PARAMS: dict[str, Any] = {
-    "version": 50,
-    "engine_mode": "THREE_TRICKS_INTRADAY",
+    "version": 51,
+    "engine_mode": "SWING_PULLBACK_H4",
     "stoch_k_window": 14,
     "stoch_d_smooth": 4,
     "adx_window": 14,
@@ -141,64 +141,53 @@ DEFAULT_STRATEGY_PARAMS: dict[str, Any] = {
     "sma_window": 200,
     "rsi_window": 14,
     "atr_window": 14,
-    "min_rvol_intraday": 1.25,
-    "max_dist_from_ema20_atr": 1.20,
-    "max_rsi_15m_entry": 70.0,
-    "min_clv_ignition": 0.65,
-    "max_upper_wick_ratio": 0.25,
-    "pullback_max_dist_atr": 0.60,
-    "min_volume_ratio_impulse_vs_pb": 1.0,
+    "rsi2_pullback_max": 10.0,
+    "rsi5_pullback_max": 25.0,
+    "rsi2_exit_overbought": 75.0,
+    "max_hold_days": 12,
+    "daily_max_drop_pct": -3.0,
     "min_quant_score": 70,
     "intraday_opening_cooldown_minutes": 15,
-    "atr_stop_loss_multiplier": 1.25,
-    "intraday_sl_buffer_atr": 0.25,
-    "intraday_sl_min_atr": 0.80,
-    "intraday_sl_max_atr": 1.50,
-    "intraday_sl_min_price_pct": 0.003,
-    "intraday_sl_max_price_pct": 0.018,
-    "take_profit_reward_risk_ratio": 1.90,
-    "min_reward_risk_ratio": 1.60,
-    "max_single_swing_gain_pct": 0.04,
-    "cap_tp_at_swing_high_in_uptrend": True,
-    "max_portfolio_risk_per_trade_pct": 0.0028,
-    "use_adaptive_allocation_cap": True,
-    "max_position_allocation_pct": 0.30,
+    "atr_stop_loss_multiplier": 1.80,
+    "use_daily_atr_for_sl": True,
+    "min_sl_price_pct": 0.008,
+    "max_sl_price_pct": 0.08,
+    "take_profit_reward_risk_ratio": 2.0,
+    "min_reward_risk_ratio": 1.80,
+    "max_single_swing_gain_pct": 0.25,
+    "cap_tp_at_swing_high_in_uptrend": False,
+    "max_portfolio_risk_per_trade_pct": 0.0065,
+    "use_adaptive_allocation_cap": False,
+    "max_position_allocation_pct": 0.20,
+    "max_concurrent_positions": 6,
     "virtual_portfolio_base": 5000.0,
     "commission_per_order": 1.0,
     "max_comm_ratio": 0.25,
-    "min_net_profit_usd": 8.0,
+    "min_net_profit_usd": 4.0,
+    "swing_rsi2_min_net_profit_usd": 4.0,
     "max_session_drawdown_pct": 0.04,
     "enable_breakeven_protection": True,
-    "breakeven_trigger_usd": 8.0,
-    "breakeven_trigger_r": 0.60,
+    "breakeven_trigger_usd": 12.0,
+    "breakeven_trigger_r": 1.20,
     "breakeven_lock_r": 0.15,
-    "breakeven_net_cushion_usd": 2.0,
-    "trailing_stage1_trigger_r": 1.00,
-    "trailing_stage1_trigger_usd": 12.0,
-    "trailing_stage1_lock_mfe_pct": 0.60,
-    "trailing_stage2_trigger_r": 1.40,
-    "trailing_stage2_trigger_usd": 18.0,
-    "trailing_stage2_lock_mfe_pct": 0.75,
-    "trailing_ratchet_trigger_r": 1.00,
-    "trailing_ratchet_lock_r": 0.60,
-    "early_abort_selling_rvol": 1.30,
-    "exhaustion_close_min_r": 1.00,
-    "swing_overnight_min_r": 1.50,
-    "swing_overnight_min_clv": 0.70,
+    "breakeven_net_cushion_usd": 3.0,
+    "enable_early_abort": False,
+    "enable_eod_forced_intraday_close": False,
     "eod_close_window_minutes": 15,
     "ai_gate_full_auto": True,
     "ai_veto_on_caution": True,
     "macro_regime_gatekeeper_enabled": True,
+    "macro_spy_sma200_only": True,
     "macro_benchmark_tickers": ["SPY", "QQQ"],
-    "macro_index_threshold_drop_pct": -0.75,
-    "macro_qqq_threshold_drop_pct": -1.00,
-    "macro_caution_threshold_drop_pct": -0.40,
-    "macro_intraday_vwap_filter": True,
-    "macro_market_breadth_min_advancing_pct": 0.38,
-    "macro_cooldown_minutes_after_reversal": 30,
+    "macro_index_threshold_drop_pct": -2.20,
+    "macro_qqq_threshold_drop_pct": -2.50,
+    "macro_caution_threshold_drop_pct": -1.50,
+    "macro_intraday_vwap_filter": False,
+    "macro_market_breadth_min_advancing_pct": 0.20,
+    "macro_cooldown_minutes_after_reversal": 15,
     "clusters": DEFAULT_CLUSTERS,
     "last_updated_at": None,
-    "last_updated_by": "SYSTEM_DEFAULT_V50",
+    "last_updated_by": "SYSTEM_DEFAULT_V51_H4",
 }
 
 
@@ -1866,6 +1855,25 @@ class IndependentAuditAgent:
                 if not intraday_sig.get("vwap") and vwap_15m > 0:
                     intraday_sig["vwap"] = vwap_15m
                     intraday_sig["below_vwap"] = bool(curr_px < vwap_15m)
+
+                rsi2_daily_live: Optional[float] = None
+                try:
+                    from three_tricks_engine import compute_live_daily_rsi2, get_cached_daily_batch
+
+                    d_cache = get_cached_daily_batch([sym], ttl_seconds=300.0)
+                    if sym in d_cache:
+                        rsi2_daily_live = compute_live_daily_rsi2(d_cache[sym], curr_px)
+                except Exception:
+                    rsi2_daily_live = None
+
+                try:
+                    days_held = max(
+                        0.0,
+                        (datetime.now(timezone.utc).date() - datetime.strptime(entry_date_str[:10], "%Y-%m-%d").date()).days,
+                    )
+                except Exception:
+                    days_held = 0.0
+
                 guardian_res = evaluate_position_guardian(
                     symbol=sym,
                     qty=qty,
@@ -1879,6 +1887,8 @@ class IndependentAuditAgent:
                     clv_daily=clv_daily,
                     intraday_sig=intraday_sig,
                     params=self.strategy_params,
+                    rsi2_daily=rsi2_daily_live,
+                    days_held=days_held,
                 )
                 action_type = guardian_res["action_type"]
                 regime_code = guardian_res["regime_code"]

@@ -139,7 +139,7 @@ export function CandlestickBracketChart({
         lineWidth: 2,
         lineStyle: 2,
         axisLabelVisible: true,
-        title: `SL (-1.5 ATR) $${stopLossPrice.toFixed(2)}`,
+        title: `SL (-1.8 ATR) $${stopLossPrice.toFixed(2)}`,
       });
     }
 
@@ -177,6 +177,10 @@ export function CandlestickBracketChart({
         <span className="flex items-center gap-1 text-blue-600">
           <span className="inline-block h-2 w-2 rounded-full bg-blue-600" />
           SMA 200 (Macro Anual)
+        </span>
+        <span className="flex items-center gap-1 text-emerald-700">
+          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          AUTO 10s
         </span>
       </div>
       <div ref={chartContainerRef} className="h-full w-full" />

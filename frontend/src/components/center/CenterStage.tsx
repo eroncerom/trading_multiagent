@@ -26,7 +26,7 @@ export function CenterStage() {
   }, [opportunities.length, selectedTicker]);
 
   const activeOppForSelected = opportunities.find((o) => o.ticker === selectedTicker);
-  const candlesQ = useCandles(selectedTicker);
+  const candlesQ = useCandles(selectedTicker, viewMode === "CHART");
 
   // Mutaciones de 1 clic
   const scanNowMutation = useMutation({

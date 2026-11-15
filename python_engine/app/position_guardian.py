@@ -1,12 +1,11 @@
 """
-Agente Revisor / Guardián Activo de Posiciones en Vivo.
+Agente Revisor / Guardián Activo de Posiciones en Vivo (V51 · Escenario H4).
 
 Misiones (100% automático cada ciclo en MANUAL y FULL_AUTO):
-1. Corte Temprano ('Perder 2 en vez de 14'): cierra al instante si tras entrar rompe VWAP con volumen vendedor.
-2. Candado Breakeven+ inmediato (desde +$8 o +0.60R): sube SL sobre Entrada + Comisiones + Colchón.
-3. Trailing Ratchet progresivo: asegura 60% del MFE desde +1.0R / +$12 y 75% desde +1.4R / +$18,
-   y cierra por agotamiento si pierde EMA9_5m con rechazo.
-4. Filtro Fin de Sesión (últimos 15 min NY, 15:45-16:00 ET): cierra posiciones salvo prórroga Swing (>= +1.5R y cierre fuerte).
+1. Salida Swing por Sobrecompra RSI(2)_1D >= 75 en ventana EOD (15:45-16:00 ET) cuando PnL neto > $4.00.
+2. Salida por Tiempo (12 días naturales) en ventana EOD para evitar capital muerto.
+3. Candado Breakeven+ defensivo al alcanzar +1.20R (sube SL a Entrada + $2 comisiones + $3 neto).
+4. Sin cierres prematuros intradía (EARLY_ABORT desactivado) para dejar trabajar al SL estructural (1.8x ATR_1D).
 """
 from __future__ import annotations
 
@@ -97,12 +96,12 @@ def evaluate_position_guardian(
     intraday_sig: dict[str, Any],
     params: dict[str, Any],
     now_utc: Optional[datetime] = None,
+    rsi2_daily: Optional[float] = None,
+    days_held: float = 0.0,
 ) -> dict[str, Any]:
     """
-    Evalúa una posición abierta y decide la acción exacta del Guardián:
+    Evalúa una posición abierta bajo las reglas H4:
     - action_type: "NONE" | "ADJUST_SL" | "CLOSE_IMMEDIATELY"
-    - regime_code, urgency, headline, why_proposed, action_summary, quantitative_evidence
-    - recommended_sl, recommended_tp
     """
     qty_eff = max(1.0, float(qty))
     risk_ps = max(0.01, float(initial_risk_per_share))
@@ -113,203 +112,100 @@ def evaluate_position_guardian(
 
     commission_per_order = float(params.get("commission_per_order", 1.0))
     round_trip_comm = commission_per_order * 2.0
-    be_cushion_usd = float(params.get("breakeven_net_cushion_usd", 2.0))
-    be_trigger_r = float(params.get("breakeven_trigger_r", 0.60))
-    be_trigger_usd = float(params.get("breakeven_trigger_usd", 8.0))
-
-    trail1_r = float(params.get("trailing_stage1_trigger_r", 1.00))
-    trail1_usd = float(params.get("trailing_stage1_trigger_usd", 12.0))
-    trail1_mfe_pct = float(params.get("trailing_stage1_lock_mfe_pct", 0.60))
-
-    trail2_r = float(params.get("trailing_stage2_trigger_r", 1.40))
-    trail2_usd = float(params.get("trailing_stage2_trigger_usd", 18.0))
-    trail2_mfe_pct = float(params.get("trailing_stage2_lock_mfe_pct", 0.75))
-
-    swing_min_r = float(params.get("swing_overnight_min_r", 1.50))
-    swing_min_clv = float(params.get("swing_overnight_min_clv", 0.70))
+    be_cushion_usd = float(params.get("breakeven_net_cushion_usd", 3.0))
+    be_trigger_r = float(params.get("breakeven_trigger_r", 1.20))
+    rsi2_exit_thresh = float(params.get("rsi2_exit_overbought", 75.0))
+    swing_min_net_usd = float(params.get("swing_rsi2_min_net_profit_usd", 4.0))
+    max_hold_days = float(params.get("max_hold_days", 12))
     eod_window_mins = int(params.get("eod_close_window_minutes", 15))
 
-    # Precio de Breakeven+ que cubre comisiones de ida y vuelta + colchón neto positivo
+    # Precio de Breakeven+ que cubre comisiones de ida y vuelta + colchón neto positivo ($3)
     be_plus_sl = round(entry_price + ((round_trip_comm + be_cushion_usd) / qty_eff), 2)
 
     # -----------------------------------------------------------------
-    # 1. REGLA FIN DE SESIÓN VS PRÓRROGA SWING (15:45 - 16:00 ET)
+    # 1. VENTANA FIN DE SESIÓN NY (15:45 - 16:00 ET): SALIDA SWING RSI(2) O TIEMPO 12D
     # -----------------------------------------------------------------
     dt_utc = now_utc or datetime.now(timezone.utc)
     dt_ny = dt_utc.astimezone(NY_TZ)
     mins_ny = dt_ny.hour * 60 + dt_ny.minute
-    close_mins = 16 * 60  # 16:00 ET cierre regular NYSE/NASDAQ
+    close_mins = 16 * 60
     in_eod_window = (dt_ny.weekday() < 5) and ((close_mins - eod_window_mins) <= mins_ny < close_mins)
 
     if in_eod_window:
-        swing_ok = (
-            curr_r >= swing_min_r
-            and clv_daily >= swing_min_clv
-            and (current_sl is not None and current_sl >= be_plus_sl)
-        )
-        if not swing_ok:
+        net_unrealized = unrealized_pl - round_trip_comm
+        if rsi2_daily is not None and rsi2_daily >= rsi2_exit_thresh and net_unrealized > swing_min_net_usd:
             return {
                 "action_type": "CLOSE_IMMEDIATELY",
                 "action_required": True,
-                "regime_code": "EOD_CLOSE_POSITION",
+                "regime_code": "RSI2_OVERBOUGHT_EXIT",
                 "urgency": "HIGH",
                 "recommended_sl": current_sl,
                 "recommended_tp": current_tp,
-                "headline": f"Cierre Intradía Fin de Sesión en {symbol} ({curr_r:+.2f}R / ${unrealized_pl:+.2f})",
+                "headline": f"Salida Swing RSI(2)={rsi2_daily:.1f} en {symbol} (Neto est. ${net_unrealized:+.2f})",
                 "why_proposed": (
-                    f"Faltan <= {eod_window_mins} min para el cierre de NY y {symbol} no cumple el colchón mínimo "
-                    f"para prórroga Swing (>= +{swing_min_r:.2f}R y CLV >= {swing_min_clv:.2f}). Se cierra para evitar gaps nocturnos."
+                    f"{symbol} alcanzó sobrecompra diaria RSI(2)={rsi2_daily:.1f} (>= {rsi2_exit_thresh:.0f}) "
+                    f"en ventana de cierre NY con beneficio neto estimado de ${net_unrealized:+.2f}."
                 ),
-                "action_summary": f"Cerrar posición en {symbol} antes del cierre regular para evitar riesgo overnight.",
+                "action_summary": f"Cerrar {symbol} al cierre para embolsar el rebote Swing.",
                 "quantitative_evidence": [
-                    f"Hora NY: {dt_ny.strftime('%H:%M')} ET (ventana de cierre)",
-                    f"Múltiplo actual: {curr_r:+.2f}R (mínimo Swing: +{swing_min_r:.2f}R) · CLV 1D: {clv_daily:.2f}",
+                    f"Hora NY: {dt_ny.strftime('%H:%M')} ET · RSI(2)_1D: {rsi2_daily:.1f}",
+                    f"PnL bruto: ${unrealized_pl:+.2f} · PnL neto est.: ${net_unrealized:+.2f} ({curr_r:+.2f}R)",
+                ],
+            }
+
+        if days_held >= max_hold_days:
+            return {
+                "action_type": "CLOSE_IMMEDIATELY",
+                "action_required": True,
+                "regime_code": "TIME_EXIT_12D",
+                "urgency": "MEDIUM",
+                "recommended_sl": current_sl,
+                "recommended_tp": current_tp,
+                "headline": f"Salida por Tiempo ({days_held:.0f}d) en {symbol} ({curr_r:+.2f}R / ${unrealized_pl:+.2f})",
+                "why_proposed": (
+                    f"{symbol} lleva {days_held:.0f} días abierto (>= {max_hold_days:.0f}d) sin resolver hacia TP/SL. "
+                    f"Se libera el capital para rotar hacia nuevas oportunidades PB10."
+                ),
+                "action_summary": f"Cerrar {symbol} por cumplimiento de horizonte temporal ({max_hold_days:.0f} días).",
+                "quantitative_evidence": [
+                    f"Días en cartera: {days_held:.0f}d (límite {max_hold_days:.0f}d)",
+                    f"Múltiplo actual: {curr_r:+.2f}R · PnL bruto: ${unrealized_pl:+.2f}",
                 ],
             }
 
     # -----------------------------------------------------------------
-    # 2. CORTE TEMPRANO DE DAÑOS ('PERDER 2 EN VEZ DE 14')
+    # 2. CANDADO DEFENSIVO BREAKEVEN+ EN +1.20R (SIN CORTES PREMATUROS)
     # -----------------------------------------------------------------
-    if (
-        intraday_sig.get("has_intraday")
-        and unrealized_pl < 0.0
-        and current_price < entry_price
-        and intraday_sig.get("below_vwap")
-        and float(intraday_sig.get("rvol_intraday") or 1.0) >= 1.30
-        and float(intraday_sig.get("last_close") or current_price) < float(intraday_sig.get("last_open") or current_price)
-    ):
-        return {
-            "action_type": "CLOSE_IMMEDIATELY",
-            "action_required": True,
-            "regime_code": "EARLY_ABORT_BY_REVIEWER",
-            "urgency": "HIGH",
-            "recommended_sl": current_sl,
-            "recommended_tp": current_tp,
-            "headline": f"Corte Temprano en {symbol}: pérdida de VWAP con volumen vendedor (${unrealized_pl:+.2f})",
-            "why_proposed": (
-                f"{symbol} perdió el VWAP (${intraday_sig['vwap']:.2f}) con vela bajista y RVOL {intraday_sig['rvol_intraday']:.2f}x. "
-                f"El Agente Revisor corta el daño en ${unrealized_pl:+.2f} sin esperar a que caiga al Stop Loss."
-            ),
-            "action_summary": f"Cerrar {symbol} inmediatamente a mercado para limitar la pérdida.",
-            "quantitative_evidence": [
-                f"Precio ${current_price:.2f} < VWAP ${intraday_sig['vwap']:.2f}",
-                f"Volumen vendedor RVOL {intraday_sig['rvol_intraday']:.2f}x >= 1.30x · PnL latente: ${unrealized_pl:+.2f}",
-            ],
-        }
+    be_hit = bool(params.get("enable_breakeven_protection", True)) and (max(curr_r, mfe_r) >= be_trigger_r)
 
-    # -----------------------------------------------------------------
-    # 3. SALIDA POR AGOTAMIENTO EN ZONA DE BENEFICIO (+1.0R / +$12)
-    # -----------------------------------------------------------------
-    in_profit_zone = (curr_r >= trail1_r) or (unrealized_pl >= trail1_usd)
-    if (
-        intraday_sig.get("has_intraday")
-        and in_profit_zone
-        and unrealized_pl > (round_trip_comm + 2.0)
-        and intraday_sig.get("below_ema9")
-        and (
-            float(intraday_sig.get("upper_wick_ratio") or 0.0) >= 0.40
-            or float(intraday_sig.get("last_close") or current_price) < float(intraday_sig.get("last_open") or current_price)
-        )
-    ):
-        return {
-            "action_type": "CLOSE_IMMEDIATELY",
-            "action_required": True,
-            "regime_code": "TAKE_PROFIT_EXHAUSTION_CLOSE",
-            "urgency": "HIGH",
-            "recommended_sl": current_sl,
-            "recommended_tp": current_tp,
-            "headline": f"Cierre por Agotamiento en {symbol}: embolsando ${unrealized_pl:+.2f}",
-            "why_proposed": (
-                f"{symbol} alcanzó zona de beneficio (+{max(curr_r, mfe_r):.2f}R) y perdió EMA9 intradía "
-                f"(${intraday_sig['ema9_5m']:.2f}) con rechazo. Se asegura la ganancia antes de que retroceda."
-            ),
-            "action_summary": f"Cerrar {symbol} ahora y asegurar +${unrealized_pl:.2f} brutos en cuenta.",
-            "quantitative_evidence": [
-                f"PnL latente: ${unrealized_pl:+.2f} (Pico MFE: +${mfe_usd:.2f})",
-                f"Cierre bajo EMA9_5m (${intraday_sig['ema9_5m']:.2f}) | Mecha superior {intraday_sig['upper_wick_ratio']*100:.0f}%",
-            ],
-        }
-
-    # -----------------------------------------------------------------
-    # 4. TRAILING RATCHET PROGRESIVO (75% MFE -> 60% MFE) Y BREAKEVEN+
-    # -----------------------------------------------------------------
-    stage2_hit = (max(curr_r, mfe_r) >= trail2_r) or (mfe_usd >= trail2_usd)
-    stage1_hit = (max(curr_r, mfe_r) >= trail1_r) or (mfe_usd >= trail1_usd)
-    be_hit = (max(curr_r, mfe_r) >= be_trigger_r) or (mfe_usd >= be_trigger_usd) or (unrealized_pl >= be_trigger_usd)
-
-    target_sl: Optional[float] = None
     regime_code = "HOLD_STEADY"
-    headline = f"Posición {symbol} dentro de márgenes ({curr_r:+.2f}R / ${unrealized_pl:+.2f})"
-    why_proposed = f"{symbol} evoluciona correctamente sin alertas de giro ni umbrales pendientes."
+    headline = f"Posición {symbol} en vigilancia H4 ({curr_r:+.2f}R / ${unrealized_pl:+.2f})"
+    why_proposed = f"{symbol} evoluciona dentro de su margen estructural (SL 1.8x ATR_1D, objetivo 2.0R o RSI(2)>=75)."
     evidence: list[str] = [
         f"Actual: ${current_price:.2f} ({curr_r:+.2f}R) | Pico MFE: ${peak_price:.2f} (+{mfe_r:.2f}R / +${mfe_usd:.2f})",
-        f"Suelo Breakeven+ (costes +${be_cushion_usd:.0f}): ${be_plus_sl:.2f}",
+        f"Candado BE+ (+{be_trigger_r:.2f}R): ${be_plus_sl:.2f}"
+        + (f" | RSI(2)_1D: {rsi2_daily:.1f}" if rsi2_daily is not None else ""),
     ]
 
-    if stage2_hit:
-        lock_px = entry_price + (trail2_mfe_pct * mfe_ps)
-        candle_floor = float(intraday_sig.get("prev_low") or 0.0)
-        if candle_floor > be_plus_sl and candle_floor < current_price - 0.05:
-            lock_px = max(lock_px, candle_floor - 0.02)
-        target_sl = round(max(be_plus_sl, lock_px), 2)
-        regime_code = "TRAILING_RATCHET_75"
-        headline = f"Trailing Escudo 75% en {symbol}: SL protegido en ${target_sl:.2f}"
-        why_proposed = (
-            f"{symbol} alcanzó un pico de +${mfe_usd:.2f} (+{mfe_r:.2f}R). Se eleva el Stop Loss asegurando el 75% del tramo "
-            f"favorable (${target_sl:.2f}) para evitar devolver ganancias."
-        )
-    elif stage1_hit:
-        lock_px = entry_price + (trail1_mfe_pct * mfe_ps)
-        target_sl = round(max(be_plus_sl, lock_px), 2)
-        regime_code = "TRAILING_RATCHET_60"
-        headline = f"Trailing Escudo 60% en {symbol}: SL protegido en ${target_sl:.2f}"
-        why_proposed = (
-            f"{symbol} superó +${trail1_usd:.0f} / +{trail1_r:.2f}R (Pico +${mfe_usd:.2f}). "
-            f"El Guardián bloquea al menos el 60% del beneficio alcanzado subiendo el Stop a ${target_sl:.2f}."
-        )
-    elif be_hit:
-        target_sl = be_plus_sl
+    if be_hit:
+        final_sl = round(max(current_sl or 0.0, be_plus_sl), 2)
         regime_code = "BREAKEVEN_LOCK"
-        headline = f"Candado Breakeven+ Activo en {symbol}: imposible perder (${target_sl:.2f})"
+        headline = f"Candado Breakeven+ Activo en {symbol} (+{max(curr_r, mfe_r):.2f}R): SL en ${final_sl:.2f}"
         why_proposed = (
-            f"{symbol} alcanzó el umbral de supervivencia (+${be_trigger_usd:.0f} o +{be_trigger_r:.2f}R). "
-            f"El Stop Loss sube a ${target_sl:.2f} (Entrada + comisiones + ${be_cushion_usd:.0f} neto)."
+            f"{symbol} superó +{be_trigger_r:.2f}R (Pico +{mfe_r:.2f}R / +${mfe_usd:.2f}). "
+            f"El Stop Loss sube a ${final_sl:.2f} (Entrada + comisiones + ${be_cushion_usd:.0f} neto)."
         )
-
-    if target_sl is not None:
-        # Si ya tocó zona ganadora pero el precio actual cayó por debajo del candado que correspondía, cerrar para no volver a rojo
-        if current_price <= target_sl + 0.02:
-            if current_price > entry_price + (round_trip_comm / qty_eff):
-                return {
-                    "action_type": "CLOSE_IMMEDIATELY",
-                    "action_required": True,
-                    "regime_code": "PROFIT_LOCK_MARKET_CLOSE",
-                    "urgency": "HIGH",
-                    "recommended_sl": current_sl,
-                    "recommended_tp": current_tp,
-                    "headline": f"Asegurando Ganancia en {symbol}: retroceso hacia suelo protegido (${current_price:.2f})",
-                    "why_proposed": (
-                        f"{symbol} alcanzó +${mfe_usd:.2f} y ha retrocedido hasta el nivel protegido (${target_sl:.2f}). "
-                        "Se cierra al instante para garantizar beneficio neto positivo."
-                    ),
-                    "action_summary": f"Cerrar {symbol} para asegurar +${unrealized_pl:.2f} antes de que siga cayendo.",
-                    "quantitative_evidence": evidence,
-                }
-            # Si aún no está bajo entrada pero sí muy pegado, ajustamos justo debajo del precio si sigue sobre breakeven
-            target_sl = round(max(be_plus_sl, current_price - 0.05), 2)
-
-        final_sl = round(max(current_sl or 0.0, target_sl), 2)
         if final_sl < current_price - 0.02 and (current_sl is None or (final_sl - current_sl) >= 0.05):
             return {
                 "action_type": "ADJUST_SL",
                 "action_required": True,
                 "regime_code": regime_code,
-                "urgency": "HIGH" if stage1_hit else "MEDIUM",
+                "urgency": "MEDIUM",
                 "recommended_sl": final_sl,
                 "recommended_tp": current_tp,
                 "headline": headline,
                 "why_proposed": why_proposed,
-                "action_summary": f"Subir Stop Loss en Alpaca a ${final_sl:.2f} (nunca retrocede).",
+                "action_summary": f"Subir Stop Loss en Alpaca a ${final_sl:.2f} (candado Breakeven+).",
                 "quantitative_evidence": evidence,
             }
 

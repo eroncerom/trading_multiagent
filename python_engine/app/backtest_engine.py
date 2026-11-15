@@ -76,6 +76,8 @@ def evaluate_bar_signals(
     df["plus_di"], df["minus_di"] = _dmi(high, low, close, 14)
     df["di_spread"] = df["plus_di"] - df["minus_di"]
     df["rsi_14"] = _rsi(close, 14)
+    df["rsi_2"] = _rsi(close, 2)
+    df["rsi_5"] = _rsi(close, 5)
 
     vol_sma20 = vol_s.rolling(20).mean().replace(0.0, np.nan)
     df["rvol_20"] = (vol_s / vol_sma20).fillna(1.0)
@@ -89,57 +91,36 @@ def evaluate_bar_signals(
     df["upper_wick_ratio"] = (high - np.maximum(open_s, close)) / candle_range
     df["recent_swing_high"] = high.shift(1).rolling(20, min_periods=5).max()
     df["pullback_low"] = low.rolling(4, min_periods=1).min()
+    df["falling_knife"] = (df["ret_1d_pct"] <= -3.0) | (df["candle_body_atr"] <= -1.20)
 
-    # Anti-Cuchillo Cayendo
-    severe_bear = (df["candle_body_atr"] <= -0.80) | ((df["ret_1d_pct"] <= -2.8) & (df["clv"] < 0.25))
-    waterfall = (df["ret_3d_pct"] <= -4.2) & (close < df["ema_20"]) & (df["minus_di"] > df["plus_di"]) & (df["candle_body"] < 0)
-    df["falling_knife"] = severe_bear | waterfall
-
-    # Truco 1: Marea Alcista
-    trick1_tide = (
+    # Regla 1 H4: Tendencia Alcista 1D
+    rule1_trend = (
         (close > df["sma_200"])
-        & (df["ema_20"] >= df["sma_50"] * 0.995)
-        & (df["ema20_slope_5d"] >= -0.05)
-        & (df["di_spread"] >= 0.0)
-        & (~df["falling_knife"])
+        & (df["ema_20"] > df["sma_50"])
+        & (df["ret_1d_pct"] > -3.0)
     )
 
-    # Truco 2: Zona de valor (pullback a EMA20 sin sobreprecio ni 3 velas verticales seguidas)
-    dist_ema_atr = (close - df["ema_20"]) / df["atr_14"].replace(0.0, np.nan)
-    three_green = (close > open_s) & (close.shift(1) > open_s.shift(1)) & (close.shift(2) > open_s.shift(2))
-    touched_ema = (low <= df["ema_20"] * 1.008) | (low.shift(1) <= df["ema_20"].shift(1) * 1.008)
-    trick2_pullback = touched_ema & (dist_ema_atr <= float(params.get("max_dist_from_ema20_atr", 1.20))) & (~three_green)
+    # Regla 2 H4: Pullback Profundo PB10
+    rsi2_max = float(params.get("rsi2_pullback_max", 10.0))
+    rsi5_max = float(params.get("rsi5_pullback_max", 25.0))
+    rule2_pb10 = (df["rsi_2"] <= rsi2_max) | (df["rsi_5"] <= rsi5_max)
 
-    # Truco 3: Ignición con volumen
-    min_rvol = float(params.get("min_rvol_intraday", 1.25))
-    min_clv = float(params.get("min_clv_ignition", 0.65))
-    max_wick = float(params.get("max_upper_wick_ratio", 0.25))
-    trick3_ignition = (
-        (close > open_s)
-        & (close > high.shift(1))
-        & (df["clv"] >= min_clv)
-        & (df["upper_wick_ratio"] <= max_wick)
-        & (df["rvol_20"] >= min_rvol)
-    )
+    # Regla 3 H4 (Proxy diaria de giro comprador)
+    rule3_turn = (close > open_s) & (close > high.shift(1))
 
-    # Comité #1 (Momento sin agotamiento) y Comité #2 (Absorción compradora > vendedora)
-    red_vol = pd.Series(np.where(close < open_s, vol_s, np.nan), index=df.index).shift(1).rolling(5, min_periods=1).mean().fillna(0.0)
-    green_vol = pd.Series(np.where(close > open_s, vol_s, np.nan), index=df.index).rolling(3, min_periods=1).mean().fillna(vol_s)
-    committee_ok = (df["rsi_14"] <= float(params.get("max_rsi_15m_entry", 70.0))) & ((red_vol == 0.0) | (green_vol >= red_vol))
-
-    df["signal_buy"] = trick1_tide & trick2_pullback & trick3_ignition & committee_ok
-    df["setup_archetype"] = np.where(df["signal_buy"], "THREE_TRICKS_IGNITION", "NONE")
-    df["pred_edge"] = (df["rvol_20"].clip(0.5, 3.0) * 15.0) + (df["clv"] * 25.0) + (df["di_spread"].clip(0.0, 25.0))
+    df["signal_buy"] = rule1_trend & rule2_pb10 & rule3_turn
+    df["setup_archetype"] = np.where(df["signal_buy"], "SWING_PULLBACK_H4", "NONE")
+    df["pred_edge"] = (100.0 - df["rsi_2"]).clip(75.0, 99.0)
     return df
 
 
 def run_full_auto_backtest(
     initial_capital: float = 5000.0,
-    max_risk_pct: float = 0.0028,
-    atr_sl_mult: float = 1.25,
-    tp_rr: float = 1.9,
+    max_risk_pct: float = 0.0065,
+    atr_sl_mult: float = 1.8,
+    tp_rr: float = 2.0,
     commission_per_order: float = 1.0,
-    max_concurrent_positions: int = 4,
+    max_concurrent_positions: int = 6,
 ) -> dict[str, Any]:
     """Ejecuta la simulación cronológica día por día (3 años) con reglas 100% agnósticas al activo."""
     params = audit_agent.strategy_params
@@ -203,17 +184,16 @@ def run_full_auto_backtest(
     equity_curve: list[dict[str, Any]] = []
     circuit_breaker_triggered = False
 
-    be_trigger_r = float(params.get("breakeven_trigger_r", 0.60))
-    be_cushion_usd = float(params.get("breakeven_net_cushion_usd", 2.0))
-    t1_trigger_r = float(params.get("trailing_stage1_trigger_r", 1.00))
-    t1_lock_mfe_pct = float(params.get("trailing_stage1_lock_mfe_pct", 0.60))
-    t2_trigger_r = float(params.get("trailing_stage2_trigger_r", 1.40))
-    t2_lock_mfe_pct = float(params.get("trailing_stage2_lock_mfe_pct", 0.75))
+    be_trigger_r = float(params.get("breakeven_trigger_r", 1.20))
+    be_cushion_usd = float(params.get("breakeven_net_cushion_usd", 3.0))
+    rsi2_exit_thresh = float(params.get("rsi2_exit_overbought", 75.0))
+    swing_min_net_usd = float(params.get("swing_rsi2_min_net_profit_usd", 4.0))
+    max_hold_days = int(params.get("max_hold_days", 12))
     macro_gatekeeper_enabled = bool(params.get("macro_regime_gatekeeper_enabled", True))
-    spy_thresh = float(params.get("macro_index_threshold_drop_pct", -0.75))
-    qqq_thresh = float(params.get("macro_qqq_threshold_drop_pct", -1.00))
-    vwap_filter = bool(params.get("macro_intraday_vwap_filter", True))
-    min_breadth_ratio = float(params.get("macro_market_breadth_min_advancing_pct", 0.38))
+    spy_thresh = float(params.get("macro_index_threshold_drop_pct", -2.20))
+    qqq_thresh = float(params.get("macro_qqq_threshold_drop_pct", -2.50))
+    vwap_filter = bool(params.get("macro_intraday_vwap_filter", False))
+    min_breadth_ratio = float(params.get("macro_market_breadth_min_advancing_pct", 0.20))
 
     macro_vetoed_days = 0
     macro_vetoed_signals = 0
@@ -256,20 +236,18 @@ def run_full_auto_backtest(
                 exit_reason = "TAKE_PROFIT_HIT"
             else:
                 peak_r = mfe_ps / risk_dist if risk_dist > 0 else 0.0
-                if peak_r >= t2_trigger_r:
-                    pos["stage"] = max(pos["stage"], 3)
-                    pos["stop_loss"] = max(pos["stop_loss"], round(entry_p + (mfe_ps * t2_lock_mfe_pct), 2))
-                elif peak_r >= t1_trigger_r:
-                    pos["stage"] = max(pos["stage"], 2)
-                    pos["stop_loss"] = max(pos["stop_loss"], round(entry_p + (mfe_ps * t1_lock_mfe_pct), 2))
-                elif peak_r >= be_trigger_r:
+                if peak_r >= be_trigger_r:
                     pos["stage"] = max(pos["stage"], 1)
                     be_plus = round(entry_p + (((commission_per_order * 2.0) + be_cushion_usd) / max(1, shares)), 2)
                     pos["stop_loss"] = max(pos["stop_loss"], be_plus)
 
-                if pos["bars_held"] >= 10:
+                net_close_pnl = ((close_p - entry_p) * shares) - (commission_per_order * 2.0)
+                if float(row.get("rsi_2", 50.0)) >= rsi2_exit_thresh and net_close_pnl > swing_min_net_usd:
                     exit_price = close_p
-                    exit_reason = "TIME_EXPIRY_10D"
+                    exit_reason = "RSI2_OVERBOUGHT_EXIT"
+                elif pos["bars_held"] >= max_hold_days:
+                    exit_price = close_p
+                    exit_reason = "TIME_EXIT_12D"
                 else:
                     pos["bars_held"] += 1
                     pos["current_price"] = close_p
