@@ -37,11 +37,16 @@ export function OneClickExecutionCard({
     commission_to_gross_profit_pct: (opp as any).commission_to_gross_profit_pct ?? 0,
   };
   const advice = opp.ai_advice;
+  const tech = opp.technical_analysis;
+  const dualGate = opp.dual_gate;
 
   const verdict = advice?.verdict;
   const isApprovedByAi = verdict === "APPROVE";
   const isCaution = verdict === "CAUTION";
   const isReject = verdict === "REJECT";
+  const isTechApproved = tech?.verdict === "APPROVE";
+  const isTechWatchlist = tech?.verdict === "WATCHLIST";
+  const bestPattern = tech?.best_pattern;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-sm">
@@ -95,6 +100,54 @@ export function OneClickExecutionCard({
           <p className="text-[11px] font-medium text-ink-soft">{opp.expert_summary}</p>
         )}
       </div>
+
+      {/* Semáforo Dual + Agente Técnico Defensivo (1D + 1H + Figuras Chartistas) */}
+      {tech && (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-line/60 bg-slate-50/70 p-3">
+          <div className="flex items-center justify-between flex-wrap gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <ShieldCheck className="h-4 w-4 text-buy" />
+              <span className="text-xs font-bold text-ink">Agente Técnico Defensivo (1D + 1H)</span>
+              <span
+                className={clsx(
+                  "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
+                  isTechApproved && "bg-buy-bg text-buy border border-emerald-200",
+                  isTechWatchlist && "bg-warn-bg text-warn border border-amber-200",
+                  !isTechApproved && !isTechWatchlist && "bg-sell-bg text-sell border border-rose-200"
+                )}
+              >
+                {tech.verdict} · {tech.confidence}%
+              </span>
+              {bestPattern && (
+                <span className="rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                  {bestPattern.label} ({bestPattern.status})
+                </span>
+              )}
+            </div>
+            {dualGate && (
+              <span
+                className={clsx(
+                  "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
+                  dualGate.passed
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                    : "bg-amber-100 text-amber-800 border border-amber-300"
+                )}
+              >
+                Doble Filtro: {dualGate.passed ? "APROBADO (2/2)" : dualGate.status}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] font-medium text-ink-soft">{tech.headline}</p>
+          {bestPattern && (
+            <div className="flex flex-wrap gap-3 text-[11px] text-ink-soft num">
+              <span>Neckline: <strong className="text-ink">${bestPattern.neckline.toFixed(2)}</strong></span>
+              <span>Objetivo: <strong className="text-buy">${bestPattern.projected_target.toFixed(2)}</strong></span>
+              <span>Invalidación: <strong className="text-sell">${bestPattern.invalidation_price.toFixed(2)}</strong></span>
+              <span>RVOL: <strong className="text-ink">{bestPattern.breakout_rvol.toFixed(2)}x</strong></span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Dictamen del Asesor IA Gemini */}
       <div className="flex flex-col gap-1.5 rounded-lg border border-line/60 bg-slate-50/70 p-3">

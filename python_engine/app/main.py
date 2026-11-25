@@ -314,6 +314,7 @@ from three_tricks_engine import (
     fetch_intraday_bars_batch,
     get_cached_daily_batch,
 )
+from technical_agent import evaluate_dual_gate, evaluate_technical_gate
 
 
 def _in_ny_opening_cooldown(opening_cooldown_mins: int) -> bool:
@@ -334,10 +335,12 @@ def analyze_single_ticker_df(
     df_15m: Optional[pd.DataFrame] = None,
     df_5m: Optional[pd.DataFrame] = None,
     daily_pre: Optional[dict[str, Any]] = None,
+    df_1h: Optional[pd.DataFrame] = None,
 ) -> tuple[Optional[dict[str, Any]], Optional[dict[str, Any]]]:
     """
-    Evalúa un activo combinando Capa 1 (1D) + Capa 2 (15m/5m) mediante "Los 3 Trucos"
-    y el Comité de Admisión #1 (Momento) y #2 (Volumen/Divergencia).
+    Evalúa un activo combinando Capa 1 (1D) + Capa 2 (15m/5m) mediante "Los 3 Trucos",
+    el Agente Técnico Defensivo (figuras chartistas 1D + confirmación horaria 1H)
+    y el Comité de Admisión.
     """
     params = audit_agent.strategy_params
     daily = daily_pre or evaluate_daily_structure(df)
@@ -354,8 +357,44 @@ def analyze_single_ticker_df(
     intraday = extract_intraday_features(df_15m, df_5m) if df_15m is not None else None
     eval_res = evaluate_three_tricks(daily, intraday, params)
 
+    # Evaluación del Agente Técnico Defensivo (1D estructura + figuras chartistas + confirmación 1H)
+    tech_eval = evaluate_technical_gate(daily, df, df_1h=df_1h, params=params)
+    best_pattern = tech_eval.get("best_pattern")
+
+    # Si hay figura confirmada o señal disparada y aún no tenemos barras 1H, intentar confirmar en 1H
+    if (
+        df_1h is None
+        and params.get("technical_require_hourly_confirmation", True)
+        and (eval_res["signal_triggered"] or tech_eval.get("pattern_status") == "CONFIRMED")
+    ):
+        try:
+            b1h = fetch_intraday_bars_batch([ticker], interval="1h", period="15d")
+            fetched_1h = b1h.get(ticker)
+            if fetched_1h is not None and not fetched_1h.empty:
+                tech_eval = evaluate_technical_gate(daily, df, df_1h=fetched_1h, params=params)
+                best_pattern = tech_eval.get("best_pattern")
+        except Exception as h1_err:
+            logger.debug(f"[{ticker}] Sin barras 1H para confirmación táctica: {h1_err}")
+
     signal_triggered = bool(eval_res["signal_triggered"])
+    setup_archetype = eval_res["setup_archetype"]
+    quant_score = int(eval_res["quant_score"])
+    expert_summary = eval_res["expert_summary"]
     block_reason = eval_res["block_reason"]
+
+    # Camino B: Figura chartista alcista CONFIRMADA con volumen (HCHi, Doble/Triple Suelo, Rango)
+    if not signal_triggered and tech_eval.get("verdict") == "APPROVE" and tech_eval.get("pattern_status") == "CONFIRMED" and best_pattern:
+        signal_triggered = True
+        setup_archetype = best_pattern["pattern"]
+        quant_score = max(quant_score, int(best_pattern.get("confidence", 80)))
+        expert_summary = f"Figura {best_pattern['label']} CONFIRMADA: {tech_eval['headline']}"
+        block_reason = None
+    elif signal_triggered and params.get("technical_gate_enabled", True) and tech_eval.get("verdict") != "APPROVE":
+        # Regla defensiva: el Agente Técnico puede vetar o pasar a WATCHLIST una señal intradía
+        signal_triggered = False
+        block_reason = f"[Agente Técnico · {tech_eval.get('verdict')}] {tech_eval.get('headline')}"
+    elif signal_triggered and best_pattern and tech_eval.get("pattern_status") == "CONFIRMED":
+        quant_score = min(99, max(quant_score, int(best_pattern.get("confidence", 80))) + 5)
 
     opening_cooldown_mins = int(params.get("intraday_opening_cooldown_minutes", 15))
     if signal_triggered and _in_ny_opening_cooldown(opening_cooldown_mins):
@@ -367,8 +406,8 @@ def analyze_single_ticker_df(
 
     entry_px = float((intraday or {}).get("price") or daily["price"])
     atr_15m = (intraday or {}).get("atr_15m")
-    pullback_low = (intraday or {}).get("pullback_low")
-    swing_high_ref = (intraday or {}).get("intraday_swing_high") or daily.get("daily_swing_high_20")
+    pullback_low = daily.get("daily_pullback_low") or (intraday or {}).get("pullback_low")
+    swing_high_ref = daily.get("daily_swing_high_6m") or daily.get("daily_swing_high_20")
 
     brackets = trigger_agent.calculate_bracket_levels(
         entry_price=entry_px,
@@ -380,6 +419,16 @@ def analyze_single_ticker_df(
     )
     stop_loss = brackets["stop_loss_price"]
     take_profit = brackets["take_profit_price"]
+
+    # Si la entrada viene de figura chartista confirmada, respetar el nivel de invalidación estructural
+    # siempre que quede dentro de un riesgo razonable, y acotar TP con el objetivo proyectado si es más conservador
+    if best_pattern and tech_eval.get("pattern_status") == "CONFIRMED":
+        pat_inv = float(best_pattern.get("invalidation_price") or 0.0)
+        if 0 < pat_inv < entry_px and ((entry_px - pat_inv) / entry_px) <= float(params.get("max_sl_price_pct", 0.08)):
+            stop_loss = max(stop_loss, round(pat_inv, 2))
+        pat_target = float(best_pattern.get("projected_target") or 0.0)
+        if pat_target > entry_px:
+            take_profit = round(min(max(take_profit, pat_target), entry_px * (1.0 + float(params.get("max_single_swing_gain_pct", 0.25)))), 2)
 
     snapshot = {
         "ticker": ticker,
@@ -416,12 +465,13 @@ def analyze_single_ticker_df(
         "avg_red_pb_vol": (intraday or {}).get("avg_red_pb_vol"),
         "avg_green_imp_vol": (intraday or {}).get("avg_green_imp_vol"),
         "short_term_bias": eval_res["short_term_bias"],
-        "quant_score": eval_res["quant_score"],
-        "expert_summary": eval_res["expert_summary"],
+        "quant_score": quant_score,
+        "expert_summary": expert_summary,
         "expert_criteria": eval_res["expert_criteria"],
-        "market_regime": eval_res["regime"],
-        "setup_archetype": eval_res["setup_archetype"] if signal_triggered else "NONE",
+        "market_regime": daily.get("regime", "NEUTRAL"),
+        "setup_archetype": setup_archetype if signal_triggered else "NONE",
         "signal_triggered": signal_triggered,
+        "technical_analysis": tech_eval,
         "provisional_stop_loss": stop_loss,
         "provisional_take_profit": take_profit,
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -440,15 +490,17 @@ def analyze_single_ticker_df(
 
     opportunity = {
         "ticker": ticker,
-        "market_regime": eval_res["regime"],
-        "setup_archetype": eval_res["setup_archetype"],
+        "market_regime": daily.get("regime", "NEUTRAL"),
+        "setup_archetype": setup_archetype,
         "short_term_bias": eval_res["short_term_bias"],
-        "quant_score": eval_res["quant_score"],
+        "quant_score": quant_score,
         "falling_knife": daily["falling_knife"],
         "recent_swing_high": round(float(swing_high_ref or entry_px), 2),
         "intraday_swing_high": (intraday or {}).get("intraday_swing_high"),
-        "expert_summary": eval_res["expert_summary"],
+        "expert_summary": expert_summary,
         "expert_criteria": eval_res["expert_criteria"],
+        "technical_analysis": tech_eval,
+        "dual_gate": evaluate_dual_gate(None, tech_eval, params),
         "entry_price": round(entry_px, 2),
         "stop_loss_price": stop_loss,
         "take_profit_price": take_profit,
@@ -1600,27 +1652,23 @@ class AutonomousScannerWorker:
                         )
                         continue
 
-                    # Puerta del asesor IA: bloquea tanto REJECT como CAUTION (cuando ai_veto_on_caution=True)
+                    # Puerta Dual Defensiva (AND estricto fail-closed): Fundamental OK + Técnico OK
                     if params.get("ai_gate_full_auto", True):
                         advice = opp.get("ai_advice") if (opp.get("ai_advice") or {}).get("status") == "DONE" else None
                         if advice is None:
                             advice = await self.request_advice(
-                                opp, timeout_seconds=float(params.get("ai_gate_timeout_seconds", 6.0))
+                                opp, timeout_seconds=float(params.get("ai_gate_timeout_seconds", 12.0))
                             )
                         opp["ai_advice"] = advice
-                        fail_open = bool(params.get("ai_gate_fail_open", True))
-                        veto_caution = bool(params.get("ai_veto_on_caution", True))
-                        blocked_verdicts = ("REJECT", "CAUTION") if veto_caution else ("REJECT",)
-                        vetoed = (advice.get("status") == "DONE" and advice.get("verdict") in blocked_verdicts) or (
-                            advice.get("status") != "DONE" and not fail_open
-                        )
-                        if vetoed:
-                            opp["status"] = "VETOED_BY_AI"
+                        dual = evaluate_dual_gate(advice, opp.get("technical_analysis"), params)
+                        opp["dual_gate"] = dual
+                        if not dual["passed"]:
+                            if not dual["fundamental_ok"]:
+                                opp["status"] = "VETOED_BY_AI" if advice.get("status") == "DONE" else "AI_PENDING_RETRY"
+                            else:
+                                opp["status"] = "WATCHLIST_TECHNICAL" if dual["status"] == "WATCHLIST_TECHNICAL" else "VETOED_BY_TECHNICAL"
                             self.active_opportunities[ticker] = opp
-                            logger.info(
-                                f"[ASESOR IA] Entrada automática en {ticker} bloqueada ({advice.get('verdict')}): "
-                                f"{advice.get('headline') or advice.get('reason')}"
-                            )
+                            logger.info(f"[PUERTA DUAL] Entrada automática en {ticker} bloqueada ({dual['status']}): {dual['reason']}")
                             continue
                     sizing = opp.get("order_sizing") or {}
                     sl_val = float(opp.get("stop_loss_price") or sizing.get("stop_loss_price") or opp.get("provisional_stop_loss", 0.0))
@@ -2223,7 +2271,7 @@ async def approve_opportunity_one_click(
                 entry_price=entry_price,
                 atr_14=float(opp.get("atr_14") or live_snap["atr"] or (entry_price * 0.01)),
                 strategy_params=audit_agent.strategy_params,
-                recent_swing_high=opp.get("intraday_swing_high") or opp.get("recent_swing_high"),
+                recent_swing_high=opp.get("recent_swing_high"),
                 atr_15m=opp.get("atr_15m"),
                 pullback_low=opp.get("pullback_low"),
             )
@@ -3146,18 +3194,34 @@ async def adjust_position_levels(ticker: str, payload: AdjustPositionLevelsPaylo
 
 _CANDLES_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
 _CANDLES_CACHE_TTL_SECONDS = 10.0
+_CANDLES_INTERVAL_PERIOD = {
+    "5m": "5d",
+    "15m": "1mo",
+    "1h": "3mo",
+    "1d": "1y",
+}
 
 
-def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
-    """Velas diarias OHLCV + EMA(20) + SMA(50) + SMA(200) + diagnóstico experto corto plazo + Bracket OCO."""
-    df = yf.download(ticker, period="1y", interval="1d", progress=False)
+def _format_candle_time(idx: Any, is_intraday: bool) -> int | str:
+    if is_intraday:
+        return int(idx.timestamp())
+    return idx.strftime("%Y-%m-%d")
+
+
+def build_candles_payload_sync(ticker: str, bars: int, interval: str = "1d") -> dict[str, Any]:
+    """Velas OHLCV (5m/15m/1h/1d) + EMA(20) + SMA(50) + SMA(200) + diagnóstico experto corto plazo + Bracket OCO."""
+    period = _CANDLES_INTERVAL_PERIOD.get(interval, "1y")
+    is_intraday = interval != "1d"
+
+    df = yf.download(ticker, period=period, interval=interval, progress=False)
     if df is None or df.empty:
-        raise ValueError(f"Sin datos de mercado para {ticker}")
+        raise ValueError(f"Sin datos de mercado para {ticker} ({interval})")
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
     df = df.dropna(subset=["Open", "High", "Low", "Close"])
-    if len(df) < 30:
-        raise ValueError(f"Histórico insuficiente para {ticker}")
+    df = df[~df.index.duplicated(keep="last")].sort_index()
+    if len(df) < 20:
+        raise ValueError(f"Histórico insuficiente para {ticker} ({interval})")
 
     close, high, low = df["Close"], df["High"], df["Low"]
     ema20 = EMAIndicator(close=close, window=20).ema_indicator()
@@ -3165,12 +3229,23 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
     sma200 = SMAIndicator(close=close, window=200).sma_indicator()
     atr = AverageTrueRange(high=high, low=low, close=close, window=14).average_true_range()
 
-    _, snap = analyze_single_ticker_df(ticker, df, scanner_worker.portfolio_value)
+    if is_intraday:
+        df_daily = yf.download(ticker, period="1y", interval="1d", progress=False)
+        if df_daily is not None and not df_daily.empty:
+            if isinstance(df_daily.columns, pd.MultiIndex):
+                df_daily.columns = df_daily.columns.get_level_values(0)
+            df_daily = df_daily.dropna(subset=["Open", "High", "Low", "Close"])
+        else:
+            df_daily = df
+    else:
+        df_daily = df
+
+    _, snap = analyze_single_ticker_df(ticker, df_daily, scanner_worker.portfolio_value)
 
     tail = df.tail(bars)
     candles = [
         {
-            "time": idx.strftime("%Y-%m-%d"),
+            "time": _format_candle_time(idx, is_intraday),
             "open": round(float(r["Open"]), 2),
             "high": round(float(r["High"]), 2),
             "low": round(float(r["Low"]), 2),
@@ -3180,17 +3255,17 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
         for idx, r in tail.iterrows()
     ]
     ema20_series = [
-        {"time": idx.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+        {"time": _format_candle_time(idx, is_intraday), "value": round(float(v), 2)}
         for idx, v in ema20.loc[tail.index].items()
         if not pd.isna(v)
     ]
     sma50_series = [
-        {"time": idx.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+        {"time": _format_candle_time(idx, is_intraday), "value": round(float(v), 2)}
         for idx, v in sma50.loc[tail.index].items()
         if not pd.isna(v)
     ]
     sma_series = [
-        {"time": idx.strftime("%Y-%m-%d"), "value": round(float(v), 2)}
+        {"time": _format_candle_time(idx, is_intraday), "value": round(float(v), 2)}
         for idx, v in sma200.loc[tail.index].items()
         if not pd.isna(v)
     ]
@@ -3211,7 +3286,7 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
                 entry,
                 last_atr,
                 params,
-                recent_swing_high=opp.get("intraday_swing_high") or opp.get("recent_swing_high"),
+                recent_swing_high=opp.get("recent_swing_high"),
                 atr_15m=opp.get("atr_15m"),
                 pullback_low=opp.get("pullback_low"),
             )
@@ -3227,7 +3302,7 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
                 entry,
                 last_atr,
                 params,
-                recent_swing_high=(snap or {}).get("intraday_swing_high") or (snap or {}).get("recent_swing_high"),
+                recent_swing_high=(snap or {}).get("recent_swing_high"),
                 atr_15m=(snap or {}).get("atr_15m"),
                 pullback_low=(snap or {}).get("pullback_low"),
             )
@@ -3237,7 +3312,7 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
 
     return {
         "ticker": ticker,
-        "interval": "1d",
+        "interval": interval,
         "candles": candles,
         "ema20_series": ema20_series,
         "sma50_series": sma50_series,
@@ -3282,16 +3357,20 @@ def build_candles_payload_sync(ticker: str, bars: int) -> dict[str, Any]:
 
 
 @app.get("/market/candles/{ticker}")
-async def get_market_candles(ticker: str, bars: int = Query(default=120, ge=30, le=252)):
+async def get_market_candles(
+    ticker: str,
+    bars: int = Query(default=120, ge=30, le=252),
+    interval: str = Query(default="1d", pattern="^(5m|15m|1h|1d)$"),
+):
     symbol = ticker.strip().upper()
-    key = f"{symbol}:{bars}"
+    key = f"{symbol}:{interval}:{bars}"
     cached = _CANDLES_CACHE.get(key)
     now_m = time.monotonic()
     # Con oportunidad activa no se usa caché: los niveles SL/TP deben ser siempre los vigentes
     if cached and (now_m - cached[0]) < _CANDLES_CACHE_TTL_SECONDS and symbol not in scanner_worker.active_opportunities:
         return cached[1]
     try:
-        payload = await asyncio.to_thread(build_candles_payload_sync, symbol, bars)
+        payload = await asyncio.to_thread(build_candles_payload_sync, symbol, bars, interval)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
@@ -3570,8 +3649,8 @@ def ai_advisor_status():
         "use_search": cfg["use_search"],
         "timeout_seconds": cfg["timeout_seconds"],
         "gate_full_auto": audit_agent.strategy_params.get("ai_gate_full_auto", True),
-        "gate_timeout_seconds": audit_agent.strategy_params.get("ai_gate_timeout_seconds", 6.0),
-        "gate_fail_open": audit_agent.strategy_params.get("ai_gate_fail_open", True),
+        "gate_timeout_seconds": audit_agent.strategy_params.get("ai_gate_timeout_seconds", 12.0),
+        "gate_fail_open": audit_agent.strategy_params.get("ai_gate_fail_open", False),
         "cached_tickers": list(scanner_worker.ai_cache.keys()),
         "pending_tickers": list(scanner_worker.ai_pending),
     }
@@ -3588,7 +3667,31 @@ async def refresh_ai_advice(ticker: str):
     live = scanner_worker.active_opportunities.get(symbol)
     if live is not None:
         live["ai_advice"] = advice
+        live["dual_gate"] = evaluate_dual_gate(advice, live.get("technical_analysis"), audit_agent.strategy_params)
     return advice
+
+
+@app.get("/technical-watchlist")
+async def get_technical_watchlist():
+    """Devuelve los activos con figuras chartistas en formación o confirmadas en el último barrido."""
+    items = []
+    for snap in scanner_worker.market_watch:
+        ta_info = snap.get("technical_analysis") or {}
+        pat_status = ta_info.get("pattern_status", "NONE")
+        if ta_info.get("verdict") == "WATCHLIST" or pat_status in ("FORMING", "CONFIRMED"):
+            items.append({
+                "ticker": snap.get("ticker"),
+                "price": snap.get("price"),
+                "verdict": ta_info.get("verdict"),
+                "confidence": ta_info.get("confidence", 0),
+                "headline": ta_info.get("headline"),
+                "pattern_status": pat_status,
+                "best_pattern": ta_info.get("best_pattern"),
+                "hourly_confirmation": ta_info.get("hourly_confirmation"),
+                "updated_at": snap.get("updated_at"),
+            })
+    items.sort(key=lambda x: (1 if x["pattern_status"] == "CONFIRMED" else 0, x["confidence"]), reverse=True)
+    return {"count": len(items), "items": items}
 
 
 # =====================================================================

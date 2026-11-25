@@ -143,6 +143,53 @@ export interface ExpertCriterion {
   detail: string;
 }
 
+export interface ChartPatternInfo {
+  pattern: string;
+  label: string;
+  status: "CONFIRMED" | "FORMING" | "NONE";
+  confidence: number;
+  neckline: number;
+  projected_target: number;
+  invalidation_price: number;
+  pattern_height_pct: number;
+  span_bars: number;
+  breakout_rvol: number;
+  detail: string;
+}
+
+export interface HourlyConfirmationInfo {
+  available: boolean;
+  confirmed: boolean;
+  hourly_close?: number;
+  hourly_ema20?: number;
+  hourly_rsi?: number;
+  reason: string;
+}
+
+export interface TechnicalAnalysisInfo {
+  status: "DONE" | "UNAVAILABLE";
+  verdict: "APPROVE" | "WATCHLIST" | "REJECT";
+  confidence: number;
+  headline: string;
+  trend_ok: boolean;
+  pattern_status: "CONFIRMED" | "FORMING" | "NONE";
+  best_pattern?: ChartPatternInfo | null;
+  hourly_confirmation?: HourlyConfirmationInfo;
+  checks?: ExpertCriterion[];
+  reasons?: string[];
+}
+
+export interface DualGateInfo {
+  passed: boolean;
+  status: "APPROVED" | "BLOCKED_BOTH" | "BLOCKED_FUNDAMENTAL" | "BLOCKED_TECHNICAL" | "WATCHLIST_TECHNICAL";
+  fail_closed: boolean;
+  fundamental_ok: boolean;
+  fundamental_verdict: string;
+  technical_ok: boolean;
+  technical_verdict: string;
+  reason: string;
+}
+
 export interface MarketWatchItem {
   ticker: string;
   cluster_id?: string;
@@ -171,6 +218,7 @@ export interface MarketWatchItem {
   expert_criteria?: ExpertCriterion[];
   market_regime: string;
   signal_triggered: boolean;
+  technical_analysis?: TechnicalAnalysisInfo;
   provisional_stop_loss: number;
   provisional_take_profit: number;
   rejection_reason?: string;
@@ -245,10 +293,14 @@ export interface OpportunityItem {
     lines: string[];
   };
   ai_advice?: AiAdvice;
+  technical_analysis?: TechnicalAnalysisInfo;
+  dual_gate?: DualGateInfo;
 }
 
+export type CandleInterval = "5m" | "15m" | "1h" | "1d";
+
 export interface CandleData {
-  time: string;
+  time: string | number;
   open: number;
   high: number;
   low: number;
@@ -257,7 +309,7 @@ export interface CandleData {
 }
 
 export interface SmaPoint {
-  time: string;
+  time: string | number;
   value: number;
 }
 
@@ -303,6 +355,7 @@ export interface CandleResponse {
     order_sizing?: OpportunityItem["order_sizing"];
     financial_metrics?: OpportunityItem["financial_metrics"];
   };
+  generated_at?: string;
 }
 
 export interface StartEngineRequest {
